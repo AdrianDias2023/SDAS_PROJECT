@@ -1,0 +1,20 @@
+{
+  "model": "Random Forest Risk Classifier",
+  "accuracy": 0.9993,
+  "f1_score": 0.9993,
+  "num_trees": 100,
+  "features": [
+    "water_level",
+    "temperature",
+    "humidity",
+    "rainfall",
+    "rainfall_3h",
+    "rainfall_6h",
+    "rate_of_rise",
+    "sin_month",
+    "cos_month",
+    "sin_hour",
+    "cos_hour",
+    "is_monsoon"
+  ]
+}
