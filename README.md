@@ -189,23 +189,27 @@ graph TD
 
 ---
 
-## 🧠 Machine Learning Performance
+## 🧠 Hybrid Machine Learning Performance
 
-| Neural Network | Architecture | Target Objective | Achieved Metrics |
+| Model Component | Architecture | Target Objective | Achieved Metrics |
 |---|---|---|---|
-| **LSTM Forecaster** | 2-Layer Stacked LSTM (64/32 units) + Dropout + Dense | 1-Hour Ahead Water Level Forecasting | **MAE: 2.319%** \| **RMSE: 3.873%** |
-| **Deep Autoencoder** | Symmetric Encoder-Decoder (4 ➔ 16 ➔ 8 ➔ 16 ➔ 4) | Sensor Drift & Flash-Flood Anomaly Detection | **FAR: 4.1%** \| **Inference Latency: < 5ms** |
+| **LSTM Forecaster** | 2-Layer Stacked LSTM (64/32 units) + Dropout + Dense | 1-Hour Ahead Water Level Continuous Forecasting | **MAE: 2.319%** \| **RMSE: 3.873%** |
+| **Random Forest Ensemble** | 100 Calibrated Decision Trees (Max Depth 14) + Gini | Multi-Class Flood Risk & Overtopping Probability (%) | **Accuracy: 99.93%** \| **F1-Score: 99.93%** |
+| **Deep Autoencoder** | Symmetric Encoder-Decoder (4 ➔ 16 ➔ 8 ➔ 16 ➔ 4) | Sensor Drift, Discrepancy & Outlier Filtering | **FAR: 4.1%** \| **Threshold: 0.001603** |
 
 ---
 
-## 📱 Mobile Application Features
+## 📱 Mobile Application & Edge Features
 
 - **Multi-Language Support (i18n):** Native support for **English**, **Sinhala (සිංහල)**, and **Tamil (தமிழ்)** with instant header switcher and `AsyncStorage` persistence.
-- **Real-Time Hydrological Gauges:** Color-coded animated gauges backed by Supabase WebSocket subscriptions.
-- **Dual User Portals:**
-  - *Public Portal:* Live dam height, 4-tier alert status, rainfall forecast, and project information.
-  - *Operator Portal:* Authenticated dashboard, manual gate override slider (0–100%), and emergency SMS contact management.
-- **Dedicated Proposal Screen:** Complete academic details, team member profiles, supervisor affiliations, and technical matrices.
+- **Satellite Weather & Rain Radar:** Real-time live weather and 6-hour rainfall forecasts for the Puttalam basin from Open-Meteo API.
+- **Interactive Evacuation Map & Safe Zones:** High-ground relief shelters, elevation safety indicators, GPS directions, and direct DMC Hotline (`117`) dialing.
+- **Triple-Redundancy Alerting:** Automated GSM SMS $+$ Instant Mobile Push Notifications $+$ Continuous SOS Vibration/Audio Siren Alarm.
+- **Operator Control & System Diagnostics:**
+  - Historical analysis charts (24h / 7d / 30d).
+  - Live hardware health monitoring (Sensors 1 & 2 latency, GSM signal dBm, Battery UPS %, Node authorization).
+- **Physical Emergency Manual Buttons:** Hardware push buttons on the ESP32 (`OPEN` GPIO 32, `CLOSE` GPIO 33, `STOP/HOLD` GPIO 23) for local manual fail-safe operation during total cloud or network outages.
+- **Dual-Source Power Management:** 12V DC Mains Supply $+$ 18650 Li-ion Battery Backup with automatic seamless switchover and ADC voltage tracking.
 
 ---
 

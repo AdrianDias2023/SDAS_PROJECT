@@ -106,6 +106,11 @@ const int SMS_CONTACT_COUNT = 3;
 // Active Buzzer (HIGH = ON)
 #define BUZZER_PIN 14
 
+// ─── PHYSICAL EMERGENCY MANUAL CONTROL BUTTONS (Active LOW with internal pull-up) ─
+#define BTN_OPEN_PIN   32   // Physical Emergency OPEN Button (100% / 180°)
+#define BTN_CLOSE_PIN  33   // Physical Emergency CLOSE Button (0% / 0°)
+#define BTN_STOP_PIN   23   // Physical Emergency STOP/HOLD Button (Lock current position)
+
 // ─── ALERT THRESHOLDS ──────────────────────────────────────────────────────────
 #define THRESH_NORMAL      70.0f   // Below this = NORMAL
 #define THRESH_DANGER      85.0f   // Above this = DANGER
@@ -137,6 +142,10 @@ enum AlertLevel : uint8_t {
 AlertLevel currentLevel    = LEVEL_NORMAL;
 bool       smsSentThisLevel = false;
 bool       wifiOK           = false;
+
+// Physical Emergency Manual Override State
+bool physicalManualOverride = false;
+int  currentGateAngle       = 0;
 
 float waterLevelPct   = 0.0f;
 float prevLevelPct    = 0.0f;   // Previous reading for rate-of-rise
@@ -290,7 +299,10 @@ void triggerBuzzer(int beeps, int onMs, int offMs) {
 // Smooth servo move to avoid mechanical shock
 void setGate(int targetAngle) {
   int currentAngle = gateServo.read();
-  if (currentAngle == targetAngle) return;
+  if (currentAngle == targetAngle) {
+    currentGateAngle = targetAngle;
+    return;
+  }
 
   int step = (targetAngle > currentAngle) ? 1 : -1;
   while (currentAngle != targetAngle) {
@@ -298,16 +310,65 @@ void setGate(int targetAngle) {
     gateServo.write(currentAngle);
     delay(15);   // 15 ms per degree → ~2.7 s for full 0→180° sweep
   }
+  currentGateAngle = targetAngle;
   Serial.printf("[GATE] Position → %d° (%.0f%% open)\n",
                 targetAngle, (targetAngle / 180.0f) * 100.0f);
 }
 
 void applyGate(AlertLevel level) {
+  if (physicalManualOverride) {
+    Serial.println(F("[GATE] Skipped automatic gate actuation — Physical Manual Override is ACTIVE"));
+    return;
+  }
   switch (level) {
     case LEVEL_NORMAL:     setGate(GATE_CLOSED);    break;
     case LEVEL_PRE_WARN:   setGate(GATE_PRE_WARN);  break;
     case LEVEL_CLEAR_AREA: setGate(GATE_CLEAR);     break;
     case LEVEL_DANGER:     setGate(GATE_FULL_OPEN); break;
+  }
+}
+
+// ─── EMERGENCY PHYSICAL BUTTON HANDLER ─────────────────────────────────────────
+void checkEmergencyButtons() {
+  static unsigned long lastBtnPressMs = 0;
+  unsigned long now = millis();
+  if (now - lastBtnPressMs < 200) return; // Debounce window
+
+  // 1. Emergency OPEN Button Pressed
+  if (digitalRead(BTN_OPEN_PIN) == LOW) {
+    lastBtnPressMs = now;
+    physicalManualOverride = true;
+    Serial.println(F("\n[MANUAL OVERRIDE] Physical OPEN Pressed → Actuating Gate to 100% (180°)"));
+    setGate(GATE_FULL_OPEN);
+    triggerBuzzer(2, 100, 50);
+  }
+  // 2. Emergency CLOSE Button Pressed
+  else if (digitalRead(BTN_CLOSE_PIN) == LOW) {
+    lastBtnPressMs = now;
+    physicalManualOverride = true;
+    Serial.println(F("\n[MANUAL OVERRIDE] Physical CLOSE Pressed → Closing Gate 0%"));
+    setGate(GATE_CLOSED);
+    triggerBuzzer(1, 100, 0);
+  }
+  // 3. Emergency STOP / HOLD Button Pressed
+  else if (digitalRead(BTN_STOP_PIN) == LOW) {
+    lastBtnPressMs = now;
+    // Long press check (>2.5s) to exit manual mode and return to AUTO
+    unsigned long pressStart = millis();
+    while (digitalRead(BTN_STOP_PIN) == LOW) {
+      if (millis() - pressStart > 2500) {
+        physicalManualOverride = false;
+        Serial.println(F("\n[MANUAL OVERRIDE] RESET → Returned to AUTOMATIC AI/Threshold Control"));
+        triggerBuzzer(3, 100, 100);
+        applyGate(currentLevel);
+        return;
+      }
+      delay(10);
+    }
+    // Short press = Instant HOLD current position
+    physicalManualOverride = true;
+    Serial.printf("\n[MANUAL OVERRIDE] Physical STOP/HOLD Pressed → Locked at %d°\n", currentGateAngle);
+    triggerBuzzer(1, 200, 0);
   }
 }
 
@@ -502,6 +563,12 @@ void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
 
+  // ── Physical Emergency Button Pins (Internal Pull-Up) ──────────────────────
+  pinMode(BTN_OPEN_PIN,  INPUT_PULLUP);
+  pinMode(BTN_CLOSE_PIN, INPUT_PULLUP);
+  pinMode(BTN_STOP_PIN,  INPUT_PULLUP);
+  Serial.println(F("[GPIO] Emergency push buttons initialised (OPEN=32, CLOSE=33, STOP=23)"));
+
   // ── DHT sensor ─────────────────────────────────────────────────────────────
   dht.begin();
   Serial.println(F("[DHT] Sensor initialised"));
@@ -543,6 +610,9 @@ void setup() {
 
 void loop() {
   unsigned long now = millis();
+
+  // ════ 0. CHECK PHYSICAL EMERGENCY BUTTONS (Instant Real-Time Response) ════
+  checkEmergencyButtons();
 
   // ════ READ SENSORS (every 2 s) ════════════════════════════════════════════
   if (now - lastSensorMs >= SENSOR_INTERVAL_MS) {
