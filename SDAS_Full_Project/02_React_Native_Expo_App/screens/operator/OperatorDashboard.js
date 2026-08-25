@@ -179,6 +179,43 @@ export default function OperatorDashboard({ navigation }) {
             ))}
           </View>
         </View>
+
+        {/* COMMUNITY REPORTS REVIEW Section */}
+        <View style={styles.card}>
+          <View style={styles.communityHeaderRow}>
+            <Text style={styles.sectionHeader}>COMMUNITY REPORTS REVIEW</Text>
+            <View style={styles.pendingBadge}>
+              <Text style={styles.pendingBadgeText}>1 Pending</Text>
+            </View>
+          </View>
+
+          <View style={styles.reportItemBox}>
+            <View style={styles.reportTopRow}>
+              <Text style={styles.reportIdText}>Report #001 • Water Rising</Text>
+              <Text style={styles.reportUsersText}>👥 23 Confirmed</Text>
+            </View>
+            <Text style={styles.reportLocationText}>📍 Puttalam Lower Basin Sector 3</Text>
+            <Text style={styles.reportDetailText}>"Rapid water rise observed at downstream bridge approach road."</Text>
+
+            <View style={styles.operatorActionRow}>
+              <TouchableOpacity
+                style={styles.approveBtn}
+                onPress={() => Alert.alert('Report Approved', 'Community alert verified and broadcasted as official advisory.')}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.approveBtnText}>✓ Approve Alert</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.rejectBtn}
+                onPress={() => Alert.alert('Report Dismissed', 'Community report dismissed after sensor check.')}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.rejectBtnText}>✕ Reject</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -387,5 +424,86 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#334155',
+  },
+  communityHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  pendingBadge: {
+    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+  },
+  pendingBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#F59E0B',
+  },
+  reportItemBox: {
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    gap: 6,
+  },
+  reportTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  reportIdText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#38BDF8',
+  },
+  reportUsersText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  reportLocationText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#CBD5E1',
+  },
+  reportDetailText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontStyle: 'italic',
+  },
+  operatorActionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  approveBtn: {
+    flex: 1,
+    backgroundColor: '#10B981',
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  approveBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  rejectBtn: {
+    flex: 1,
+    backgroundColor: '#334155',
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  rejectBtnText: {
+    color: '#CBD5E1',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

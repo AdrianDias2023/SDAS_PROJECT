@@ -116,9 +116,26 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- ─── COMMUNITY REPORTS ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS community_reports (
+  id                  BIGSERIAL PRIMARY KEY,
+  user_id             UUID REFERENCES profiles(id),
+  location            TEXT NOT NULL,
+  report_type         TEXT NOT NULL CHECK (report_type IN ('WATER_RISING', 'ROAD_FLOODED', 'DIFFICULT_PASS', 'HEAVY_RAIN', 'OTHER')),
+  description         TEXT NOT NULL,
+  image_url           TEXT,
+  confirmation_count  INTEGER NOT NULL DEFAULT 1,
+  status              TEXT NOT NULL DEFAULT 'PENDING_REVIEW' CHECK (status IN ('PENDING_REVIEW', 'APPROVED', 'REJECTED')),
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_created ON community_reports (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_community_status  ON community_reports (status, created_at DESC);
+
 -- ─── ENABLE REALTIME ─────────────────────────────────────────
 -- Run these in Supabase Dashboard → Database → Replication
 -- Or uncomment and run:
 -- ALTER PUBLICATION supabase_realtime ADD TABLE sensor_readings;
 -- ALTER PUBLICATION supabase_realtime ADD TABLE alerts;
 -- ALTER PUBLICATION supabase_realtime ADD TABLE gate_control;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE community_reports;

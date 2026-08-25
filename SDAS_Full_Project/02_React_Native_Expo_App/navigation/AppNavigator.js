@@ -10,6 +10,7 @@ import HomeScreen             from '../screens/public/HomeScreen';
 import AlertsScreen           from '../screens/public/AlertsScreen';
 import PredictionScreen       from '../screens/public/PredictionScreen';
 import EvacuationMapScreen    from '../screens/public/EvacuationMapScreen';
+import CommunityReportsScreen from '../screens/public/CommunityReportsScreen';
 import AboutScreen            from '../screens/public/AboutScreen';
 import SafetyInfoScreen       from '../screens/public/SafetyInfoScreen';
 import PublicGateStatusScreen from '../screens/public/PublicGateStatusScreen';
@@ -63,17 +64,17 @@ function PublicTabs() {
       <Tab.Screen
         name="Alerts"
         component={AlertsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚨" focused={focused} />, tabBarLabel: 'Alert' }}
-      />
-      <Tab.Screen
-        name="Map"
-        component={EvacuationMapScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🗺️" focused={focused} />, tabBarLabel: 'Map' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚨" focused={focused} />, tabBarLabel: 'Alerts' }}
       />
       <Tab.Screen
         name="Safety"
         component={SafetyInfoScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🛡️" focused={focused} />, tabBarLabel: 'Safety' }}
+      />
+      <Tab.Screen
+        name="Community"
+        component={CommunityReportsScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📢" focused={focused} />, tabBarLabel: 'Community' }}
       />
       <Tab.Screen
         name="More"
@@ -133,10 +134,12 @@ export default function AppNavigator({ session }) {
       <Stack.Screen name="PublicTabs" component={PublicTabs} />
       
       {/* Public Sub-Screens */}
+      <Stack.Screen name="Map" component={EvacuationMapScreen} />
       <Stack.Screen name="GateStatus" component={PublicGateStatusScreen} />
       <Stack.Screen name="Weather" component={WeatherForecastScreen} />
       <Stack.Screen name="Safety" component={SafetyInfoScreen} />
       <Stack.Screen name="Predict" component={PredictionScreen} />
+      <Stack.Screen name="Community" component={CommunityReportsScreen} />
       
       {/* Operator Screens */}
       <Stack.Screen name="Login" component={LoginScreen} />
