@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: sdas-ai-inference-server
+    runtime: python
+    rootDir: SDAS_Full_Project/03_Machine_Learning
+    buildCommand: pip install -r requirements.txt
+    startCommand: python inference_server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+    plan: free
