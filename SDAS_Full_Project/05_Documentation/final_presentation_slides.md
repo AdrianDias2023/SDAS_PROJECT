@@ -18,7 +18,7 @@
 * **The Global & Local Crisis:** Extreme tropical precipitation in Sri Lanka (Puttalam/Deduru Oya basin) causes sudden reservoir overtopping, costing lives and infrastructure.
 * **Limitations of Existing Systems:**
   1. *Manual / Reactive Management:* Telemetry relies on periodic manual gauge readings without predictive lookahead.
-  2. *Single-Point-of-Failure:* Cloud-only IoT architectures collapse when severe storms knock out cellular/WiFi towers.
+  2. *Network Vulnerability:* Cloud-dependent IoT systems may experience reduced availability during network interruptions caused by severe weather conditions.
   3. *Unexplainable Black-Box ML:* Operators reject predictions without confidence scoring or manual override guards.
 * **SDAS Solution:** A 4-Tier fault-tolerant cyber-physical system integrating on-chip edge safety, hybrid predictive AI, and physical manual interlocks.
 * **Single Dam Simulation Environment:** Implemented a configurable simulated dam profile based on the Tabbowa Dam environment to demonstrate water-level monitoring, AI prediction, automated gate control, and emergency alert workflows.
@@ -39,13 +39,13 @@
 * **Dynamic Speed-of-Sound Compensation:** DHT22 temperature probe calibrates acoustic velocity:
   $$v_{\text{sound}} = 331.3 \times \sqrt{1 + \frac{T}{273.15}} \text{ m/s}$$
   *Result: Reduced measurement error from $7.86\text{ cm}$ to $0.32\text{ cm}$ ($99.78\%$ accuracy).*
-* **Autonomous Actuation & Alarms:** High-Torque MG996R Metal-Gear Servo (11 kg-cm) + 85dB Acoustic Siren + RGB Beacon.
+* **Actuation & Alarms:** MG996R Servo-Based Prototype Gate Actuator (11 kg-cm) + 85dB Acoustic Siren + RGB Beacon.
 
 ---
 
 ## 📽️ Slide 5: 3-Stage Hybrid AI Predictive Pipeline
 1. **Stage 1 (LSTM Deep Forecaster):** Sequence input of 24 hourly readings predicting reservoir depth 1 hour ahead ($\text{MAE} = 2.319\%$).
-2. **Stage 2 (Random Forest Flood Risk Classifier):** Combines LSTM forecast with Open-Meteo satellite radar rainfall ($+40\%$), kinetic rate-of-rise ($+35\%$), and seasonal monsoon lag ($+25\%$) ($\text{F1-Score} = 94.6\%$).
+2. **Stage 2 (Random Forest Flood Risk Classifier):** Combines LSTM forecast with Open-Meteo weather predictions ($+40\%$), kinetic rate-of-rise ($+35\%$), and seasonal monsoon lag ($+25\%$) ($99.93\%\text{ test accuracy on the prepared prototype dataset}$).
 3. **Stage 3 (Autoencoder Sensor Guardian):** Deep reconstruction Autoencoder detects sensor drift, bio-fouling, or spoofing ($\text{Cutoff MSE} = 0.00160$).
 
 ---

@@ -75,8 +75,8 @@ graph TD
     subgraph APP_ACTUATION_LAYER ["5. Client Applications & Actuation"]
         APP_PUB["Public Mobile App<br/>(Live Gauge, 3 Languages, Warnings)"]
         APP_OP["Operator Control Portal<br/>(Manual Gate Override, SMS Directory)"]
-        SERVO["MG996R Servo Gate Actuator<br/>(0% Closed ➔ 100% Fully Open)"]
-        DMC["Disaster Management Center (DMC)<br/>& Public Evacuation Broadcast"]
+        SERVO["MG996R Servo-Based Prototype Gate Actuator<br/>(0% Closed ➔ 50% Controlled Release)"]
+        DMC["Configured Emergency Contacts<br/>& Prototype Evacuation Alerts"]
     end
 
     %% CONNECTIONS & DATA FLOW
@@ -208,10 +208,11 @@ graph TD
 > The React Native Expo application provides a configurable simulated dam environment where operators can monitor reservoir conditions, water levels, alerts, and control actions through a single prototype dam model.
 
 - **Single Dam Prototype Simulation Environment:** Configurable simulated dam profile based on **Tabbowa Prototype Dam | Puttalam District (Simulation Model)** with dual-source telemetry (**Prototype Sensors + Simulated Data**).
+- **Reference Location:** Puttalam District coordinates ($8.0362^\circ\text{ N}, 79.8283^\circ\text{ E}$) used for prototype simulation mapping.
 - **Multi-Language Support (i18n):** Native support for **English**, **Sinhala (සිංහල)**, and **Tamil (தமிழ்)** with instant header switcher and `AsyncStorage` persistence.
-- **Satellite Weather & Rain Radar:** Real-time live weather and 6-hour rainfall forecasts for the Puttalam basin from Open-Meteo API.
-- **Interactive Evacuation Map & Safe Zones:** Prototype evacuation zones and configured safety locations, elevation safety indicators, GPS directions, and emergency contacts.
-- **Direct GSM SMS Alert Communication:** Direct GSM SMS alert communication to configured emergency contacts via onboard SIM800L module.
+- **Open-Meteo Weather Forecast Integration & 6-Hour Rainfall Prediction:** Real-time weather and 6-hour precipitation predictions for the Puttalam basin simulation.
+- **Prototype Evacuation Zones & Safety Locations:** Configured safety locations, elevation indicators, GPS directions, and emergency contacts.
+- **Direct SIM800L GSM SMS Module (Configurable Emergency SMS Alerts):** Direct SMS alert communication dispatched to configured emergency contacts.
 - **Controlled Emergency Release:** Automated gradual gate aperture control ($0\%, 0\%, 20\%, 50\%$) preventing uncontrolled overtopping while preserving reservoir capacity.
 - **Operator Control & System Diagnostics:**
   - Historical analysis charts (24h / 7d / 30d).

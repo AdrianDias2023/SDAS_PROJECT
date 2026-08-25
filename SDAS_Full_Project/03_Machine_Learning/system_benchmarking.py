@@ -378,7 +378,7 @@ def test_ai_confidence_score():
         # (MAE, Sensor Anomaly, Data%, Exp Score, Exp Status, Note)
         (2.3, False, 96.0, 97.9, "HIGH_CONFIDENCE_RELIABLE", "Standard operational baseline: All systems optimal"),
         (2.3, True,  96.0, 86.2, "MODERATE_CONFIDENCE",      "Autoencoder flags sensor discrepancy: Confidence safely discounted"),
-        (2.3, False, 80.0, 92.6, "HIGH_CONFIDENCE_RELIABLE", "Intermittent weather radar sync: Confidence maintains good rating"),
+        (2.3, False, 80.0, 92.6, "HIGH_CONFIDENCE_RELIABLE", "Intermittent weather API sync: Confidence maintains good rating"),
         (6.5, True,  70.0, 76.2, "MODERATE_CONFIDENCE",      "Compounded model drift + sensor noise: Downgraded to moderate"),
     ]
 

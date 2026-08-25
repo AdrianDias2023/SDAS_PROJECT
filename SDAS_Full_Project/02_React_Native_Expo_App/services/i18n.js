@@ -61,7 +61,7 @@ export const translations = {
     operatorLoginBtn: "Login as Dam Operator",
     
     // Weather & Rainfall Forecast API
-    liveWeatherTitle: "Satellite Weather & Rain Radar",
+    liveWeatherTitle: "Open-Meteo Weather Forecast & Rain Prediction",
     forecast6h: "Next 6-Hour Rainfall Forecast",
     precipProb: "Precipitation Probability",
     rainAlertIncoming: "⛈️ Heavy rain forecast (>30mm). Pre-warning threshold activated earlier for proactive safety.",
@@ -203,8 +203,8 @@ export const translations = {
     operatorLoginBtn: "ක්‍රියාකරු ලෙස පිවිසෙන්න",
     
     // Weather & Rainfall Forecast API
-    liveWeatherTitle: "සැටලයිට් කාලගුණ සහ වර්ෂාපතන රේඩාර්",
-    forecast6h: "ඉදිරි පැය 6 ක වර්ෂාපතන පුරෝකථනය",
+    liveWeatherTitle: "Open-Meteo කාලගුණ අනාවැකි සහ වර්ෂාපතන තොරතුරු",
+    forecast6h: "ඉදිරි පැය 6 වර්ෂාපතන අනාවැකිය",
     precipProb: "වර්ෂාපතන සම්භාවිතාව",
     rainAlertIncoming: "⛈️ අධික වර්ෂාවක් පුරෝකථනය කර ඇත (>30mm). පෙර අනතුරු ඇඟවීමේ මට්ටම කල්තියා ක්‍රියාත්මක විය.",
     rainNormal: "🌤️ පුත්තලම ද්‍රෝණියේ කාලගුණය සාමාන්‍ය මට්ටමේ පවතී.",
@@ -345,7 +345,7 @@ export const translations = {
     operatorLoginBtn: "இயக்குநராக உள்நுழையவும்",
     
     // Weather & Rainfall Forecast API
-    liveWeatherTitle: "செயற்கைக்கோள் வானிலை மற்றும் மழை ரேடார்",
+    liveWeatherTitle: "Open-Meteo வானிலை முன்னறிவிப்பு மற்றும் மழை கணிப்பு",
     forecast6h: "அடுத்த 6 மணி நேர மழை முன்னறிவிப்பு",
     precipProb: "மழை பெய்யும் நிகழ்தகவு",
     rainAlertIncoming: "⛈️ அதிக மழை பெய்ய வாய்ப்புள்ளது (>30mm). பாதுகாப்பு கருதி முன் எச்சரிக்கை முன்கூட்டியே தூண்டப்பட்டுள்ளது.",

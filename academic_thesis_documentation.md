@@ -46,7 +46,7 @@ SDAS introduces an end-to-end multi-tier architecture solving these deficiencies
   1. *2-Layer Stacked LSTM* for 1-hour continuous water level forecasting ($MAE = 2.319\%$).
   2. *100-Tree Random Forest Ensemble* for multi-class spill risk and overtopping probability quantification ($99.93\%$ accuracy).
   3. *Deep Symmetric Autoencoder* for sensor drift and anomaly verification ($FAR = 4.1\%$).
-* **Real-Time Satellite Weather Fusion:** Integration with Open-Meteo satellite rainfall radar to pre-emptively escalate warnings 2 hours before physical water rise.
+* **Real-Time Weather Forecast Fusion:** Integration with Open-Meteo weather forecast API to pre-emptively escalate warnings 2 hours before physical water rise.
 * **Multi-Language Public Mobile App & Safe Zones:** English, Sinhala (සිංහල), and Tamil (தமிழ்) app with high-ground evacuation routing and direct Disaster Management Centre (DMC 117) hotlines.
 
 ---
