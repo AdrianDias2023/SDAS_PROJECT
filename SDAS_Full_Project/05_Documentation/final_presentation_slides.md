@@ -113,11 +113,12 @@
 ---
 
 ## 📽️ Slide 13: Live Demonstration Scenarios
-* **Stage 1:** Normal Baseline ($50\%$ level $\to$ Gate Closed, Green LED).
-* **Stage 2:** Monsoon Surge ($75\%$ level $\to$ AI predicts $85\%$, Gate 30%, Warning SMS).
-* **Stage 3:** Critical Flood ($90\%$ level $\to$ Gate 100%, 85dB Siren, Evacuation SMS).
-* **Stage 4:** Internet Outage ($>30\text{s}$ disconnect $\to$ ESP32 local edge rules take over).
-* **Stage 5:** Manual Override & Safety Interlock (Testing OPEN/STOP & rejecting manual close during danger).
+* **Stage 1:** Normal Baseline ($50\%$ level $\to$ Gate Closed $0\%$, Green LED).
+* **Stage 2:** Water Conservation ($72.5\%$ level stable $\to$ Gate Kept Closed $0\%$ to save water, Yellow LED).
+* **Stage 3:** Rapid Surge Influx ($79\%$ surging $\to$ Gate Opens $50\%$ Controlled Release, Orange LED).
+* **Stage 4:** Critical Flood Crest ($91.5\%$ danger $\to$ Gate $100\%$ Full Open, 85dB Siren, Evacuation SMS).
+* **Stage 5:** Internet Outage ($>30\text{s}$ disconnect $\to$ ESP32 autonomous local edge safety takes over).
+* **Stage 6:** Manual Override & Safety Interlock (Manual OPEN/STOP & rejecting manual close during danger).
 
 ---
 

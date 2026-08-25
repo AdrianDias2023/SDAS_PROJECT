@@ -147,30 +147,30 @@ graph TD
                   │ 1. 2-Layer LSTM Network             │ ──► [ 1-Hour Flood Forecast ]
                   │ 2. Deep Autoencoder                 │ ──► [ Sensor Drift & Surge Detection ]
                   └─────────────────────────────────────┘
-                         │
-        ┌────────────────┴────────────────────────┐
-        │                                         │
-        ▼ (Live WebSockets)                       ▼ (Live WebSockets)
-┌───────────────────────────────┐         ┌───────────────────────────────┐
-│       PUBLIC MOBILE APP       │         │    OPERATOR CONTROL PORTAL    │
-│ ───────────────────────────── │         │ ───────────────────────────── │
-│ • Real-time Water Level Gauge │         │ • Full Dam Telemetry Dashboard│
-│ • 4-Tier Safety Status Banner │         │ • Manual Gate Override Slider │
-│ • 3 Languages (EN / SI / TA)  │         │ • Emergency Contacts Manager  │
-│ • About SDAS Project Proposal │         │ • Role-based Operator Login   │
-└───────────────────────────────┘         └───────────────────────────────┘
-                                                          │
-                                                  (Override Command)
-                                                          ▼
-                                          ┌───────────────────────────────┐
-                                          │      AUTOMATIC / MANUAL       │
-                                          │      GATE ACTUATOR (SERVO)    │
-                                          │ ───────────────────────────── │
-                                          │ • 0%   (0°)   : Closed Normal │
-                                          │ • 30%  (54°)  : Pre-Warning   │
-                                          │ • 70%  (126°) : Clear Area    │
-                                          │ • 100% (180°) : Danger Spill  │
-                                          └───────────────────────────────┘
+                          │
+         ┌────────────────┴────────────────────────┐
+         │                                         │
+         ▼ (Live WebSockets)                       ▼ (Live WebSockets)
+ ┌───────────────────────────────┐         ┌───────────────────────────────┐
+ │       PUBLIC MOBILE APP       │         │    OPERATOR CONTROL PORTAL    │
+ │ ───────────────────────────── │         │ ───────────────────────────── │
+ │ • Real-time Water Level Gauge │         │ • Full Dam Telemetry Dashboard│
+ │ • 4-Tier Safety Status Banner │         │ • Manual Gate Override Slider │
+ │ • 3 Languages (EN / SI / TA)  │         │ • Emergency Contacts Manager  │
+ │ • About SDAS Project Proposal │         │ • Role-based Operator Login   │
+ └───────────────────────────────┘         └───────────────────────────────┘
+                                                           │
+                                                   (Override Command)
+                                                           ▼
+                                           ┌───────────────────────────────┐
+                                           │      AUTOMATIC / MANUAL       │
+                                           │      GATE ACTUATOR (SERVO)    │
+                                           │ ───────────────────────────── │
+                                           │ • 0%   (0°)   : Closed Normal │
+                                           │ • 0%   (0°)   : Pre-Warn Save │
+                                           │ • 50%  (90°)  : Surge Buffer  │
+                                           │ • 100% (180°) : Danger Spill  │
+                                           └───────────────────────────────┘
 ===================================================================================================
 ```
 
@@ -181,8 +181,8 @@ graph TD
 | Alert Level | Water Level (%) | Rate of Rise | Dam Gate Position | RGB LED | Local Buzzer | Emergency SMS Broadcast |
 |---|---|---|---|---|---|---|
 | **NORMAL** | `< 70.0%` | Any | Closed (0° / 0%) | 🟢 Green | OFF | Regular 60s cloud logging |
-| **PRE-WARNING** | `70.0% – 85.0%` | Stable (`< 5%/hr`) | 30% Open (54°) | 🟡 Yellow | OFF | Operator & Irrigation Department SMS |
-| **CLEAR AREA** | `70.0% – 85.0%` | Rapid (`≥ 5%/hr`) | 70% Open (126°) | 🟠 Orange | Beep | Public Evacuation Advisory SMS |
+| **PRE-WARNING** | `70.0% – 85.0%` | Stable (`< 5%/hr`) | Closed (0° / 0%) | 🟡 Yellow | OFF | Water Conservation Advisory SMS |
+| **CLEAR AREA** | `70.0% – 85.0%` | Rapid (`≥ 5%/hr`) | 50% Open (90°) | 🟠 Orange | Beep | Controlled Surge Release SMS |
 | **DANGER** | `> 85.0%` | Any | 100% Full Open (180°) | 🔴 Red | Continuous 85dB | Disaster Management Centre (DMC) SMS |
 
 *Hysteresis of 3.0% is applied to avoid rapid oscillatory gate switching at boundary thresholds.*

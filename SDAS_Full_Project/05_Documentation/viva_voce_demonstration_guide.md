@@ -24,18 +24,15 @@ This guide outlines the **5-Stage Live Demonstration Protocol** to perform in fr
 
 ---
 
-## 🎬 Stage 2 — Inflow Surge & Pre-Warning
-* **Objective:** Demonstrate Stage 1 LSTM Lookahead, early advisory warnings, and rate-of-rise thresholding.
-* **Examiner Action:** Select *"⚠️ Monsoon Pre-Warning"* preset or set slider to **$75.0\%$** (Rainfall: $38\text{ mm}$). Press `[⚡ Broadcast Scenario to Live Cloud]`.
-* **Observed System Behavior:**
-  - **ESP32 Edge:** Yellow LED illuminates. Single advisory chirp.
-  - **MG996R Actuator:** Servo smoothly rotates to **$30\%$ (54° Controlled Release)**.
-  - **3-Stage Hybrid AI:**
-    - *LSTM Forecaster:* Predicts water reaching $85.0\%$ in 1 hour.
-    - *AI Confidence Score:* Shows `97.2% 🟢 RELIABLE`.
-  - **Alert Dispatch:** Advisory alert published; SIM800L SMS dispatched:
-    > *"SDAS ALERT | Water level increasing (75.0%). Gate opened 30%. Please stay alert."*
-* **Examiner Talking Point:** *"Notice that SDAS does not wait for disaster to strike. It uses LSTM predictive lookahead to begin controlled outflow early, flattening the downstream flood crest."*
+## 🎬 Stage 2 — Pre-Warning (Water Saving) & Clear-Area (Surge Buffer)
+* **Objective:** Demonstrate Water Conservation Policy in Pre-Warning ($0\%$) and Controlled Surge Release in Clear-Area ($50\%$).
+* **Examiner Action (Part A - Water Conservation):** Select *"⚠️ Monsoon Pre-Warning"* preset or set slider to **$72.5\%$** (Low rise rate $+0.1\%$). Press `[⚡ Broadcast Scenario to Live Cloud]`.
+  - **Behavior:** Yellow LED illuminates. Single chirp. Gate remains **$0\%$ (0° CLOSED)** to conserve water for agriculture and dry season.
+  - **Advisory SMS:** *"SDAS ALERT | Water at 72.5% (Stable). Gate kept CLOSED to conserve irrigation water. Monitor closely."*
+* **Examiner Action (Part B - Rapid Surge Clear-Area):** Select *"🚧 Rapid Surge (Clear Area)"* or set level to **$79.0\%$** (Rise rate $+0.8\%/2\text{s}$).
+  - **Behavior:** Orange LED illuminates. Triple siren pulse. Gate rotates smoothly to **$50\%$ (90° Controlled Surge Release)**.
+  - **Advisory SMS:** *"SDAS ALERT | WARNING - CLEAR THE AREA: Surge detected. Gate opened 50% (Controlled release). Evacuate river bank immediately."*
+* **Examiner Talking Point:** *"Notice the dual-intelligence logic: SDAS avoids wasting precious irrigation water during slow rise, but instantly deploys a 50% buffer release the moment a sudden upstream surge is detected."*
 
 ---
 

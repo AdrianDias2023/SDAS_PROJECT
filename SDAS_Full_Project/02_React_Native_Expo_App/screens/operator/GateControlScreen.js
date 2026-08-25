@@ -13,10 +13,9 @@ import { useLanguage } from '../../services/i18n';
 import LanguageSelector from '../../components/LanguageSelector';
 
 const PRESETS = [
-  { label: '0% (CLOSE)', pct: 0,   color: '#10B981', emoji: '🔒' },
-  { label: '30%',        pct: 30,  color: '#F59E0B', emoji: '🚧' },
-  { label: '70%',        pct: 70,  color: '#F97316', emoji: '⚠️' },
-  { label: '100% (FULL)',pct: 100, color: '#EF4444', emoji: '🚨' },
+  { label: '0% (CLOSE / CONSERVE)', pct: 0,   color: '#10B981', emoji: '🔒' },
+  { label: '50% (SURGE / BUFFER)',  pct: 50,  color: '#F97316', emoji: '⚠️' },
+  { label: '100% (FULL OPEN)',      pct: 100, color: '#EF4444', emoji: '🚨' },
 ];
 
 function StepSlider({ value, onChange, disabled }) {

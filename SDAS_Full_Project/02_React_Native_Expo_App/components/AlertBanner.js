@@ -10,9 +10,9 @@ export default function AlertBanner({ level, config }) {
       <View>
         <Text style={styles.title}>{config.label} ALERT</Text>
         <Text style={styles.sub}>
-          {level === 'PRE_WARNING'  && 'Gate opening 30%. Monitor closely.'}
-          {level === 'CLEAR_AREA'   && 'Gate opening 70%. Clear the area.'}
-          {level === 'DANGER'       && 'Gate fully open. Evacuate immediately!'}
+          {level === 'PRE_WARNING'  && 'Gate kept 0% (Closed) to conserve water. Monitor closely.'}
+          {level === 'CLEAR_AREA'   && 'Surge detected. Gate opened 50% (Controlled Release). Clear the area.'}
+          {level === 'DANGER'       && 'Gate 100% fully open. Evacuate immediately!'}
         </Text>
       </View>
     </View>
