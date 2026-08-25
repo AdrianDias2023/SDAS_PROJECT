@@ -13,6 +13,7 @@ import { useLanguage } from '../../services/i18n';
 import WaterLevelGauge from '../../components/WaterLevelGauge';
 import AlertBanner from '../../components/AlertBanner';
 import LanguageSelector from '../../components/LanguageSelector';
+import DamSelector from '../../components/DamSelector';
 
 function getAlertLevel(pct) {
   if (pct >= 85) return 'DANGER';
@@ -96,6 +97,7 @@ const graphStyles = StyleSheet.create({
 
 export default function OperatorDashboard() {
   const { t } = useLanguage();
+  const [selectedDamId, setSelectedDamId] = useState('ESP32_PUTTALAM_01');
   const [reading,       setReading]      = useState(null);
   const [activeAlerts,  setActiveAlerts] = useState([]);
   const [history,       setHistory]      = useState([]);
@@ -104,14 +106,14 @@ export default function OperatorDashboard() {
   const [user,          setUser]         = useState(null);
   const [refreshing,    setRefreshing]   = useState(false);
 
-  const loadData = useCallback(async (hours = 24) => {
+  const loadData = useCallback(async (hours = 24, damId = selectedDamId) => {
     try {
       const [r, alerts, hist, { data: { user } }, { data: st }] = await Promise.all([
-        fetchLatestReading(),
+        fetchLatestReading(damId),
         fetchActiveAlerts(),
         fetchReadingsLastHours(hours),
         supabase.auth.getUser(),
-        supabase.from('system_status').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('system_status').select('*').eq('device_id', damId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
       setReading(r);
       setActiveAlerts(alerts);
@@ -123,18 +125,20 @@ export default function OperatorDashboard() {
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [selectedDamId]);
 
   useEffect(() => {
     const hours = timeRange === '30d' ? 720 : timeRange === '7d' ? 168 : 24;
-    loadData(hours);
-  }, [timeRange]);
+    loadData(hours, selectedDamId);
+  }, [timeRange, selectedDamId]);
 
   useEffect(() => {
-    const sc = subscribeSensorReadings(setReading);
+    const sc = subscribeSensorReadings((newReading) => {
+      if (newReading.device_id === selectedDamId) setReading(newReading);
+    });
     const ac = subscribeAlerts((a) => setActiveAlerts((prev) => [a, ...prev]));
     return () => { sc.unsubscribe(); ac.unsubscribe(); };
-  }, []);
+  }, [selectedDamId]);
 
   const handleLogout = () =>
     Alert.alert(t.signOut, 'Are you sure you want to sign out?', [
@@ -166,6 +170,7 @@ export default function OperatorDashboard() {
         <View style={styles.langBar}>
           <LanguageSelector compact={true} />
         </View>
+        <DamSelector selectedDamId={selectedDamId} onSelectDam={setSelectedDamId} />
       </View>
 
       <ScrollView

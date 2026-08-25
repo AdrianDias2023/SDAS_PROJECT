@@ -14,6 +14,7 @@ import { useLanguage } from '../../services/i18n';
 import WaterLevelGauge from '../../components/WaterLevelGauge';
 import AlertBanner from '../../components/AlertBanner';
 import LanguageSelector from '../../components/LanguageSelector';
+import DamSelector from '../../components/DamSelector';
 
 function getAlertLevel(pct, isHeavyRain = false) {
   if (pct >= 85) return 'DANGER';
@@ -24,11 +25,12 @@ function getAlertLevel(pct, isHeavyRain = false) {
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { t } = useLanguage();
-  const [reading, setReading]       = useState(null);
-  const [weather, setWeather]       = useState(null);
-  const [loading, setLoading]       = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState(null);
+  const [selectedDamId, setSelectedDamId] = useState('ESP32_PUTTALAM_01');
+  const [reading, setReading]             = useState(null);
+  const [weather, setWeather]             = useState(null);
+  const [loading, setLoading]             = useState(true);
+  const [refreshing, setRefreshing]       = useState(false);
+  const [lastUpdate, setLastUpdate]       = useState(null);
 
   const LEVELS = {
     NORMAL:      { label: t.statusNormal,      color: '#27AE60', bg: '#EAFAF1', emoji: '✅' },
@@ -37,11 +39,11 @@ export default function HomeScreen() {
     DANGER:      { label: t.statusDanger,      color: '#E74C3C', bg: '#FDEDEC', emoji: '🚨' },
   };
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (damId = selectedDamId) => {
     try {
       const [r, w] = await Promise.all([
-        fetchLatestReading().catch(() => null),
-        fetchLivePuttalamWeather().catch(() => null),
+        fetchLatestReading(damId).catch(() => null),
+        fetchLivePuttalamWeather(damId).catch(() => null),
       ]);
       setReading(r);
       setWeather(w);
@@ -52,21 +54,23 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [selectedDamId]);
 
   useEffect(() => {
-    loadData();
+    loadData(selectedDamId);
 
     // Realtime subscription
     const channel = subscribeSensorReadings((newReading) => {
-      setReading(newReading);
-      setLastUpdate(new Date());
+      if (newReading.device_id === selectedDamId) {
+        setReading(newReading);
+        setLastUpdate(new Date());
+      }
     });
 
     return () => channel.unsubscribe();
-  }, []);
+  }, [selectedDamId]);
 
-  const onRefresh = () => { setRefreshing(true); loadData(); };
+  const onRefresh = () => { setRefreshing(true); loadData(selectedDamId); };
 
   const isHeavyRain = weather?.isHeavyRainIncoming ?? false;
   const level       = reading ? getAlertLevel(reading.water_level, isHeavyRain) : 'NORMAL';
@@ -101,10 +105,11 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Compact Language Bar */}
+        {/* Compact Language Bar & Multi-Dam Selector */}
         <View style={styles.langBar}>
           <LanguageSelector compact={true} />
         </View>
+        <DamSelector selectedDamId={selectedDamId} onSelectDam={setSelectedDamId} />
       </View>
 
       <ScrollView

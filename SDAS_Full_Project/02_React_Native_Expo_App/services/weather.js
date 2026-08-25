@@ -1,10 +1,32 @@
 /**
  * SDAS Weather & Satellite Precipitation Service
- * Fetches real-time weather and 6-hour rainfall forecasts for the Puttalam Dam catchment basin (8.0362° N, 79.8283° E).
+ * Multi-Dam Support: Puttalam Dam (8.0362° N, 79.8283° E) and Unnichchai Dam (7.6975° N, 81.5647° E)
  */
 
-const PUTTALAM_LAT = 8.0362;
-const PUTTALAM_LON = 79.8283;
+export const DAMS = [
+  {
+    id: 'ESP32_PUTTALAM_01',
+    name: 'Puttalam Dam (Tabbowa)',
+    shortName: 'Puttalam Dam',
+    district: 'Puttalam District',
+    province: 'North Western Province',
+    lat: 8.0362,
+    lon: 79.8283,
+    capacity: '14,200 acre-ft',
+    gates: 3,
+  },
+  {
+    id: 'ESP32_UNNICHCHAI_02',
+    name: 'Unnichchai Dam',
+    shortName: 'Unnichchai Dam',
+    district: 'Batticaloa District',
+    province: 'Eastern Province',
+    lat: 7.6975,
+    lon: 81.5647,
+    capacity: '41,500 acre-ft',
+    gates: 6,
+  },
+];
 
 // WMO Weather interpretation codes
 const WEATHER_CODES = {
@@ -20,9 +42,10 @@ const WEATHER_CODES = {
   95: { label: 'Severe Thunderstorm', icon: '⚡' },
 };
 
-export async function fetchLivePuttalamWeather() {
+export async function fetchLivePuttalamWeather(damId = 'ESP32_PUTTALAM_01') {
+  const dam = DAMS.find(d => d.id === damId) || DAMS[0];
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${PUTTALAM_LAT}&longitude=${PUTTALAM_LON}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&hourly=precipitation,precipitation_probability&forecast_hours=6&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${dam.lat}&longitude=${dam.lon}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&hourly=precipitation,precipitation_probability&forecast_hours=6&timezone=auto`;
     
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Weather API returned ${response.status}`);
@@ -41,6 +64,8 @@ export async function fetchLivePuttalamWeather() {
 
     return {
       success: true,
+      damName: dam.name,
+      district: dam.district,
       currentTemp: data.current?.temperature_2m ?? 28.0,
       currentHumidity: data.current?.relative_humidity_2m ?? 75,
       currentRainMm: currentPrecip,
@@ -56,16 +81,18 @@ export async function fetchLivePuttalamWeather() {
     console.warn('Live weather fetch failed, returning simulated baseline:', err);
     return {
       success: false,
+      damName: dam.name,
+      district: dam.district,
       currentTemp: 28.5,
       currentHumidity: 78,
       currentRainMm: 0.0,
-      forecast6hRainMm: 45.0, // fallback baseline
-      maxPrecipProb: 80,
+      forecast6hRainMm: 5.0,
+      maxPrecipProb: 30,
       windSpeedKmH: 14.0,
-      conditionLabel: 'Monsoon Overcast',
-      conditionIcon: '🌧️',
-      isHeavyRainIncoming: true,
-      syncedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      conditionLabel: 'Partly Cloudy',
+      conditionIcon: '⛅',
+      isHeavyRainIncoming: false,
+      syncedAt: 'Cached',
     };
   }
 }
