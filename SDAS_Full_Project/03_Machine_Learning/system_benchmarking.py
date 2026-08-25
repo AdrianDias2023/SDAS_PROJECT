@@ -166,7 +166,7 @@ def test_offline_emergency_and_interlock():
     print("  TEST 4: OFFLINE EMERGENCY CONTROL & SAFETY INTERLOCK VALIDATION")
     print("="*70)
 
-    def evaluate_system(internet_connected, disconnect_sec, water_level, manual_cmd=None):
+    def evaluate_system(internet_connected, disconnect_sec, water_level, surge_rate=0.0, manual_cmd=None):
         # 1. Watchdog mode determination
         if manual_cmd:
             mode = "MANUAL_OVERRIDE"
@@ -190,8 +190,9 @@ def test_offline_emergency_and_interlock():
             if water_level >= 85.0:
                 gate_pct = 100.0
             elif water_level >= 70.0:
-                # In PRE-WARNING (70-85% stable level), gate is kept CLOSED (0%) to conserve irrigation water!
-                gate_pct = 0.0
+                # If rapid surge >=0.3%/2s (CLEAR-AREA), gate opens 50% (controlled release).
+                # If stable (PRE-WARNING), gate stays 0% (closed to save irrigation water).
+                gate_pct = 50.0 if (surge_rate >= 0.3) else 0.0
             else:
                 gate_pct = 0.0
             interlock_rejected = False
@@ -209,20 +210,21 @@ def test_offline_emergency_and_interlock():
         }
 
     scenarios = [
-        # (Internet, Disconnect_s, Water%, Cmd, Expected Mode, Expected Gate, Expected Buzzer, Note)
-        (True,  0,  60.0, None, "CLOUD_AUTO",        0.0,   False, "Internet ON, normal level -> Gate closed"),
-        (False, 45, 75.0, None, "OFFLINE_EMERGENCY", 0.0,   False, "Internet OFF >30s, pre-warning -> Gate kept 0% to save water, Warning SMS sent"),
-        (False, 45, 90.0, None, "OFFLINE_EMERGENCY", 100.0, True,  "Internet OFF >30s, danger level -> Gate 100%, Buzzer ON, Emergency SMS"),
-        (True,  0,  92.0, "CLOSE_0_PCT", "MANUAL_OVERRIDE", 100.0, True, "Safety Interlock: Manual CLOSE during danger (92%) REJECTED"),
+        # (Internet, Disconnect_s, Water%, SurgeRate, Cmd, Expected Mode, Expected Gate, Expected Buzzer, Note)
+        (True,  0,  60.0, 0.0, None, "CLOUD_AUTO",        0.0,   False, "Internet ON, normal level -> Gate closed"),
+        (False, 45, 75.0, 0.1, None, "OFFLINE_EMERGENCY", 0.0,   False, "Internet OFF >30s, pre-warning -> Gate kept 0% to save water, Warning SMS sent"),
+        (False, 45, 78.0, 0.8, None, "OFFLINE_EMERGENCY", 50.0,  False, "Rapid surge >0.3%/2s (CLEAR-AREA) -> Gate opened 50% (Controlled Release), Warning SMS"),
+        (False, 45, 90.0, 1.2, None, "OFFLINE_EMERGENCY", 100.0, True,  "Internet OFF >30s, danger level -> Gate 100%, Buzzer ON, Emergency SMS"),
+        (True,  0,  92.0, 0.0, "CLOSE_0_PCT", "MANUAL_OVERRIDE", 100.0, True, "Safety Interlock: Manual CLOSE during danger (92%) REJECTED"),
     ]
 
     all_passed = True
-    for net, disc, w_lvl, cmd, exp_mode, exp_gate, exp_buzz, note in scenarios:
-        res = evaluate_system(net, disc, w_lvl, cmd)
+    for net, disc, w_lvl, surge, cmd, exp_mode, exp_gate, exp_buzz, note in scenarios:
+        res = evaluate_system(net, disc, w_lvl, surge, cmd)
         passed = (res["mode"] == exp_mode and res["gate_pct"] == exp_gate and res["buzzer"] == exp_buzz)
         if not passed: all_passed = False
         mark = "✓" if passed else "✗"
-        print(f"  [{mark}] Net={str(net):5s} | Level={w_lvl:4.1f}% | Mode={res['mode']:18s} | Gate={res['gate_pct']:3.0f}% | Buzzer={str(res['buzzer']):5s} ({note})")
+        print(f"  [{mark}] Net={str(net):5s} | Level={w_lvl:4.1f}% | Mode={res['mode']:16s} | Gate={res['gate_pct']:3.0f}% | Buzzer={str(res['buzzer']):5s} ({note})")
 
     print("-"*70)
     print(f"  Offline Emergency & Safety Interlock: {'100% PASSED' if all_passed else 'FAILED'}")

@@ -36,7 +36,7 @@ const SCENARIOS = [
     riseRate: 0.8,
     rainfall: 45.0,
     sensorHealth: 'NORMAL',
-    desc: 'Water rising >0.3%/2s. Gate opens to 70% (126°), LED Orange, Triple siren pulse.',
+    desc: 'Water rising >0.3%/2s. Gate opens to 50% (90° Controlled Release), LED Orange, Triple siren pulse.',
   },
   {
     id: 'danger',
@@ -79,7 +79,7 @@ const REPLAY_EVENTS = [
     steps: [
       { time: '08:00', level: 58.0, rain: 12.0, gate: 0, status: 'NORMAL', action: 'Routine Monitoring' },
       { time: '09:00', level: 72.5, rain: 38.0, gate: 0, status: 'PRE_WARNING', action: 'Gate kept CLOSED (Water Conservation), Early warning SMS' },
-      { time: '10:00', level: 81.0, rain: 45.0, gate: 70, status: 'CLEAR_AREA', action: 'Surge detected >0.3%/2s: Gate opened 70%, Downstream siren 85dB' },
+      { time: '10:00', level: 81.0, rain: 45.0, gate: 50, status: 'CLEAR_AREA', action: 'Surge detected >0.3%/2s: Gate opened 50% (Controlled Release), Downstream siren 85dB' },
       { time: '11:00', level: 92.4, rain: 53.5, gate: 100, status: 'DANGER', action: 'Spillway 100% Full Open, Evacuation SMS' },
     ],
   },
@@ -90,7 +90,7 @@ const REPLAY_EVENTS = [
     steps: [
       { time: '14:00', level: 52.0, rain: 0.0, gate: 0, status: 'NORMAL', action: 'Normal Baseline' },
       { time: '15:00', level: 68.0, rain: 2.0, gate: 0, status: 'NORMAL', action: 'LSTM Rate-of-Rise Alarm Flagged' },
-      { time: '16:00', level: 86.2, rain: 3.0, gate: 70, status: 'DANGER', action: 'Gate Actuation 70%, Surge Absorbed' },
+      { time: '16:00', level: 86.2, rain: 3.0, gate: 50, status: 'DANGER', action: 'Gate Actuation 50%, Surge Absorbed' },
     ],
   },
 ];

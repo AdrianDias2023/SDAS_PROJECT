@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-25T20:45:41.938725",
+  "timestamp": "2026-08-25T21:09:47.464677",
   "sensor_accuracy_test": {
     "mae_cm": 0.32,
     "rmse_cm": 0.35,
@@ -68,9 +68,9 @@
     ]
   },
   "communication_latency_test": {
-    "avg_latency_ms": 1203.5,
-    "min_latency_ms": 590.8,
-    "max_latency_ms": 3086.8,
+    "avg_latency_ms": 658.5,
+    "min_latency_ms": 570.4,
+    "max_latency_ms": 1022.7,
     "success_rate_pct": 100.0
   },
   "state_transitions_test": {
@@ -79,7 +79,7 @@
   },
   "offline_emergency_test": {
     "offline_emergency_passed": true,
-    "total_cases": 4
+    "total_cases": 5
   },
   "four_tier_architecture_test": {
     "four_tier_passed": true,

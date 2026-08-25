@@ -123,7 +123,7 @@ const int SMS_CONTACT_COUNT = 3;
 // Gate %  →  Servo angle:   pct * 1.8° (100% = 180°)
 #define GATE_CLOSED     0     //   0% open (NORMAL: Closed)
 #define GATE_PRE_WARN   0     //   0% open (PRE-WARNING: Kept CLOSED to conserve irrigation water)
-#define GATE_CLEAR      126   //  70% open (CLEAR-AREA: Opened 70% during rapid surge >0.3%/2s)
+#define GATE_CLEAR      90    //  50% open (CLEAR-AREA: Controlled 30-50% release during rapid surge >0.3%/2s)
 #define GATE_FULL_OPEN  180   // 100% open (DANGER: Full spillway discharge >85%)
 
 // ─── TIMING ────────────────────────────────────────────────────────────────────
@@ -454,7 +454,7 @@ String buildSMSMessage(AlertLevel level, float pct) {
       break;
     case LEVEL_CLEAR_AREA:
       msg += "WARNING - CLEAR THE AREA\n"
-             "Gate opening 70%. Evacuate flood zone immediately.";
+             "Surge detected. Gate opened 50% (Controlled release). Evacuate flood zone immediately.";
       break;
     case LEVEL_DANGER:
       msg += "DANGER - EMERGENCY\n"
