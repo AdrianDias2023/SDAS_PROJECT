@@ -46,8 +46,8 @@
 #define WIFI_PASSWORD     "YOUR_WIFI_PASSWORD"
 
 // Supabase project (from supabase.com → Project Settings → API)
-#define SUPABASE_URL      "https://YOUR_PROJECT_ID.supabase.co"
-#define SUPABASE_ANON_KEY "YOUR_SUPABASE_ANON_KEY"
+#define SUPABASE_URL      "https://nkjzrpwghmkdhixjybzm.supabase.co"
+#define SUPABASE_ANON_KEY "sb_publishable_GIYan9Gc0ZVR55pWEnx-ww_5iF4w4da"
 #define DEVICE_ID         "ESP32_SDAS_01"
 
 // Dam geometry — set based on your physical installation
