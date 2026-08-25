@@ -13,12 +13,9 @@ env/
 .env
 .venv
 
-# ML models (large files — store separately or use Git LFS)
-*.h5
-*.pkl
-*.npy
-*.tflite
+# ML dataset raw csv (ignore very large raw training csv files)
 dataset/*.csv
+dataset/synthetic_data_raw.csv
 
 # Node / React Native
 node_modules/
