@@ -51,18 +51,49 @@ models_loaded     = False
 load_errors       = {}
 
 
+def build_lstm_arch():
+    from tensorflow.keras import layers, Sequential
+    return Sequential([
+        layers.Input(shape=(24, 4)),
+        layers.LSTM(64, return_sequences=True),
+        layers.Dropout(0.2),
+        layers.LSTM(32, return_sequences=False),
+        layers.Dropout(0.2),
+        layers.Dense(16, activation='relu'),
+        layers.Dense(1),
+    ])
+
+
+def build_autoencoder_arch():
+    from tensorflow.keras import layers, Model
+    inp = layers.Input(shape=(4,))
+    x = layers.Dense(32, activation='relu')(inp)
+    x = layers.Dropout(0.1)(x)
+    x = layers.Dense(16, activation='relu')(x)
+    encoded = layers.Dense(8, activation='relu')(x)
+    x = layers.Dense(16, activation='relu')(encoded)
+    x = layers.Dense(32, activation='relu')(x)
+    x = layers.Dropout(0.1)(x)
+    decoded = layers.Dense(4, activation='linear')(x)
+    return Model(inp, decoded)
+
+
 def load_all_models():
     global lstm_model, autoencoder_model, rf_model, rf_features, scaler, anomaly_threshold, models_loaded, load_errors
     load_errors = {}
 
     # 1. LSTM
     try:
-        lstm_path = os.path.join(BASE_DIR, 'models', 'lstm_model.h5')
-        print(f"[SDAS ML] Loading LSTM from {lstm_path}...")
-        try:
-            import keras
-            lstm_model = keras.models.load_model(lstm_path, compile=False)
-        except Exception:
+        npz_path = os.path.join(BASE_DIR, 'models', 'lstm_weights.npz')
+        if os.path.exists(npz_path):
+            print(f"[SDAS ML] Loading LSTM from pure weights ({npz_path})...")
+            lstm_model = build_lstm_arch()
+            with np.load(npz_path) as data:
+                weights = [data[k] for k in data.files]
+            lstm_model.set_weights(weights)
+        else:
+            lstm_path = os.path.join(BASE_DIR, 'models', 'lstm_model.h5')
+            print(f"[SDAS ML] Loading LSTM from {lstm_path}...")
             lstm_model = tf.keras.models.load_model(lstm_path, compile=False)
         print("[SDAS ML] [OK] LSTM loaded.")
     except Exception as e:
@@ -71,12 +102,16 @@ def load_all_models():
 
     # 2. Autoencoder
     try:
-        ae_path = os.path.join(BASE_DIR, 'models', 'autoencoder_model.h5')
-        print(f"[SDAS ML] Loading Autoencoder from {ae_path}...")
-        try:
-            import keras
-            autoencoder_model = keras.models.load_model(ae_path, compile=False)
-        except Exception:
+        npz_path = os.path.join(BASE_DIR, 'models', 'autoencoder_weights.npz')
+        if os.path.exists(npz_path):
+            print(f"[SDAS ML] Loading Autoencoder from pure weights ({npz_path})...")
+            autoencoder_model = build_autoencoder_arch()
+            with np.load(npz_path) as data:
+                weights = [data[k] for k in data.files]
+            autoencoder_model.set_weights(weights)
+        else:
+            ae_path = os.path.join(BASE_DIR, 'models', 'autoencoder_model.h5')
+            print(f"[SDAS ML] Loading Autoencoder from {ae_path}...")
             autoencoder_model = tf.keras.models.load_model(ae_path, compile=False)
         print("[SDAS ML] [OK] Autoencoder loaded.")
     except Exception as e:
