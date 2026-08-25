@@ -330,6 +330,49 @@ def test_system_health_score():
 
     return {"health_score_passed": all_passed, "total_cases": len(test_cases)}
 
+# ==============================================================================
+# TEST 7: MULTI-FACTOR AI CONFIDENCE SCORE VALIDATION (METHOD 3)
+# ==============================================================================
+def test_ai_confidence_score():
+    print("\n" + "="*70)
+    print("  TEST 7: MULTI-FACTOR AI CONFIDENCE SCORE VALIDATION (METHOD 3)")
+    print("="*70)
+
+    def calculate_confidence(lstm_mae, is_sensor_anomaly, data_completeness_pct):
+        # 1. Model statistical accuracy (100 - MAE)
+        model_acc = max(0.0, 100.0 - lstm_mae)
+        # 2. Sensor cross-validation reliability
+        sensor_rel = 65.0 if is_sensor_anomaly else 100.0
+        # 3. Data stream completeness
+        data_qual = data_completeness_pct
+
+        composite_score = round((model_acc + sensor_rel + data_qual) / 3.0, 1)
+        status = "HIGH_CONFIDENCE_RELIABLE" if composite_score >= 90 else "MODERATE_CONFIDENCE" if composite_score >= 75 else "LOW_CONFIDENCE"
+
+        return composite_score, status
+
+    test_scenarios = [
+        # (MAE, Sensor Anomaly, Data%, Exp Score, Exp Status, Note)
+        (2.3, False, 96.0, 97.9, "HIGH_CONFIDENCE_RELIABLE", "Standard operational baseline: All systems optimal"),
+        (2.3, True,  96.0, 86.2, "MODERATE_CONFIDENCE",      "Autoencoder flags sensor discrepancy: Confidence safely discounted"),
+        (2.3, False, 80.0, 92.6, "HIGH_CONFIDENCE_RELIABLE", "Intermittent weather radar sync: Confidence maintains good rating"),
+        (6.5, True,  70.0, 76.2, "MODERATE_CONFIDENCE",      "Compounded model drift + sensor noise: Downgraded to moderate"),
+    ]
+
+    all_passed = True
+    for mae, anom, data_pct, exp_sc, exp_st, note in test_scenarios:
+        sc, st = calculate_confidence(mae, anom, data_pct)
+        passed = (abs(sc - exp_sc) < 0.1 and st == exp_st)
+        if not passed: all_passed = False
+        mark = "✓" if passed else "✗"
+        print(f"  [{mark}] Score={sc:5.1f}% | Status={st:26s} | Expected={exp_sc:5.1f}% ({note})")
+
+    print("-"*70)
+    print(f"  Multi-Factor AI Confidence Score: {'100% PASSED' if all_passed else 'FAILED'}")
+    print("="*70)
+
+    return {"ai_confidence_passed": all_passed, "total_cases": len(test_scenarios)}
+
 def main():
     print("\n🔬 STARTING FULL SDAS SYSTEM BENCHMARKING SUITE...")
     t1 = test_sensor_accuracy()
@@ -338,6 +381,7 @@ def main():
     t4 = test_offline_emergency_and_interlock()
     t5 = test_four_tier_control_modes()
     t6 = test_system_health_score()
+    t7 = test_ai_confidence_score()
 
     summary = {
         "timestamp": datetime.now().isoformat(),
@@ -347,6 +391,7 @@ def main():
         "offline_emergency_test": t4,
         "four_tier_architecture_test": t5,
         "system_health_benchmark": t6,
+        "ai_confidence_score_benchmark": t7,
         "evaluation_verdict": "ALL BENCHMARKS SATISFIED (GRADE A+ QUALITY)"
     }
 
