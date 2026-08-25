@@ -9,8 +9,9 @@ import { View, Text } from 'react-native';
 import HomeScreen       from '../screens/public/HomeScreen';
 import AlertsScreen     from '../screens/public/AlertsScreen';
 import PredictionScreen from '../screens/public/PredictionScreen';
-import AboutScreen      from '../screens/public/AboutScreen';
-import { useLanguage }  from '../services/i18n';
+import EvacuationMapScreen from '../screens/public/EvacuationMapScreen';
+import AboutScreen         from '../screens/public/AboutScreen';
+import { useLanguage }     from '../services/i18n';
 
 // Operator Screens
 import LoginScreen         from '../screens/operator/LoginScreen';
@@ -24,7 +25,7 @@ const Stack = createNativeStackNavigator();
 // ─── Tab icon component ────────────────────────────────────────
 function TabIcon({ emoji, focused }) {
   return (
-    <Text style={{ fontSize: focused ? 24 : 20, opacity: focused ? 1 : 0.6 }}>
+    <Text style={{ fontSize: focused ? 22 : 18, opacity: focused ? 1 : 0.6 }}>
       {emoji}
     </Text>
   );
@@ -39,7 +40,7 @@ function PublicTabs() {
       screenOptions={{
         headerShown:       false,
         tabBarStyle:       { backgroundColor: '#0F4C81', borderTopWidth: 0, height: 62 },
-        tabBarLabelStyle:  { color: '#FFFFFF', fontSize: 11, marginBottom: 6, fontWeight: '600' },
+        tabBarLabelStyle:  { color: '#FFFFFF', fontSize: 10, marginBottom: 6, fontWeight: '600' },
         tabBarActiveTintColor:   '#4FC3F7',
         tabBarInactiveTintColor: '#90CAF9',
       }}
@@ -58,6 +59,11 @@ function PublicTabs() {
         name="Prediction"
         component={PredictionScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📈" focused={focused} />, tabBarLabel: t.tabPredict }}
+      />
+      <Tab.Screen
+        name="Map"
+        component={EvacuationMapScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🗺️" focused={focused} />, tabBarLabel: t.tabMap ?? 'Safe Zones' }}
       />
       <Tab.Screen
         name="About"

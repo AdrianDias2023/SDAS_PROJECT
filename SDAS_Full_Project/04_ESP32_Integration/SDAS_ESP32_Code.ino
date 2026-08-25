@@ -48,7 +48,11 @@
 // Supabase project (from supabase.com → Project Settings → API)
 #define SUPABASE_URL      "https://nkjzrpwghmkdhixjybzm.supabase.co"
 #define SUPABASE_ANON_KEY "sb_publishable_GIYan9Gc0ZVR55pWEnx-ww_5iF4w4da"
-#define DEVICE_ID         "ESP32_SDAS_01"
+#define DEVICE_ID         "ESP32_PUTTALAM_01"
+#define DEVICE_SECRET_KEY "sdas_sec_key_puttalam_2026"
+
+// Backup Power & Battery ADC Pin (ADC1 Channel 6)
+#define BATTERY_ADC_PIN   34
 
 // Dam geometry — set based on your physical installation
 // SENSOR_HEIGHT_CM = vertical distance from JSN-SR04T face to dam floor (empty dam)
@@ -396,6 +400,13 @@ void uploadToSupabase() {
     return;
   }
 
+  // ── Read Backup Battery Voltage (ADC) ───────────────────────────────────
+  int rawADC = analogRead(BATTERY_ADC_PIN);
+  // Divider: R1=100k, R2=27k (4.7:1 ratio) on 3.3V ADC
+  float batteryVolts = (rawADC / 4095.0f) * 3.3f * 4.7f;
+  float batteryPct   = constrain(((batteryVolts - 10.5f) / (12.6f - 10.5f)) * 100.0f, 0.0f, 100.0f);
+  const char* powerSource = (batteryVolts >= 11.8f) ? "MAINS_12V" : "BATTERY_BACKUP";
+
   // ── POST sensor reading ───────────────────────────────────────────────────
   {
     HTTPClient http;
@@ -405,18 +416,20 @@ void uploadToSupabase() {
     http.addHeader("Content-Type",  "application/json");
     http.addHeader("Prefer",        "return=minimal");
 
-    StaticJsonDocument<300> doc;
+    StaticJsonDocument<400> doc;
     doc["device_id"]     = DEVICE_ID;
     doc["water_level"]   = waterLevelPct;
     doc["temperature"]   = temperature;
     doc["humidity"]      = humidity;
     doc["sensor_health"] = sensorHealth;
+    doc["battery_level"] = batteryPct;
+    doc["power_source"]  = powerSource;
 
     String body;
     serializeJson(doc, body);
 
     int code = http.POST(body);
-    Serial.printf("[Supabase] sensor_readings POST → HTTP %d\n", code);
+    Serial.printf("[Supabase] sensor_readings POST (Battery: %.1f%%, %s) → HTTP %d\n", batteryPct, powerSource, code);
     http.end();
   }
 

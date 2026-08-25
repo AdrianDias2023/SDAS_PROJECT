@@ -13,8 +13,10 @@ export const translations = {
     tabHome: "Home",
     tabAlerts: "Alerts",
     tabPredict: "AI Forecast",
+    tabMap: "Safe Zones",
     tabAbout: "About",
     tabOperator: "Operator",
+    mapTitle: "Evacuation Safe Zones",
     
     // Home Screen
     liveWaterLevel: "Live Water Level",
@@ -129,8 +131,10 @@ export const translations = {
     tabHome: "ප්‍රධාන පිටුව",
     tabAlerts: "අනතුරු ඇඟවීම්",
     tabPredict: "AI පුරෝකථන",
+    tabMap: "ආරක්ෂිත කලාප",
     tabAbout: "තොරතුරු",
     tabOperator: "ක්‍රියාකරු",
+    mapTitle: "ආරක්ෂිත ඉවත් කිරීමේ කලාප",
     
     // Home Screen
     liveWaterLevel: "සජීවී ජල මට්ටම",
@@ -245,8 +249,10 @@ export const translations = {
     tabHome: "முகப்பு",
     tabAlerts: "எச்சரிக்கைகள்",
     tabPredict: "AI கணிப்பு",
+    tabMap: "பாதுகாப்பான இடங்கள்",
     tabAbout: "விவரம்",
     tabOperator: "இயக்குநர்",
+    mapTitle: "வெளியேற்ற பாதுகாப்பு மண்டலங்கள்",
     
     // Home Screen
     liveWaterLevel: "நேரடி நீர் மட்டம்",
