@@ -67,6 +67,7 @@
 ---
 
 ## 📽️ Slide 8: Real-Time Mobile & Web Application Suite
+* **Configurable Simulation Console:** The React Native Expo application provides a configurable simulated dam environment where operators can monitor reservoir conditions, water levels, alerts, and control actions through a single prototype dam model.
 * **Public Portal (No Login Required):** Live reservoir depth gauge, 3-language localized flood alerts (EN • සිං • தம), 1-Hour AI forecast, and interactive Leaflet / Google Maps with safe evacuation zones.
 * **Operator Console (Secure RBAC Auth):** Real-time gate slider (0–100%), System Health Score meter, Disaster Event Replay, and full audit logs.
 

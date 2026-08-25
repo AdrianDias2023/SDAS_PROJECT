@@ -263,10 +263,20 @@ flowchart TD
 
 ### Physical Tank Ruler Distance Calibration (Centimeters)
 ```cpp
-// Calibration distance constants in SDAS_ESP32_Code.ino (Adjustable to physical model):
-float CALIB_TANK_MAX_DEPTH_CM  = 100.0f; // Total tank depth / sensor mounting height (cm)
-float CALIB_NORMAL_DIST_CM     = 30.0f;  // Sensor distance >30cm = Normal Safe Water (<70%)
-float CALIB_PRE_WARN_DIST_CM   = 25.0f;  // Sensor distance 15-30cm = Pre-Warning (70-85%)
-float CALIB_WARNING_DIST_CM    = 20.0f;  // Sensor distance 15-20cm or fast surge = Warning (20% Gate)
-float CALIB_DANGER_DIST_CM     = 10.0f;  // Sensor distance <15cm = Critical Danger (>85% / 50% Gate)
+// 3-Point Calibration distance constants in SDAS_ESP32_Code.ino:
+float CALIB_EMPTY_DIST_CM  = 100.0f; // Distance when reservoir is EMPTY (0% water level) -> Max distance
+float CALIB_HALF_DIST_CM   = 55.0f;  // Distance when reservoir is HALF FULL (50% water level)
+float CALIB_FULL_DIST_CM   = 10.0f;  // Distance when reservoir is FULL (100% water level) -> Min distance
+
+// Water Level % = ((CALIB_EMPTY_DIST_CM - Current Distance) / (CALIB_EMPTY_DIST_CM - CALIB_FULL_DIST_CM)) * 100.0%
 ```
+
+---
+
+## 6. Mobile Client Simulation Architecture
+
+> The React Native Expo application provides a configurable simulated dam environment where operators can monitor reservoir conditions, water levels, alerts, and control actions through a single prototype dam model.
+
+* **Digital Twin Console:** Real-time synchronized bi-directional link to Supabase PostgreSQL and ESP32 Edge hardware.
+* **Role-Based Views:** Public Civilian Portal (Unrestricted, trilingual) + Operator Tactical Console (Authenticated via Supabase Auth).
+* **Multi-Parameter Verification:** Combines real-time transducer feeds, speed-of-sound adjustments, Open-Meteo satellite rain radar, and 3-stage ML inference metrics.

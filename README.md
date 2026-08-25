@@ -203,6 +203,8 @@ graph TD
 
 ## 📱 Mobile Application & Edge Features
 
+> The React Native Expo application provides a configurable simulated dam environment where operators can monitor reservoir conditions, water levels, alerts, and control actions through a single prototype dam model.
+
 - **Multi-Language Support (i18n):** Native support for **English**, **Sinhala (සිංහල)**, and **Tamil (தமிழ்)** with instant header switcher and `AsyncStorage` persistence.
 - **Satellite Weather & Rain Radar:** Real-time live weather and 6-hour rainfall forecasts for the Puttalam basin from Open-Meteo API.
 - **Interactive Evacuation Map & Safe Zones:** High-ground relief shelters, elevation safety indicators, GPS directions, and direct DMC Hotline (`117`) dialing.
