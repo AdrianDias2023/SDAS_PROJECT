@@ -190,7 +190,8 @@ def test_offline_emergency_and_interlock():
             if water_level >= 85.0:
                 gate_pct = 100.0
             elif water_level >= 70.0:
-                gate_pct = 30.0
+                # In PRE-WARNING (70-85% stable level), gate is kept CLOSED (0%) to conserve irrigation water!
+                gate_pct = 0.0
             else:
                 gate_pct = 0.0
             interlock_rejected = False
@@ -210,7 +211,7 @@ def test_offline_emergency_and_interlock():
     scenarios = [
         # (Internet, Disconnect_s, Water%, Cmd, Expected Mode, Expected Gate, Expected Buzzer, Note)
         (True,  0,  60.0, None, "CLOUD_AUTO",        0.0,   False, "Internet ON, normal level -> Gate closed"),
-        (False, 45, 75.0, None, "OFFLINE_EMERGENCY", 30.0,  False, "Internet OFF >30s, warning level -> Gate 30%, Warning SMS"),
+        (False, 45, 75.0, None, "OFFLINE_EMERGENCY", 0.0,   False, "Internet OFF >30s, pre-warning -> Gate kept 0% to save water, Warning SMS sent"),
         (False, 45, 90.0, None, "OFFLINE_EMERGENCY", 100.0, True,  "Internet OFF >30s, danger level -> Gate 100%, Buzzer ON, Emergency SMS"),
         (True,  0,  92.0, "CLOSE_0_PCT", "MANUAL_OVERRIDE", 100.0, True, "Safety Interlock: Manual CLOSE during danger (92%) REJECTED"),
     ]

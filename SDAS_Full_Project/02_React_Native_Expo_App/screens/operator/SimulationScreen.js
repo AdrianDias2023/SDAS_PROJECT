@@ -22,12 +22,12 @@ const SCENARIOS = [
   },
   {
     id: 'prewarn',
-    title: '⚠️ Monsoon Pre-Warning',
+    title: '⚠️ Monsoon Pre-Warning (Water Saving)',
     waterLevel: 72.5,
     riseRate: 0.1,
     rainfall: 18.0,
     sensorHealth: 'NORMAL',
-    desc: 'Water level between 70-85%. Gate opens to 30% (54°), LED Yellow, Single advisory beep.',
+    desc: 'Water level between 70-85% (Stable). Gate kept CLOSED (0°) to conserve irrigation water. Yellow LED, advisory SMS.',
   },
   {
     id: 'cleararea',
@@ -78,8 +78,8 @@ const REPLAY_EVENTS = [
     desc: 'Rapid watershed inflow exceeding 85% reservoir threshold within 4 hours. Automated 100% spillway actuation and evacuation SMS.',
     steps: [
       { time: '08:00', level: 58.0, rain: 12.0, gate: 0, status: 'NORMAL', action: 'Routine Monitoring' },
-      { time: '09:00', level: 72.5, rain: 38.0, gate: 30, status: 'PRE_WARNING', action: 'Gate opened 30%, Early warning SMS' },
-      { time: '10:00', level: 81.0, rain: 45.0, gate: 70, status: 'CLEAR_AREA', action: 'Gate opened 70%, Downstream siren 85dB' },
+      { time: '09:00', level: 72.5, rain: 38.0, gate: 0, status: 'PRE_WARNING', action: 'Gate kept CLOSED (Water Conservation), Early warning SMS' },
+      { time: '10:00', level: 81.0, rain: 45.0, gate: 70, status: 'CLEAR_AREA', action: 'Surge detected >0.3%/2s: Gate opened 70%, Downstream siren 85dB' },
       { time: '11:00', level: 92.4, rain: 53.5, gate: 100, status: 'DANGER', action: 'Spillway 100% Full Open, Evacuation SMS' },
     ],
   },
@@ -111,9 +111,9 @@ export default function SimulationScreen() {
     if (level >= 85) {
       return { level: 'DANGER', color: '#EF4444', gate: '100% (180°)', action: 'Full Spillway Release & SMS Broadcast' };
     } else if (level >= 70) {
-      return { level: 'PRE-WARNING', color: '#F59E0B', gate: '30%–70%', action: 'Controlled Inflow Release' };
+      return { level: 'PRE-WARNING', color: '#F59E0B', gate: '0% (Closed)', action: 'Conserve Water for Agriculture & Send Advisory SMS' };
     }
-    return { level: 'NORMAL', color: '#10B981', gate: '0% (Closed)', action: 'Maintain Reservoir Retention' };
+    return { level: 'NORMAL', color: '#10B981', gate: '0% (Closed)', action: 'Maintain Normal Reservoir Retention' };
   };
 
   const currentExpected = getExpectedState(sliderLevel);
