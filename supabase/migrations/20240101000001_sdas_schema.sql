@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS gate_control (
 -- ─── ALERTS ──────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS alerts (
   id           BIGSERIAL PRIMARY KEY,
-  alert_type   TEXT NOT NULL CHECK (alert_type IN ('NORMAL','PRE_WARNING','CLEAR_AREA','DANGER')),
+  alert_type   TEXT NOT NULL CHECK (alert_type IN ('NORMAL','PRE_WARNING','CONTROLLED_RELEASE','DANGER')),
   severity     TEXT NOT NULL CHECK (severity IN ('INFO','WARNING','CRITICAL','EMERGENCY')),
   message      TEXT NOT NULL,
   water_level  FLOAT,

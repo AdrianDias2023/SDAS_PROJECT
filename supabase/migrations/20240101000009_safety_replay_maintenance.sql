@@ -36,17 +36,17 @@ INSERT INTO public.disaster_events (
 ) VALUES (
     'EVENT_001',
     'Severe Monsoon Influx (Puttalam 2026)',
-    'Rapid watershed inflow exceeding 85% reservoir threshold within 4 hours. Automated 100% spillway actuation and 1,200 civilian evacuation SMS dispatched.',
+    'Rapid watershed inflow exceeding 85% reservoir threshold within 4 hours. Automated 50% controlled emergency release and 1,200 civilian advisory SMS dispatched.',
     '2026-05-18',
     92.4,
     148.5,
-    100,
+    50,
     1240,
     '[
       {"time": "08:00", "water_level": 58.0, "rainfall": 12.0, "gate": 0, "status": "NORMAL", "action": "Routine Monitoring"},
-      {"time": "09:00", "water_level": 72.5, "rainfall": 38.0, "gate": 30, "status": "PRE_WARNING", "action": "Gate opened 30%, Early warning SMS"},
-      {"time": "10:00", "water_level": 81.0, "rainfall": 45.0, "gate": 70, "status": "CLEAR_AREA", "action": "Gate opened 70%, Downstream siren 85dB"},
-      {"time": "11:00", "water_level": 92.4, "rainfall": 53.5, "gate": 100, "status": "DANGER", "action": "Spillway 100% Full Open, Evacuation SMS"}
+      {"time": "09:00", "water_level": 72.5, "rainfall": 38.0, "gate": 0, "status": "PRE_WARNING", "action": "Gate 0% Closed, Early warning SMS"},
+      {"time": "10:00", "water_level": 81.0, "rainfall": 45.0, "gate": 20, "status": "CONTROLLED_RELEASE", "action": "Gate opened 20%, Downstream siren 85dB"},
+      {"time": "11:00", "water_level": 92.4, "rainfall": 53.5, "gate": 50, "status": "DANGER", "action": "Gate 50% Controlled Emergency Release, SMS Alert"}
     ]'::jsonb
 ), (
     'EVENT_002',

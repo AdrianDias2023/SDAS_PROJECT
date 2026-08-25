@@ -153,14 +153,14 @@ def test_alert_state_transitions():
         elif level >= 70.0:
             if rise >= 0.3:
                 actual = "CONTROLLED_RELEASE"
-            elif current in ["CONTROLLED_RELEASE", "CLEAR_AREA", "DANGER"]:
+            elif current in ["CONTROLLED_RELEASE", "DANGER"]:
                 actual = "CONTROLLED_RELEASE"
             else:
                 actual = "PRE_WARNING"
         else: # Below 70% with hysteresis going down
             if current == "DANGER":
                 actual = "CONTROLLED_RELEASE" if level < 82.0 else "DANGER"
-            elif current in ["CONTROLLED_RELEASE", "CLEAR_AREA", "PRE_WARNING"]:
+            elif current in ["CONTROLLED_RELEASE", "PRE_WARNING"]:
                 actual = "NORMAL" if level < 67.0 else current
             else:
                 actual = "NORMAL"

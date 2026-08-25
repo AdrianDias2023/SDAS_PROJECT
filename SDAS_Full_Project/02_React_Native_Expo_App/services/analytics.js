@@ -56,10 +56,10 @@ export async function fetchHistoricalAnalytics(period = '24h') {
 
   // Alert breakdown
   const alertCounts = {
-    PRE_WARNING: safeAlerts.filter(a => a.alert_type === 'PRE_WARNING').length,
-    CLEAR_AREA:  safeAlerts.filter(a => a.alert_type === 'CLEAR_AREA').length,
-    DANGER:      safeAlerts.filter(a => a.alert_type === 'DANGER').length,
-    NORMAL:      safeAlerts.filter(a => a.alert_type === 'NORMAL').length,
+    PRE_WARNING:        safeAlerts.filter(a => a.alert_type === 'PRE_WARNING').length,
+    CONTROLLED_RELEASE: safeAlerts.filter(a => a.alert_type === 'CONTROLLED_RELEASE' || a.alert_type === 'WARNING').length,
+    DANGER:             safeAlerts.filter(a => a.alert_type === 'DANGER').length,
+    NORMAL:             safeAlerts.filter(a => a.alert_type === 'NORMAL').length,
   };
   const totalAlerts = safeAlerts.length;
 
