@@ -104,8 +104,11 @@ export default function SimulationScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.protoBadge}>
+          <Text style={styles.protoBadgeText}>🔬 Prototype Simulation Mode</Text>
+        </View>
         <Text style={styles.subTitle}>
-          Test different scenarios{'\n'}(For Training & Demonstration)
+          Test different flood & gate scenarios{'\n'}(For Training & Academic Demonstration)
         </Text>
 
         {/* 2x2 Scenario Cards Grid */}
@@ -184,13 +187,27 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: 16,
-    gap: 20,
+    gap: 16,
+  },
+  protoBadge: {
+    backgroundColor: '#0F172A',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderColor: '#38BDF8',
+  },
+  protoBadgeText: {
+    color: '#38BDF8',
+    fontSize: 12,
+    fontWeight: '800',
   },
   subTitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#94A3B8',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
     fontWeight: '500',
   },
   grid: {

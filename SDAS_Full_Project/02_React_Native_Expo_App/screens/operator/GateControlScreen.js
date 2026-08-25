@@ -73,8 +73,8 @@ export default function GateControlScreen({ navigation }) {
     {
       pct: 20,
       title: '20%',
-      sub: 'OPEN',
-      note: '(Controlled\nRelease)',
+      sub: 'CONTROLLED',
+      note: 'Controlled\nRelease',
       color: '#F59E0B',
       borderColor: '#F59E0B',
       icon: '🌊',
@@ -82,8 +82,8 @@ export default function GateControlScreen({ navigation }) {
     {
       pct: 50,
       title: '50%',
-      sub: 'OPEN',
-      note: '(Emergency\nRelease)',
+      sub: 'EMERGENCY',
+      note: 'Emergency\nRelease',
       color: '#EF4444',
       borderColor: '#EF4444',
       icon: '🚨',

@@ -28,7 +28,7 @@ export default function EvacuationMapScreen({ navigation }) {
         >
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>LIVE MAP & SAFETY ZONES</Text>
+        <Text style={styles.headerTitle}>PROTOTYPE FLOOD RISK MAP</Text>
         <View style={{ width: 32 }} />
       </View>
 

@@ -81,7 +81,13 @@ export default function HomeScreen() {
   const pct = (typeof rawLevel === 'number' && !isNaN(rawLevel)) ? rawLevel : (parseFloat(rawLevel) || 72.5);
   
   const isDanger = pct >= 85;
-  const isWarning = pct >= 70;
+  const isWarning = pct >= 70 && pct < 85;
+  const isNormal = pct < 70;
+
+  const storageAvailable = Math.max(0, 100 - pct).toFixed(1);
+  const statusColor = isDanger ? '#EF4444' : isWarning ? '#F59E0B' : '#10B981';
+  const statusLabel = isDanger ? 'DANGER' : isWarning ? 'PRE-WARNING' : 'NORMAL';
+  const statusEmoji = isDanger ? '🚨' : isWarning ? '🟡' : '🟢';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -131,13 +137,13 @@ export default function HomeScreen() {
           <View style={styles.waterLevelRow}>
             <View>
               <Text style={styles.waterLevelValue}>{pct.toFixed(1)}%</Text>
-              <Text style={styles.normalRangeText}>Normal Range: &lt; 70%</Text>
+              <Text style={styles.normalRangeText}>Normal Range: &lt; 70% • Storage: {storageAvailable}%</Text>
             </View>
             <MiniSparkline />
           </View>
         </TouchableOpacity>
 
-        {/* Card 2: STATUS (🟢 NORMAL / 🟡 PRE-WARNING / 🔴 DANGER) */}
+        {/* Card 2: STATUS (Aligned strictly to 4-tier matrix) */}
         <View style={[styles.card, styles.statusCard]}>
           <View style={styles.statusHeaderRow}>
             <Text style={styles.statusSectionLabel}>STATUS</Text>
@@ -148,24 +154,24 @@ export default function HomeScreen() {
                 <View
                   style={[
                     styles.statusDot,
-                    { backgroundColor: isDanger ? '#EF4444' : isWarning ? '#F59E0B' : '#10B981' },
+                    { backgroundColor: statusColor },
                   ]}
                 />
                 <Text
                   style={[
                     styles.statusTitle,
-                    { color: isDanger ? '#EF4444' : isWarning ? '#F59E0B' : '#10B981' },
+                    { color: statusColor },
                   ]}
                 >
-                  {isDanger ? 'DANGER' : isWarning ? 'PRE-WARNING' : 'NORMAL'}
+                  {statusLabel}
                 </Text>
               </View>
               <Text style={styles.statusDesc}>
                 {isDanger
-                  ? 'Critical water level. Controlled emergency release active.'
+                  ? 'Critical water level (>85%). Controlled emergency release (50%) active.'
                   : isWarning
-                  ? 'Water level rising. Storage monitoring active.'
-                  : 'All systems are normal.\nDam is operating within safe limits.'}
+                  ? 'Water level rising (70–85%). Gate 0% CLOSED. Monitoring in progress.'
+                  : 'All systems are normal (<70%). Gate 0% CLOSED. Operating within safe limits.'}
               </Text>
             </View>
 
@@ -179,7 +185,7 @@ export default function HomeScreen() {
                 },
               ]}
             >
-              <Text style={styles.shieldIcon}>{isDanger ? '🚨' : isWarning ? '⚠️' : '🛡️'}</Text>
+              <Text style={styles.shieldIcon}>{isDanger ? '🚨' : isWarning ? '👁️' : '🛡️'}</Text>
             </View>
           </View>
         </View>

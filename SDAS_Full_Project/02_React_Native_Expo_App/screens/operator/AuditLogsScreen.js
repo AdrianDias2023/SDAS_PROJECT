@@ -28,8 +28,8 @@ export default function AuditLogsScreen({ navigation }) {
       id: '2',
       type: 'WATER',
       icon: '🌊',
-      title: 'Water level normal (72.5%)',
-      sub: 'Telemetry confirmed',
+      title: 'Water level pre-warning (72.5%)',
+      sub: 'Telemetry confirmed • Monitoring active',
       time: 'Today, 09:10 AM',
     },
     {

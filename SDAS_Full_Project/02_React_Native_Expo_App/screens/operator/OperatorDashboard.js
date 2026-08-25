@@ -123,7 +123,23 @@ export default function OperatorDashboard({ navigation }) {
           </View>
         </View>
 
-        {/* AI RISK PREDICTION Card */}
+        {/* SYSTEM MODE Card */}
+        <View style={styles.card}>
+          <View style={styles.systemModeRow}>
+            <View>
+              <Text style={styles.sectionHeader}>SYSTEM MODE</Text>
+              <View style={styles.systemModeStatusRow}>
+                <View style={styles.statusDotGreen} />
+                <Text style={styles.systemModeText}>AUTO CLOUD</Text>
+              </View>
+            </View>
+            <View style={styles.cloudIconBadge}>
+              <Text style={{ fontSize: 20 }}>☁️</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* AI RISK PREDICTION Card (1-Hour LSTM Lookahead) */}
         <View style={styles.card}>
           <Text style={styles.sectionHeader}>AI RISK PREDICTION</Text>
           <View style={styles.aiRiskContent}>
@@ -133,8 +149,8 @@ export default function OperatorDashboard({ navigation }) {
             </View>
 
             <View style={styles.riskDetailsCol}>
-              <Text style={styles.riskTitle}>No overflow risk</Text>
-              <Text style={styles.riskSub}>in next 24 hours</Text>
+              <Text style={styles.riskTitle}>No overflow risk predicted</Text>
+              <Text style={styles.riskSub}>in next 1 hour (LSTM Forecaster)</Text>
               <Text style={styles.confidenceText}>Confidence: 91%</Text>
             </View>
           </View>
@@ -145,10 +161,10 @@ export default function OperatorDashboard({ navigation }) {
           <Text style={styles.sectionHeader}>SYSTEM STATUS</Text>
           <View style={styles.statusList}>
             {[
-              { name: 'Sensors', status: 'Online' },
-              { name: 'ESP32 Unit', status: 'Online' },
-              { name: 'GSM Module', status: 'Online' },
-              { name: 'Internet', status: 'Online' },
+              { name: 'Sensors (2x JSN-SR04T)', status: 'Online' },
+              { name: 'ESP32 Controller', status: 'Online' },
+              { name: 'GSM Module (SIM800L)', status: 'Online' },
+              { name: 'Internet / Cloud Sync', status: 'Online' },
             ].map((item, idx) => (
               <View key={idx} style={styles.statusRow}>
                 <View style={styles.statusNameRow}>
@@ -344,5 +360,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#10B981',
+  },
+  systemModeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  systemModeStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  systemModeText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#10B981',
+    letterSpacing: 0.5,
+  },
+  cloudIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
   },
 });

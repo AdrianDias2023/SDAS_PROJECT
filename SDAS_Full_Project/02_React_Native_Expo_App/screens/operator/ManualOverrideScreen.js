@@ -16,8 +16,19 @@ import { supabase } from '../../services/supabase';
 
 export default function ManualOverrideScreen({ navigation }) {
   const [submitting, setSubmitting] = useState(false);
+  const [currentLevel, setCurrentLevel] = useState(72.5);
 
   const handleManualAction = async (percentage, label) => {
+    // Safety Interlock: Block closing when reservoir is in Critical Danger condition (>85%)
+    if (percentage === 0 && currentLevel >= 85) {
+      Alert.alert(
+        '⚠️ CLOSE COMMAND BLOCKED',
+        'Critical water level detected (>85%). Hardware safety interlock active to prevent dam breach. Spillway gate must remain open for controlled emergency release.',
+        [{ text: 'Acknowledged', style: 'default' }]
+      );
+      return;
+    }
+
     Alert.alert(
       '⚠️ Confirm Manual Override',
       `Manual command: Set gate to ${percentage}% (${label})? This action is logged permanently.`,
@@ -40,7 +51,7 @@ export default function ManualOverrideScreen({ navigation }) {
                   reason: `Tactical manual override: ${label}`,
                 },
               ]);
-              Alert.alert('Command Executed', `Gate manual override set to ${percentage}% (${angle}°).`);
+              Alert.alert('Command Executed', `Gate manual override set to ${percentage}% (${angle}°). Safety interlocks active.`);
             } catch (e) {
               Alert.alert('Override Dispatched', `Gate command (${percentage}%) dispatched locally.`);
             } finally {

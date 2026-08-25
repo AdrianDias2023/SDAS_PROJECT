@@ -60,10 +60,13 @@ export default function WeatherForecastScreen({ navigation }) {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Location Dropdown Row */}
-        <TouchableOpacity style={styles.locationDropdown} activeOpacity={0.8}>
-          <Text style={styles.locationText}>Puttalam, Sri Lanka</Text>
-          <Text style={styles.chevron}>∨</Text>
-        </TouchableOpacity>
+        <View style={styles.locationContainer}>
+          <TouchableOpacity style={styles.locationDropdown} activeOpacity={0.8}>
+            <Text style={styles.locationText}>Puttalam, Sri Lanka</Text>
+            <Text style={styles.chevron}>∨</Text>
+          </TouchableOpacity>
+          <Text style={styles.sourceText}>📡 Open-Meteo Weather Forecast Feed</Text>
+        </View>
 
         {/* Current Weather Hero Card */}
         <View style={styles.heroCard}>
@@ -156,16 +159,24 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 16,
   },
+  locationContainer: {
+    gap: 2,
+  },
   locationDropdown: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   locationText: {
     fontSize: 16,
     fontWeight: '800',
     color: '#FFFFFF',
+  },
+  sourceText: {
+    fontSize: 11,
+    color: '#38BDF8',
+    fontWeight: '600',
   },
   chevron: {
     fontSize: 14,
