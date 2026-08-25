@@ -117,14 +117,21 @@ const int SMS_CONTACT_COUNT = 3;
 // ─── ALERT THRESHOLDS ──────────────────────────────────────────────────────────
 #define THRESH_NORMAL      70.0f   // Below this = NORMAL
 #define THRESH_DANGER      85.0f   // Above this = DANGER
-#define HYSTERESIS          3.0f   // 3% hysteresis window (per proposal)
+// ─── PHYSICAL SENSOR DISTANCE CALIBRATION (IN CENTIMETERS - CUSTOMIZABLE LATER) ─
+// You can adjust these exact cm measurements to match your physical model/water tank ruler:
+float CALIB_TANK_MAX_DEPTH_CM  = 100.0f; // Total tank depth / sensor mounting height (cm)
+float CALIB_NORMAL_DIST_CM     = 30.0f;  // Sensor distance >30cm = Normal Safe Water (<70%)
+float CALIB_PRE_WARN_DIST_CM   = 25.0f;  // Sensor distance 15-30cm = Pre-Warning (70-85%)
+float CALIB_WARNING_DIST_CM    = 20.0f;  // Sensor distance 15-20cm or fast surge = Warning (20% Gate)
+float CALIB_DANGER_DIST_CM     = 10.0f;  // Sensor distance <15cm = Critical Danger (>85% / 50% Gate)
 
-// ─── SERVO GATE ANGLES (MG996R 0–180°) ────────────────────────────────────────
-// Gate %  →  Servo angle:   pct * 1.8° (100% = 180°)
-#define GATE_CLOSED     0     //   0% open (NORMAL: Closed)
-#define GATE_PRE_WARN   0     //   0% open (PRE-WARNING: Kept CLOSED to conserve irrigation water)
-#define GATE_CLEAR      90    //  50% open (CLEAR-AREA: Controlled 30-50% release during rapid surge >0.3%/2s)
-#define GATE_FULL_OPEN  180   // 100% open (DANGER: Full spillway discharge >85%)
+// ─── SERVO GATE ANGLES (MG996R 0–180° CALIBRATED FOR SAFE OPERATIONAL MANAGEMENT)
+#define GATE_CLOSED     0     //   0% open (0°)   : NORMAL — Store water, maximum conservation
+#define GATE_PRE_WARN   0     //   0% open (0°)   : PRE-WARNING — Safe storage available / monitor
+#define GATE_WARNING    36    //  20% open (36°)  : WARNING / CONTROLLED RELEASE — Gradual buffer release
+#define GATE_CLEAR      36    //  20% open (Alias for backward compatibility)
+#define GATE_DANGER     90    //  50% open (90°)  : DANGER — Emergency release (50% max safe opening)
+#define GATE_FULL_OPEN  90    //  50% open (Alias for backward compatibility)
 
 // ─── TIMING ────────────────────────────────────────────────────────────────────
 #define SENSOR_INTERVAL_MS  2000    // Read sensors every 2 s
@@ -136,10 +143,11 @@ Servo gateServo;
 
 // Alert level enum
 enum AlertLevel : uint8_t {
-  LEVEL_NORMAL     = 0,
-  LEVEL_PRE_WARN   = 1,
-  LEVEL_CLEAR_AREA = 2,
-  LEVEL_DANGER     = 3
+  LEVEL_NORMAL             = 0,  // Tier 1: NORMAL — Store water, normal operation (<70%, Gate 0%)
+  LEVEL_PRE_WARN           = 1,  // Tier 2: PRE-WARNING — Monitor storage, safe capacity available (70-85%, Gate 0%)
+  LEVEL_CONTROLLED_RELEASE = 2,  // Tier 3: WARNING / CONTROLLED RELEASE — Rapid surge (70-85%, Gate 20%)
+  LEVEL_CLEAR_AREA         = 2,  // Alias for backward compatibility
+  LEVEL_DANGER             = 3   // Tier 4: DANGER — Emergency flood protection (>85%, Gate 50%)
 };
 
 // ─── 4 SYSTEM OPERATING MODES ──────────────────────────────────────────────────
@@ -445,23 +453,27 @@ void broadcastSMS(const String& message) {
 }
 
 String buildSMSMessage(AlertLevel level, float pct) {
+  float safeStorage = (100.0f - pct);
+  if (safeStorage < 0.0f) safeStorage = 0.0f;
+
   String msg  = "SDAS ALERT | Puttalam Dam\n";
-  msg += "Water: " + String(pct, 1) + "% | ";
+  msg += "Water Level: " + String(pct, 1) + "% (Storage Available: " + String(safeStorage, 1) + "%)\n";
 
   switch (level) {
     case LEVEL_PRE_WARN:
-      msg += "PRE-WARNING\nWater at 70-85% (Stable). Gate kept CLOSED to conserve irrigation water. Monitor closely.";
+      msg += "STATUS: PRE-WARNING\n"
+             "Water level increasing but within safe storage. Gate kept CLOSED (0%). Monitoring active.";
       break;
-    case LEVEL_CLEAR_AREA:
-      msg += "WARNING - CLEAR THE AREA\n"
-             "Surge detected. Gate opened 50% (Controlled release). Evacuate flood zone immediately.";
+    case LEVEL_CONTROLLED_RELEASE:
+      msg += "STATUS: WARNING (CONTROLLED RELEASE)\n"
+             "Water level increasing rapidly. Gate opened 20%. Please prepare and move to safe area if required.";
       break;
     case LEVEL_DANGER:
-      msg += "DANGER - EMERGENCY\n"
-             "Gate FULLY OPEN. Immediate evacuation required!";
+      msg += "STATUS: DANGER ALERT\n"
+             "Critical water level detected! Gate opened 50%. Move to safe location immediately.";
       break;
     default:
-      msg += "NORMAL";
+      msg += "STATUS: NORMAL (Storing Water)";
   }
   return msg;
 }
@@ -473,10 +485,10 @@ String buildSMSMessage(AlertLevel level, float pct) {
 
 const char* levelStr(AlertLevel level) {
   switch (level) {
-    case LEVEL_NORMAL:     return "NORMAL";
-    case LEVEL_PRE_WARN:   return "PRE_WARNING";
-    case LEVEL_CLEAR_AREA: return "CLEAR_AREA";
-    case LEVEL_DANGER:     return "DANGER";
+    case LEVEL_NORMAL:             return "NORMAL";
+    case LEVEL_PRE_WARN:           return "PRE_WARNING";
+    case LEVEL_CONTROLLED_RELEASE: return "CONTROLLED_RELEASE";
+    case LEVEL_DANGER:             return "DANGER";
   }
   return "UNKNOWN";
 }

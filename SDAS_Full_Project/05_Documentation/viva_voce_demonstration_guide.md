@@ -24,28 +24,28 @@ This guide outlines the **5-Stage Live Demonstration Protocol** to perform in fr
 
 ---
 
-## 🎬 Stage 2 — Pre-Warning (Water Saving) & Clear-Area (Surge Buffer)
-* **Objective:** Demonstrate Water Conservation Policy in Pre-Warning ($0\%$) and Controlled Surge Release in Clear-Area ($50\%$).
-* **Examiner Action (Part A - Water Conservation):** Select *"⚠️ Monsoon Pre-Warning"* preset or set slider to **$72.5\%$** (Low rise rate $+0.1\%$). Press `[⚡ Broadcast Scenario to Live Cloud]`.
-  - **Behavior:** Yellow LED illuminates. Single chirp. Gate remains **$0\%$ (0° CLOSED)** to conserve water for agriculture and dry season.
-  - **Advisory SMS:** *"SDAS ALERT | Water at 72.5% (Stable). Gate kept CLOSED to conserve irrigation water. Monitor closely."*
-* **Examiner Action (Part B - Rapid Surge Clear-Area):** Select *"🚧 Rapid Surge (Clear Area)"* or set level to **$79.0\%$** (Rise rate $+0.8\%/2\text{s}$).
-  - **Behavior:** Orange LED illuminates. Triple siren pulse. Gate rotates smoothly to **$50\%$ (90° Controlled Surge Release)**.
-  - **Advisory SMS:** *"SDAS ALERT | WARNING - CLEAR THE AREA: Surge detected. Gate opened 50% (Controlled release). Evacuate river bank immediately."*
-* **Examiner Talking Point:** *"Notice the dual-intelligence logic: SDAS avoids wasting precious irrigation water during slow rise, but instantly deploys a 50% buffer release the moment a sudden upstream surge is detected."*
+## 🎬 Stage 2 — Pre-Warning (Preserve Storage) & Warning (Controlled Release 20%)
+* **Objective:** Demonstrate Safe Storage Preservation in Pre-Warning ($0\%$) and Controlled Buffer Release in Warning ($20\%$).
+* **Examiner Action (Part A - Preserve Storage Capacity):** Select *"🟡 Pre-Warning"* preset or set slider to **$72.5\%$** (Low rise rate $+0.1\%$). Press `[⚡ Broadcast Scenario to Live Cloud]`.
+  - **Behavior:** Yellow LED illuminates. Single chirp. Gate remains **$0\%$ (0° CLOSED)** to preserve water storage capacity.
+  - **Advisory SMS:** *"SDAS ALERT | Water Level: 72.5% (Storage Available: 27.5%). STATUS: PRE-WARNING. Gate kept CLOSED (0%). Monitoring active."*
+* **Examiner Action (Part B - Rapid Surge Warning):** Select *"🟠 Warning (Controlled Release 20%)"* or set level to **$79.0\%$** (Rise rate $+0.8\%/2\text{s}$).
+  - **Behavior:** Orange LED illuminates. Single warning beep. Gate rotates smoothly to **$20\%$ (36° Controlled Buffer Release)**.
+  - **Advisory SMS:** *"SDAS ALERT | Water level increasing rapidly. Gate opened 20%. Please prepare and move to safe area if required."*
+* **Examiner Talking Point:** *"Notice that SDAS does not immediately dump water uncontrollably. It creates safe buffer capacity with a calibrated 20% release when rapid surge is detected."*
 
 ---
 
-## 🎬 Stage 3 — Critical Flood Crest & Emergency Evacuation
-* **Objective:** Demonstrate full spillway actuation, 85dB acoustic siren, and civilian SMS broadcasting.
-* **Examiner Action:** Select *"🚨 Critical Flash Flood"* preset or set slider to **$91.5\%$** (Rainfall: $85\text{ mm}$). Press `[⚡ Broadcast Scenario to Live Cloud]`.
+## 🎬 Stage 3 — Critical Danger & Safe Emergency Release (50%)
+* **Objective:** Demonstrate safe maximum spillway actuation ($50\%$), 85dB acoustic siren, and civilian SMS broadcasting.
+* **Examiner Action:** Select *"🔴 Critical Danger"* preset or set slider to **$91.5\%$** (Rainfall: $85\text{ mm}$). Press `[⚡ Broadcast Scenario to Live Cloud]`.
 * **Observed System Behavior:**
   - **ESP32 Edge:** Red LED pulses rapidly. 85dB siren sounds continuous emergency alarm.
-  - **MG996R Actuator:** Servo rotates to **$100\%$ (180° Full Spillway Release)**.
+  - **MG996R Actuator:** Servo rotates to **$50\%$ (90° Calibrated Emergency Spill)**.
   - **Mobile Public App:** Displays flashing `🚨 CRITICAL FLOOD WARNING (91.5%)`.
   - **Map Screen:** Automatically highlights Safe Evacuation Routes and high-ground shelters in Puttalam District.
   - **GSM Engine:** Critical broadcast sent:
-    > *"SDAS EMERGENCY ALERT | Critical water level (91.5%). Gate FULLY OPEN. Evacuate immediately to designated safe zones."*
+    > *"SDAS ALERT | STATUS: DANGER ALERT. Critical water level detected! Gate opened 50%. Move to safe location immediately."*
 
 ---
 
@@ -56,7 +56,7 @@ This guide outlines the **5-Stage Live Demonstration Protocol** to perform in fr
   - **30-Second Watchdog:** ESP32 detects `WiFi.status() != WL_CONNECTED` exceeding 30s.
   - **Mode Transition:** Shifts from `MODE_AUTO_CLOUD` $\to$ `MODE_AUTO_OFFLINE`.
   - **Edge Safety Engine:** The ESP32 executes on-chip threshold rules independently:
-    - Moves MG996R gate to **$100\%$**.
+    - Moves MG996R gate to **$50\%$ (Safe Emergency Opening)**.
     - Fires SIM800L direct GSM SMS over 2G cellular towers without internet.
   - **Operator Console:** Shows `🔴 OFFLINE` | `Mode: 🚨 OFFLINE EMERGENCY` | `Controller: ESP32 Local Edge Engine`.
 * **Examiner Talking Point:** *"This eliminates single-point-of-failure vulnerability. The dam remains 100% autonomous and protected even during electrical grid or internet collapse."*

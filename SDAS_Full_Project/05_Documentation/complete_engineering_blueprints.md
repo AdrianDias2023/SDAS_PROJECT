@@ -247,3 +247,24 @@ flowchart TD
     INTERLOCK -->|Yes - Danger| REJECT_CMD["⛔ Command Rejected by Safety Interlock<br/>Prohibit Dam Overtopping Closure"]
     INTERLOCK -->|No - Safe| MODE3["MODE 3: MANUAL OPERATOR<br/>Execute Tactical OPEN / CLOSE / STOP"]
 ```
+
+---
+
+## 5. Safe Operational Control & Calibration Matrix
+
+| Alert Tier | Water Level (%) | Available Storage | Gate Aperture | Servo Angle | Operational Action & Notification |
+|---|---|---|---|---|---|
+| **🟢 NORMAL** | `< 70.0%` | `> 30.0%` | **0% CLOSED** | $0^\circ$ | Store water safely, continuous 60s cloud telemetry logging. |
+| **🟡 PRE-WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | **0% CLOSED** | $0^\circ$ | Water preserved; monitor rainfall radar & AI lookahead. |
+| **🟠 WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | **20% OPEN** | $36^\circ$ | Controlled buffer release during rapid inflow surge. SMS alert dispatched. |
+| **🔴 DANGER** | `> 85.0%` | `< 15.0%` | **50% OPEN** | $90^\circ$ | Safe emergency spillway release; 85dB siren active; emergency SMS broadcast. |
+
+### Physical Tank Ruler Distance Calibration (Centimeters)
+```cpp
+// Calibration distance constants in SDAS_ESP32_Code.ino (Adjustable to physical model):
+float CALIB_TANK_MAX_DEPTH_CM  = 100.0f; // Total tank depth / sensor mounting height (cm)
+float CALIB_NORMAL_DIST_CM     = 30.0f;  // Sensor distance >30cm = Normal Safe Water (<70%)
+float CALIB_PRE_WARN_DIST_CM   = 25.0f;  // Sensor distance 15-30cm = Pre-Warning (70-85%)
+float CALIB_WARNING_DIST_CM    = 20.0f;  // Sensor distance 15-20cm or fast surge = Warning (20% Gate)
+float CALIB_DANGER_DIST_CM     = 10.0f;  // Sensor distance <15cm = Critical Danger (>85% / 50% Gate)
+```

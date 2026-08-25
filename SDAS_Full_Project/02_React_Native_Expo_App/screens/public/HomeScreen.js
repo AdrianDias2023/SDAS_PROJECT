@@ -16,8 +16,9 @@ import AlertBanner from '../../components/AlertBanner';
 import LanguageSelector from '../../components/LanguageSelector';
 import DamSelector from '../../components/DamSelector';
 
-function getAlertLevel(pct, isHeavyRain = false) {
+function getAlertLevel(pct, isHeavyRain = false, riseRate = 0.0) {
   if (pct >= 85) return 'DANGER';
+  if (pct >= 70 && (riseRate >= 0.3 || isHeavyRain)) return 'CONTROLLED_RELEASE';
   if (pct >= 70 || (pct >= 60 && isHeavyRain)) return 'PRE_WARNING';
   return 'NORMAL';
 }
@@ -33,10 +34,10 @@ export default function HomeScreen() {
   const [lastUpdate, setLastUpdate]       = useState(null);
 
   const LEVELS = {
-    NORMAL:      { label: t.statusNormal,      color: '#27AE60', bg: '#EAFAF1', emoji: '✅' },
-    PRE_WARNING: { label: t.statusPreWarning, color: '#F39C12', bg: '#FEF9E7', emoji: '⚠️' },
-    CLEAR_AREA:  { label: t.statusClearArea,  color: '#E67E22', bg: '#FDF2E9', emoji: '🚧' },
-    DANGER:      { label: t.statusDanger,      color: '#E74C3C', bg: '#FDEDEC', emoji: '🚨' },
+    NORMAL:             { label: t.statusNormal,            color: '#27AE60', bg: '#EAFAF1', emoji: '✅', range: '< 70% (Store Water, Gate 0%)' },
+    PRE_WARNING:        { label: t.statusPreWarning,        color: '#F39C12', bg: '#FEF9E7', emoji: '⚠️', range: '70–85% (Safe Storage, Gate 0%)' },
+    CONTROLLED_RELEASE: { label: t.statusControlledRelease || 'WARNING (CONTROLLED)', color: '#E67E22', bg: '#FDF2E9', emoji: '🟠', range: '70–85% (Surge Inflow, Gate 20%)' },
+    DANGER:             { label: t.statusDanger,            color: '#E74C3C', bg: '#FDEDEC', emoji: '🚨', range: '> 85% (Critical Level, Gate 50%)' },
   };
 
   const loadData = useCallback(async (damId = selectedDamId) => {
@@ -160,6 +161,17 @@ export default function HomeScreen() {
           <Text style={[styles.statusLabel, { color: levelCfg.color }]}>
             {levelCfg.emoji} {levelCfg.label}
           </Text>
+
+          {/* Safe Storage Capacity Indicator */}
+          <View style={styles.storageBox}>
+            <View style={styles.storageHeaderRow}>
+              <Text style={styles.storageTitle}>📦 {t.availableStorage || 'Safe Storage Capacity Available'}</Text>
+              <Text style={styles.storageVal}>{(100 - Math.min(100, Math.max(0, pct))).toFixed(1)}%</Text>
+            </View>
+            <View style={styles.storageTrack}>
+              <View style={[styles.storageFill, { width: `${Math.max(0, 100 - pct)}%` }]} />
+            </View>
+          </View>
         </View>
 
         {/* Sensor Info Cards */}
@@ -190,21 +202,20 @@ export default function HomeScreen() {
           </Text>
         )}
 
-        {/* Alert Level Scale */}
+        {/* 4-Tier Operational Logic Scale */}
         <View style={styles.scaleCard}>
-          <Text style={styles.scaleTitle}>{t.level}</Text>
+          <Text style={styles.scaleTitle}>🏛️ 4-Tier Operational & Hydrological Logic</Text>
           {Object.entries(LEVELS).map(([key, cfg]) => (
             <View key={key} style={styles.scaleRow}>
               <View style={[styles.scaleDot, { backgroundColor: cfg.color }]} />
-              <Text style={styles.scaleText}>
-                {cfg.emoji} {cfg.label}
-              </Text>
-              <Text style={styles.scaleRange}>
-                {key === 'NORMAL' ? '< 70%'
-                  : key === 'PRE_WARNING' ? '70–85%'
-                  : key === 'CLEAR_AREA' ? '70–85% ↗'
-                  : '> 85%'}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.scaleText}>
+                  {cfg.emoji} {cfg.label}
+                </Text>
+                <Text style={styles.scaleRange}>
+                  {cfg.range}
+                </Text>
+              </View>
             </View>
           ))}
         </View>
@@ -241,6 +252,12 @@ const styles = StyleSheet.create({
   weatherAdviceAlert:{ color: '#B91C1C', fontWeight: '600' },
   gaugeCard:     { backgroundColor: '#FFF', borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, elevation: 4 },
   statusLabel:   { fontSize: 18, fontWeight: '800', marginTop: 12, textAlign: 'center' },
+  storageBox:    { width: '100%', marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderColor: '#F1F5F9' },
+  storageHeaderRow:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  storageTitle:  { fontSize: 12, fontWeight: '700', color: '#334155' },
+  storageVal:    { fontSize: 14, fontWeight: '800', color: '#0F4C81' },
+  storageTrack:  { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
+  storageFill:   { height: '100%', backgroundColor: '#10B981', borderRadius: 4 },
   infoRow:       { flexDirection: 'row', gap: 10, marginBottom: 16 },
   infoCard:      { flex: 1, backgroundColor: '#FFF', borderRadius: 16, padding: 14, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
   infoEmoji:     { fontSize: 24, marginBottom: 4 },
@@ -249,8 +266,8 @@ const styles = StyleSheet.create({
   updateText:    { textAlign: 'center', color: '#95A5A6', fontSize: 12, marginBottom: 16 },
   scaleCard:     { backgroundColor: '#FFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
   scaleTitle:    { fontWeight: 'bold', fontSize: 14, color: '#1B2A3B', marginBottom: 12 },
-  scaleRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  scaleRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   scaleDot:      { width: 12, height: 12, borderRadius: 6, marginRight: 10 },
-  scaleText:     { flex: 1, fontSize: 13, color: '#2C3E50', fontWeight: '500' },
-  scaleRange:    { fontSize: 12, color: '#7F8C8D', fontWeight: '600' },
+  scaleText:     { fontSize: 13, color: '#2C3E50', fontWeight: '700' },
+  scaleRange:    { fontSize: 11, color: '#64748B', marginTop: 2 },
 });

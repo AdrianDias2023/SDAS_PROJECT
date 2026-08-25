@@ -8,6 +8,7 @@ Executes comprehensive empirical tests across:
 Outputs benchmark metrics to JSON and Markdown for Academic Thesis Chapter 5.
 """
 
+import sys
 import time
 import json
 import math
@@ -15,6 +16,13 @@ import urllib.request
 from datetime import datetime
 import numpy as np
 import pandas as pd
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 SUPABASE_URL = "https://nkjzrpwghmkdhixjybzm.supabase.co"
 SUPABASE_KEY = "sb_publishable_GIYan9Gc0ZVR55pWEnx-ww_5iF4w4da"
@@ -117,14 +125,14 @@ def test_alert_state_transitions():
 
     # Test testcases: (water_level, rate_of_rise, current_level, expected_next_level)
     test_cases = [
-        (45.0, 0.0,  "NORMAL",     "NORMAL",     "Below 70% threshold"),
-        (72.0, 0.1,  "NORMAL",     "PRE_WARNING","Crossed 70% slowly"),
-        (78.0, 0.8,  "PRE_WARNING","CLEAR_AREA", "Crossed rate-of-rise > 0.3%/2s"),
-        (87.0, 1.2,  "CLEAR_AREA", "DANGER",     "Exceeded 85% critical limit"),
-        (84.0, -0.5, "DANGER",     "CLEAR_AREA", "Stepped down from DANGER to CLEAR_AREA below 85%"),
-        (72.0, -0.5, "CLEAR_AREA", "CLEAR_AREA", "Hold CLEAR_AREA above 70%"),
-        (68.0, -0.5, "CLEAR_AREA", "CLEAR_AREA", "Hysteresis hold (70 - 3 = 67% cutoff)"),
-        (65.0, -0.5, "CLEAR_AREA", "NORMAL",     "Dropped below 67% hysteresis -> All Clear"),
+        (45.0, 0.0,  "NORMAL",             "NORMAL",             "Tier 1: <70% Store water, normal operation"),
+        (72.0, 0.1,  "NORMAL",             "PRE_WARNING",        "Tier 2: 70-85% Safe capacity available / controlled inflow"),
+        (78.0, 0.8,  "PRE_WARNING",        "CONTROLLED_RELEASE", "Tier 3: 70-85% Rapid surge / create storage buffer"),
+        (87.0, 1.2,  "CONTROLLED_RELEASE", "DANGER",             "Tier 4: >85% Critical overflow protection"),
+        (84.0, -0.5, "DANGER",             "CONTROLLED_RELEASE", "Hysteresis step down below 85%"),
+        (72.0, -0.5, "CONTROLLED_RELEASE", "CONTROLLED_RELEASE", "Hold buffer discharge above 70%"),
+        (68.0, -0.5, "CONTROLLED_RELEASE", "CONTROLLED_RELEASE", "Hysteresis hold (70 - 3 = 67% cutoff)"),
+        (65.0, -0.5, "CONTROLLED_RELEASE", "NORMAL",             "Dropped below 67% hysteresis -> Safe storage restored"),
     ]
 
     all_passed = True
@@ -134,23 +142,24 @@ def test_alert_state_transitions():
             actual = "DANGER"
         elif level >= 70.0:
             if rise >= 0.3:
-                actual = "CLEAR_AREA"
-            elif current in ["CLEAR_AREA", "DANGER"]:
-                actual = "CLEAR_AREA"
+                actual = "CONTROLLED_RELEASE"
+            elif current in ["CONTROLLED_RELEASE", "CLEAR_AREA", "DANGER"]:
+                actual = "CONTROLLED_RELEASE"
             else:
                 actual = "PRE_WARNING"
         else: # Below 70% with hysteresis going down
             if current == "DANGER":
-                actual = "CLEAR_AREA" if level < 82.0 else "DANGER"
-            elif current in ["CLEAR_AREA", "PRE_WARNING"]:
+                actual = "CONTROLLED_RELEASE" if level < 82.0 else "DANGER"
+            elif current in ["CONTROLLED_RELEASE", "CLEAR_AREA", "PRE_WARNING"]:
                 actual = "NORMAL" if level < 67.0 else current
             else:
                 actual = "NORMAL"
 
         passed = (actual == expected)
         if not passed: all_passed = False
+        safe_storage = max(0.0, 100.0 - level)
         mark = "✓" if passed else "✗"
-        print(f"  [{mark}] Water={level:4.1f}% | Rise={rise:+4.1f}% | From={current:11s} -> To={actual:11s} ({note})")
+        print(f"  [{mark}] Water={level:4.1f}% (Storage={safe_storage:4.1f}%) | Rise={rise:+4.1f}% | From={current:18s} -> To={actual:18s} ({note})")
 
     print("-"*70)
     print(f"  Safety Engine State Determinism: {'100% PASSED' if all_passed else 'FAILED'}")
@@ -178,21 +187,21 @@ def test_offline_emergency_and_interlock():
         # 2. Safety Interlock for Manual Close
         if manual_cmd == "CLOSE_0_PCT":
             if water_level >= 85.0:
-                gate_pct = 100.0 # Command Rejected! Force Open
+                gate_pct = 50.0 # Command Rejected! Force Safe Emergency 50% Release
                 interlock_rejected = True
             else:
                 gate_pct = 0.0
                 interlock_rejected = False
-        elif manual_cmd == "OPEN_100_PCT":
-            gate_pct = 100.0
+        elif manual_cmd == "OPEN_50_PCT" or manual_cmd == "OPEN_100_PCT":
+            gate_pct = 50.0
             interlock_rejected = False
         else: # Automatic / Offline Emergency
             if water_level >= 85.0:
-                gate_pct = 100.0
+                gate_pct = 50.0 # Safe emergency release (50%)
             elif water_level >= 70.0:
-                # If rapid surge >=0.3%/2s (CLEAR-AREA), gate opens 50% (controlled release).
-                # If stable (PRE-WARNING), gate stays 0% (closed to save irrigation water).
-                gate_pct = 50.0 if (surge_rate >= 0.3) else 0.0
+                # If rapid surge >=0.3%/2s (WARNING / CONTROLLED RELEASE), gate opens 20%
+                # If stable (PRE-WARNING), gate stays 0% (closed to preserve safe storage)
+                gate_pct = 20.0 if (surge_rate >= 0.3) else 0.0
             else:
                 gate_pct = 0.0
             interlock_rejected = False
@@ -211,11 +220,11 @@ def test_offline_emergency_and_interlock():
 
     scenarios = [
         # (Internet, Disconnect_s, Water%, SurgeRate, Cmd, Expected Mode, Expected Gate, Expected Buzzer, Note)
-        (True,  0,  60.0, 0.0, None, "CLOUD_AUTO",        0.0,   False, "Internet ON, normal level -> Gate closed"),
-        (False, 45, 75.0, 0.1, None, "OFFLINE_EMERGENCY", 0.0,   False, "Internet OFF >30s, pre-warning -> Gate kept 0% to save water, Warning SMS sent"),
-        (False, 45, 78.0, 0.8, None, "OFFLINE_EMERGENCY", 50.0,  False, "Rapid surge >0.3%/2s (CLEAR-AREA) -> Gate opened 50% (Controlled Release), Warning SMS"),
-        (False, 45, 90.0, 1.2, None, "OFFLINE_EMERGENCY", 100.0, True,  "Internet OFF >30s, danger level -> Gate 100%, Buzzer ON, Emergency SMS"),
-        (True,  0,  92.0, 0.0, "CLOSE_0_PCT", "MANUAL_OVERRIDE", 100.0, True, "Safety Interlock: Manual CLOSE during danger (92%) REJECTED"),
+        (True,  0,  60.0, 0.0, None, "CLOUD_AUTO",        0.0,   False, "Tier 1: Internet ON, normal level -> Gate closed 0%"),
+        (False, 45, 75.0, 0.1, None, "OFFLINE_EMERGENCY", 0.0,   False, "Tier 2: Internet OFF >30s, pre-warning -> Gate kept 0% to save storage"),
+        (False, 45, 78.0, 0.8, None, "OFFLINE_EMERGENCY", 20.0,  False, "Tier 3: Rapid surge (WARNING) -> Gate opened 20% (Controlled Release)"),
+        (False, 45, 90.0, 1.2, None, "OFFLINE_EMERGENCY", 50.0,  True,  "Tier 4: Internet OFF >30s, danger level -> Gate 50%, Buzzer ON, Emergency SMS"),
+        (True,  0,  92.0, 0.0, "CLOSE_0_PCT", "MANUAL_OVERRIDE", 50.0, True, "Safety Interlock: Manual CLOSE during danger (92%) REJECTED -> Hold 50%"),
     ]
 
     all_passed = True

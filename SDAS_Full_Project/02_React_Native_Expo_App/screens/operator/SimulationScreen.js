@@ -13,50 +13,50 @@ import LanguageSelector from '../../components/LanguageSelector';
 const SCENARIOS = [
   {
     id: 'normal',
-    title: '☀️ Dry Season Normal',
-    waterLevel: 42.0,
+    title: '🟢 Normal Operation (Store Water)',
+    waterLevel: 55.0,
     riseRate: 0.0,
-    rainfall: 0.0,
+    rainfall: 5.0,
     sensorHealth: 'NORMAL',
-    desc: 'Normal water level below 70%. Gate closed (0°), LED Green, no alarms.',
+    desc: '<70% storage level. Gate closed (0°), LED Green, maximum water conservation.',
   },
   {
     id: 'prewarn',
-    title: '⚠️ Monsoon Pre-Warning (Water Saving)',
-    waterLevel: 72.5,
+    title: '🟡 Pre-Warning (Preserve Storage Capacity)',
+    waterLevel: 74.0,
     riseRate: 0.1,
-    rainfall: 18.0,
+    rainfall: 15.0,
     sensorHealth: 'NORMAL',
-    desc: 'Water level between 70-85% (Stable). Gate kept CLOSED (0°) to conserve irrigation water. Yellow LED, advisory SMS.',
+    desc: '70–85% storage level + safe storage capacity available / controlled inflow. Gate 0% CLOSED, continue storage & increase monitoring.',
   },
   {
     id: 'cleararea',
-    title: '🚧 Rapid Surge (Clear Area)',
+    title: '🟠 Warning (Controlled Release 20%)',
     waterLevel: 79.0,
     riseRate: 0.8,
     rainfall: 45.0,
     sensorHealth: 'NORMAL',
-    desc: 'Water rising >0.3%/2s. Gate opens to 50% (90° Controlled Release), LED Orange, Triple siren pulse.',
+    desc: '70–85% storage level + rapid inflow surge. Gate opens 20% (36°) to release excess water gradually & create storage capacity.',
   },
   {
     id: 'danger',
-    title: '🚨 Critical Flash Flood (Danger)',
+    title: '🔴 Danger (Emergency Release 50%)',
     waterLevel: 91.5,
     riseRate: 1.4,
     rainfall: 85.0,
     sensorHealth: 'NORMAL',
-    desc: 'Water exceeds 85%. Gate opens to 100% (180°), LED Red, Continuous SOS siren, SMS broadcast.',
+    desc: '>85% critical level OR predicted overflow risk. Gate opens 50% (90° max safe release), continuous SOS siren, emergency evacuation broadcast.',
   },
   {
     id: 'offline_emergency',
-    title: '📵 Complete Internet Outage (Offline Emergency)',
+    title: '📵 Internet Outage (Offline Emergency)',
     waterLevel: 88.0,
     riseRate: 1.1,
     rainfall: 60.0,
     sensorHealth: 'NORMAL',
     simInternet: 'OFFLINE',
     simMode: 'AUTO_OFFLINE',
-    desc: 'Internet unreachable >30s. ESP32 autonomous safety rules execute locally: Gate 100%, Siren ON, SIM800L SMS dispatched.',
+    desc: 'Internet unreachable >30s. ESP32 autonomous safety rules execute locally: Gate 50%, Siren ON, SIM800L SMS dispatched.',
   },
   {
     id: 'sensor_fault',
@@ -75,12 +75,12 @@ const REPLAY_EVENTS = [
   {
     code: 'EVENT_001',
     name: 'Severe Monsoon Influx (Puttalam 2026)',
-    desc: 'Rapid watershed inflow exceeding 85% reservoir threshold within 4 hours. Automated 100% spillway actuation and evacuation SMS.',
+    desc: 'Rapid watershed inflow exceeding 85% reservoir threshold within 4 hours. Automated 50% spillway safe release and evacuation SMS.',
     steps: [
-      { time: '08:00', level: 58.0, rain: 12.0, gate: 0, status: 'NORMAL', action: 'Routine Monitoring' },
-      { time: '09:00', level: 72.5, rain: 38.0, gate: 0, status: 'PRE_WARNING', action: 'Gate kept CLOSED (Water Conservation), Early warning SMS' },
-      { time: '10:00', level: 81.0, rain: 45.0, gate: 50, status: 'CLEAR_AREA', action: 'Surge detected >0.3%/2s: Gate opened 50% (Controlled Release), Downstream siren 85dB' },
-      { time: '11:00', level: 92.4, rain: 53.5, gate: 100, status: 'DANGER', action: 'Spillway 100% Full Open, Evacuation SMS' },
+      { time: '08:00', level: 58.0, rain: 12.0, gate: 0,  status: 'NORMAL', action: 'Routine Monitoring & Water Storage' },
+      { time: '09:00', level: 72.5, rain: 38.0, gate: 0,  status: 'PRE_WARNING', action: 'Safe Capacity Available: Gate kept 0% CLOSED, Early advisory SMS' },
+      { time: '10:00', level: 81.0, rain: 45.0, gate: 20, status: 'WARNING', action: 'Surge Inflow: Gate opened 20% (Controlled Release to Create Buffer)' },
+      { time: '11:00', level: 92.4, rain: 53.5, gate: 50, status: 'DANGER', action: 'Critical Overflow Risk: Gate opened 50% (Max Safe Spill), Evacuation SMS' },
     ],
   },
   {
@@ -88,9 +88,9 @@ const REPLAY_EVENTS = [
     name: 'Upstream Trans-Basin Surge Wave',
     desc: 'Controlled trans-basin discharge wave without local rainfall. Hybrid AI accurately predicted peak lag 45 minutes ahead.',
     steps: [
-      { time: '14:00', level: 52.0, rain: 0.0, gate: 0, status: 'NORMAL', action: 'Normal Baseline' },
-      { time: '15:00', level: 68.0, rain: 2.0, gate: 0, status: 'NORMAL', action: 'LSTM Rate-of-Rise Alarm Flagged' },
-      { time: '16:00', level: 86.2, rain: 3.0, gate: 50, status: 'DANGER', action: 'Gate Actuation 50%, Surge Absorbed' },
+      { time: '14:00', level: 52.0, rain: 0.0, gate: 0,  status: 'NORMAL', action: 'Normal Baseline & Storage' },
+      { time: '15:00', level: 68.0, rain: 2.0, gate: 0,  status: 'NORMAL', action: 'LSTM Rate-of-Rise Alarm Flagged' },
+      { time: '16:00', level: 86.2, rain: 3.0, gate: 50, status: 'DANGER', action: 'Controlled Safe Actuation 50%, Surge Absorbed' },
     ],
   },
 ];
@@ -108,12 +108,13 @@ export default function SimulationScreen() {
   const [replayStep,    setReplayStep]    = useState(0);
 
   const getExpectedState = (level) => {
+    const availableStorage = (100 - Math.min(100, Math.max(0, level))).toFixed(1);
     if (level >= 85) {
-      return { level: 'DANGER', color: '#EF4444', gate: '100% (180°)', action: 'Full Spillway Release & SMS Broadcast' };
+      return { level: 'DANGER', color: '#EF4444', gate: '50% (90°)', action: 'Emergency Release (50%) & Evacuation SMS', storage: `${availableStorage}% (Critical Limit)` };
     } else if (level >= 70) {
-      return { level: 'PRE-WARNING', color: '#F59E0B', gate: '0% (Closed)', action: 'Conserve Water for Agriculture & Send Advisory SMS' };
+      return { level: 'PRE-WARNING / WARNING', color: '#F59E0B', gate: '0% (Preserve) / 20% (Controlled Release)', action: 'Preserve Storage if Controlled / Release 20% if Surging', storage: `${availableStorage}% (Safe Capacity Available)` };
     }
-    return { level: 'NORMAL', color: '#10B981', gate: '0% (Closed)', action: 'Maintain Normal Reservoir Retention' };
+    return { level: 'NORMAL', color: '#10B981', gate: '0% (Closed)', action: 'Store Water, Maximum Conservation', storage: `${availableStorage}% (Safe Headroom)` };
   };
 
   const currentExpected = getExpectedState(sliderLevel);

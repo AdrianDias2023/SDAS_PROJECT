@@ -113,10 +113,10 @@
 ---
 
 ## 📽️ Slide 13: Live Demonstration Scenarios
-* **Stage 1:** Normal Baseline ($50\%$ level $\to$ Gate Closed $0\%$, Green LED).
-* **Stage 2:** Water Conservation ($72.5\%$ level stable $\to$ Gate Kept Closed $0\%$ to save water, Yellow LED).
-* **Stage 3:** Rapid Surge Influx ($79\%$ surging $\to$ Gate Opens $50\%$ Controlled Release, Orange LED).
-* **Stage 4:** Critical Flood Crest ($91.5\%$ danger $\to$ Gate $100\%$ Full Open, 85dB Siren, Evacuation SMS).
+* **Stage 1:** Normal Baseline ($50\%$ level $\to$ Gate Closed $0\%$, Green LED, maximum storage conservation).
+* **Stage 2:** Pre-Warning ($72.5\%$ level stable $\to$ Gate Kept Closed $0\%$ to preserve storage, Yellow LED, monitoring active).
+* **Stage 3:** Warning / Controlled Release ($79\%$ surging $\to$ Gate Opens $20\%$ ($36^\circ$) Controlled Release to create buffer, Orange LED).
+* **Stage 4:** Critical Danger ($91.5\%$ danger $\to$ Gate Opens $50\%$ ($90^\circ$) Safe Emergency Spill, 85dB Siren, Evacuation SMS).
 * **Stage 5:** Internet Outage ($>30\text{s}$ disconnect $\to$ ESP32 autonomous local edge safety takes over).
 * **Stage 6:** Manual Override & Safety Interlock (Manual OPEN/STOP & rejecting manual close during danger).
 
