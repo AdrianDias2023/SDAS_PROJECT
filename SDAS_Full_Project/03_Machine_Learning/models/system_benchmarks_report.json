@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-25T21:49:44.453172",
+  "timestamp": "2026-08-25T21:54:27.527587",
   "sensor_accuracy_test": {
     "mae_cm": 0.32,
     "rmse_cm": 0.35,
@@ -68,9 +68,9 @@
     ]
   },
   "communication_latency_test": {
-    "avg_latency_ms": 803.9,
-    "min_latency_ms": 625.5,
-    "max_latency_ms": 1535.7,
+    "avg_latency_ms": 1741.4,
+    "min_latency_ms": 620.5,
+    "max_latency_ms": 5308.9,
     "success_rate_pct": 100.0
   },
   "state_transitions_test": {

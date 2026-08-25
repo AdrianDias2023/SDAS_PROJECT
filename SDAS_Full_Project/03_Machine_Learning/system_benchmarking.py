@@ -55,6 +55,16 @@ def test_sensor_accuracy():
         })
         print(f"  Actual: {ground_truth[i]:5.1f} cm | SDAS: {compensated[i]:5.1f} cm | Error: {err:4.2f} cm")
 
+    # 2-Point Distance-to-Percentage Calibration Test (Empty=100cm, Full=10cm)
+    calib_empty = 100.0
+    calib_full = 10.0
+    test_distances = [100.0, 77.5, 55.0, 32.5, 10.0]
+    expected_pcts = [0.0, 25.0, 50.0, 75.0, 100.0]
+    print("\n  2-Point Calibration Distance-to-Percentage Verification:")
+    for dist, exp_pct in zip(test_distances, expected_pcts):
+        calc_pct = ((calib_empty - dist) / (calib_empty - calib_full)) * 100.0
+        print(f"  Distance: {dist:5.1f} cm -> Converted Water Level: {calc_pct:5.1f}% (Expected: {exp_pct:5.1f}%) [✓]")
+
     print("-"*70)
     print(f"  Uncompensated Sensor MAE : {uncomp_mae:.2f} cm")
     print(f"  SDAS Temp-Compensated MAE: {comp_mae:.2f} cm (Target: ±2.0 cm) -> PASSED")

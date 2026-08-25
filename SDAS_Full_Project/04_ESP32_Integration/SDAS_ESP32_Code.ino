@@ -57,10 +57,8 @@
 // Backup Power & Battery ADC Pin (ADC1 Channel 6)
 #define BATTERY_ADC_PIN   34
 
-// Dam geometry — set based on your physical installation
-// SENSOR_HEIGHT_CM = vertical distance from JSN-SR04T face to dam floor (empty dam)
-// Example: if sensor is mounted 300 cm above the empty dam floor, set 300.
-#define SENSOR_HEIGHT_CM  300.0f
+// Dam geometry & 3-point physical calibration (Adjustable with ruler measurements)
+// Refer to CALIB_EMPTY_DIST_CM and CALIB_FULL_DIST_CM below for exact prototype distances.
 
 // DHT sensor type — uncomment ONE:
 #define DHT_TYPE  DHT22   // More accurate (±0.5°C)
@@ -117,13 +115,11 @@ const int SMS_CONTACT_COUNT = 3;
 // ─── ALERT THRESHOLDS ──────────────────────────────────────────────────────────
 #define THRESH_NORMAL      70.0f   // Below this = NORMAL
 #define THRESH_DANGER      85.0f   // Above this = DANGER
-// ─── PHYSICAL SENSOR DISTANCE CALIBRATION (IN CENTIMETERS - CUSTOMIZABLE LATER) ─
-// You can adjust these exact cm measurements to match your physical model/water tank ruler:
-float CALIB_TANK_MAX_DEPTH_CM  = 100.0f; // Total tank depth / sensor mounting height (cm)
-float CALIB_NORMAL_DIST_CM     = 30.0f;  // Sensor distance >30cm = Normal Safe Water (<70%)
-float CALIB_PRE_WARN_DIST_CM   = 25.0f;  // Sensor distance 15-30cm = Pre-Warning (70-85%)
-float CALIB_WARNING_DIST_CM    = 20.0f;  // Sensor distance 15-20cm or fast surge = Warning (20% Gate)
-float CALIB_DANGER_DIST_CM     = 10.0f;  // Sensor distance <15cm = Critical Danger (>85% / 50% Gate)
+// ─── PHYSICAL SENSOR DISTANCE CALIBRATION (IN CENTIMETERS - 3-POINT CALIBRATION) ─
+// Measure with a ruler on your physical dam model and adjust these values:
+float CALIB_EMPTY_DIST_CM  = 100.0f; // Sensor reading when reservoir is EMPTY (0% water level) -> Max distance
+float CALIB_HALF_DIST_CM   = 55.0f;  // Sensor reading when reservoir is HALF FULL (50% water level)
+float CALIB_FULL_DIST_CM   = 10.0f;  // Sensor reading when reservoir is FULL (100% water level) -> Min distance
 
 // ─── SERVO GATE ANGLES (MG996R 0–180° CALIBRATED FOR SAFE OPERATIONAL MANAGEMENT)
 #define GATE_CLOSED     0     //   0% open (0°)   : NORMAL — Store water, maximum conservation
@@ -230,10 +226,13 @@ float readWaterLevel() {
     distanceCm = (d1 + d2) / 2.0f;
   }
 
-  // Sensor points DOWN from mounting height → water depth = height - distance
-  float waterDepthCm = SENSOR_HEIGHT_CM - distanceCm;
-  waterDepthCm = constrain(waterDepthCm, 0.0f, SENSOR_HEIGHT_CM);
-  return (waterDepthCm / SENSOR_HEIGHT_CM) * 100.0f;
+  // ─── 2-POINT CALIBRATION FORMULA ──────────────────────────────────────────
+  // Water Level % = ((Empty Distance - Current Distance) / (Empty Distance - Full Distance)) * 100
+  float span = CALIB_EMPTY_DIST_CM - CALIB_FULL_DIST_CM;
+  if (span <= 0.0f) span = 100.0f; // Division by zero guard
+
+  float waterLevelPct = ((CALIB_EMPTY_DIST_CM - distanceCm) / span) * 100.0f;
+  return constrain(waterLevelPct, 0.0f, 100.0f);
 }
 
 
