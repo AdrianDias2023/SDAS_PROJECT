@@ -1,4 +1,5 @@
 // SDAS — Emergency Contacts Screen (Operator Only)
+// SMS Alert Recipients & 3-language translations
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -6,6 +7,8 @@ import {
   TextInput, Alert, Modal, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { fetchContacts, addContact, deleteContact } from '../../services/alerts';
+import { useLanguage } from '../../services/i18n';
+import LanguageSelector from '../../components/LanguageSelector';
 
 const ROLE_COLORS = {
   ADMIN:    '#E74C3C',
@@ -14,6 +17,7 @@ const ROLE_COLORS = {
 };
 
 export default function ContactsScreen() {
+  const { t } = useLanguage();
   const [contacts,   setContacts]   = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -36,7 +40,7 @@ export default function ContactsScreen() {
 
   const handleAdd = async () => {
     if (!form.name || !form.phone) {
-      Alert.alert('Error', 'Name and phone are required.');
+      Alert.alert('Required', 'Name and phone number are required.');
       return;
     }
     setSaving(true);
@@ -45,7 +49,7 @@ export default function ContactsScreen() {
       setContacts((prev) => [...prev, c]);
       setModalOpen(false);
       setForm({ name: '', phone: '', role: 'OPERATOR' });
-      Alert.alert('✅ Contact added');
+      Alert.alert('✅ OK', 'Emergency contact saved');
     } catch (e) {
       Alert.alert('Error', e.message);
     } finally {
@@ -54,10 +58,10 @@ export default function ContactsScreen() {
   };
 
   const handleDelete = (id, name) =>
-    Alert.alert('Delete Contact', `Remove "${name}"?`, [
+    Alert.alert(t.deleteContact, `Remove "${name}"?`, [
       { text: 'Cancel' },
       {
-        text: 'Delete', style: 'destructive', onPress: async () => {
+        text: t.deleteContact, style: 'destructive', onPress: async () => {
           try {
             await deleteContact(id);
             setContacts((prev) => prev.filter((c) => c.id !== id));
@@ -77,7 +81,7 @@ export default function ContactsScreen() {
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.phone}>{item.phone}</Text>
         <Text style={styles.smsLabel}>
-          {item.notify_sms ? '📲 Receives SMS alerts' : '🔕 SMS disabled'}
+          {item.notify_sms ? '📲 SMS Alerts Enabled' : '🔕 SMS Disabled'}
         </Text>
       </View>
       <TouchableOpacity style={styles.delBtn} onPress={() => handleDelete(item.id, item.name)}>
@@ -89,13 +93,19 @@ export default function ContactsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>📱 Emergency Contacts</Text>
-          <Text style={styles.headerSub}>SMS Alert Recipients</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.headerTitle}>📱 {t.contactsTitle}</Text>
+            <Text style={styles.headerSub}>SMS Broadcast Directory</Text>
+          </View>
+          <TouchableOpacity style={styles.addBtn} onPress={() => setModalOpen(true)}>
+            <Text style={styles.addBtnText}>+ {t.addContact}</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setModalOpen(true)}>
-          <Text style={styles.addBtnText}>+ Add</Text>
-        </TouchableOpacity>
+
+        <View style={styles.langBar}>
+          <LanguageSelector compact={true} />
+        </View>
       </View>
 
       {loading ? (
@@ -107,7 +117,7 @@ export default function ContactsScreen() {
           renderItem={renderContact}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
-          ListEmptyComponent={<Text style={styles.empty}>No contacts yet. Tap "+ Add" to begin.</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>No emergency contacts added yet.</Text>}
         />
       )}
 
@@ -115,26 +125,28 @@ export default function ContactsScreen() {
       <Modal visible={modalOpen} animationType="slide" transparent>
         <View style={styles.overlay}>
           <View style={styles.modal}>
-            <Text style={styles.modalTitle}>Add Emergency Contact</Text>
+            <Text style={styles.modalTitle}>{t.addContact}</Text>
 
-            <Text style={styles.fieldLabel}>Full Name</Text>
+            <Text style={styles.fieldLabel}>{t.contactName}</Text>
             <TextInput
               style={styles.input}
               value={form.name}
               onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
-              placeholder="e.g. Dam Operator 1"
+              placeholder="e.g. Irrigation Officer"
+              placeholderTextColor="#94A3B8"
             />
 
-            <Text style={styles.fieldLabel}>Phone (international format)</Text>
+            <Text style={styles.fieldLabel}>{t.contactPhone}</Text>
             <TextInput
               style={styles.input}
               value={form.phone}
               onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))}
-              placeholder="+94XXXXXXXXX"
+              placeholder="+947XXXXXXXX"
+              placeholderTextColor="#94A3B8"
               keyboardType="phone-pad"
             />
 
-            <Text style={styles.fieldLabel}>Role</Text>
+            <Text style={styles.fieldLabel}>{t.contactRole}</Text>
             <View style={styles.roleRow}>
               {['OPERATOR', 'ADMIN', 'PUBLIC'].map((r) => (
                 <TouchableOpacity
@@ -152,7 +164,7 @@ export default function ContactsScreen() {
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleAdd} disabled={saving}>
-                {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveText}>Save</Text>}
+                {saving ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveText}>{t.saveContact}</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -164,11 +176,13 @@ export default function ContactsScreen() {
 
 const styles = StyleSheet.create({
   container:    { flex: 1, backgroundColor: '#F0F4F8' },
-  header:       { backgroundColor: '#1B2A3B', padding: 20, paddingTop: 50, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  headerTitle:  { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
-  headerSub:    { color: '#90CAF9', fontSize: 12, marginTop: 2 },
-  addBtn:       { backgroundColor: '#0F4C81', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
-  addBtnText:   { color: '#FFF', fontWeight: 'bold' },
+  header:       { backgroundColor: '#1B2A3B', padding: 20, paddingTop: 48 },
+  headerTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerTitle:  { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+  headerSub:    { color: '#90CAF9', fontSize: 11, marginTop: 2 },
+  addBtn:       { backgroundColor: '#0F4C81', borderRadius: 18, paddingHorizontal: 14, paddingVertical: 8 },
+  addBtnText:   { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
+  langBar:      { marginTop: 10 },
   list:         { padding: 16 },
   card:         { backgroundColor: '#FFF', borderRadius: 14, padding: 14, marginBottom: 10, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
   roleTag:      { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, marginRight: 12 },

@@ -1,4 +1,5 @@
 // SDAS — Operator Dashboard Screen
+// 3-Language Support & Live Telemetry
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -8,15 +9,10 @@ import {
 import { supabase } from '../../services/supabase';
 import { fetchLatestReading, fetchActiveAlerts } from '../../services/alerts';
 import { subscribeSensorReadings, subscribeAlerts } from '../../services/realtime';
+import { useLanguage } from '../../services/i18n';
 import WaterLevelGauge from '../../components/WaterLevelGauge';
 import AlertBanner from '../../components/AlertBanner';
-
-const LEVELS = {
-  NORMAL:      { label: 'NORMAL',      color: '#27AE60', bg: '#EAFAF1', emoji: '✅' },
-  PRE_WARNING: { label: 'PRE-WARNING', color: '#F39C12', bg: '#FEF9E7', emoji: '⚠️' },
-  CLEAR_AREA:  { label: 'CLEAR AREA',  color: '#E67E22', bg: '#FDF2E9', emoji: '🚧' },
-  DANGER:      { label: 'DANGER',      color: '#E74C3C', bg: '#FDEDEC', emoji: '🚨' },
-};
+import LanguageSelector from '../../components/LanguageSelector';
 
 function getAlertLevel(pct) {
   if (pct >= 85) return 'DANGER';
@@ -25,10 +21,18 @@ function getAlertLevel(pct) {
 }
 
 export default function OperatorDashboard() {
+  const { t } = useLanguage();
   const [reading,       setReading]      = useState(null);
   const [activeAlerts,  setActiveAlerts] = useState([]);
   const [user,          setUser]         = useState(null);
   const [refreshing,    setRefreshing]   = useState(false);
+
+  const LEVELS = {
+    NORMAL:      { label: t.statusNormal,      color: '#27AE60', bg: '#EAFAF1', emoji: '✅' },
+    PRE_WARNING: { label: t.statusPreWarning, color: '#F39C12', bg: '#FEF9E7', emoji: '⚠️' },
+    CLEAR_AREA:  { label: t.statusClearArea,  color: '#E67E22', bg: '#FDF2E9', emoji: '🚧' },
+    DANGER:      { label: t.statusDanger,      color: '#E74C3C', bg: '#FDEDEC', emoji: '🚨' },
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -55,26 +59,32 @@ export default function OperatorDashboard() {
   }, []);
 
   const handleLogout = () =>
-    Alert.alert('Logout', 'Are you sure?', [
+    Alert.alert(t.signOut, 'Are you sure?', [
       { text: 'Cancel' },
-      { text: 'Logout', style: 'destructive', onPress: () => supabase.auth.signOut() },
+      { text: t.signOut, style: 'destructive', onPress: () => supabase.auth.signOut() },
     ]);
 
   const level    = reading ? getAlertLevel(reading.water_level) : 'NORMAL';
-  const levelCfg = LEVELS[level];
+  const levelCfg = LEVELS[level] || LEVELS.NORMAL;
   const pct      = reading?.water_level ?? 0;
 
   return (
     <View style={[styles.container, { backgroundColor: levelCfg.bg }]}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>📊 Operator Dashboard</Text>
-          <Text style={styles.headerSub}>{user?.email ?? 'Operator'}</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.headerTitle}>📊 {t.operatorDashboard}</Text>
+            <Text style={styles.headerSub}>{user?.email ?? 'Authorized Operator'}</Text>
+          </View>
+          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+            <Text style={styles.logoutText}>{t.signOut}</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+
+        <View style={styles.langBar}>
+          <LanguageSelector compact={true} />
+        </View>
       </View>
 
       <ScrollView
@@ -94,15 +104,15 @@ export default function OperatorDashboard() {
 
         {/* Sensor Details */}
         <View style={styles.detailCard}>
-          <Text style={styles.detailTitle}>Live Sensor Data</Text>
+          <Text style={styles.detailTitle}>{t.quickStats}</Text>
           <View style={styles.detailGrid}>
             {[
-              ['💧 Water Level', `${pct.toFixed(1)}%`],
-              ['🌡️ Temperature',  `${reading?.temperature?.toFixed(1) ?? '--'}°C`],
-              ['💦 Humidity',     `${reading?.humidity?.toFixed(0) ?? '--'}%`],
-              ['🔧 Sensor',       reading?.sensor_health ?? '--'],
-              ['🕐 Last Reading', reading ? new Date(reading.created_at).toLocaleTimeString() : '--'],
-              ['📡 Device',       reading?.device_id ?? '--'],
+              [`💧 ${t.liveWaterLevel}`, `${pct.toFixed(1)}%`],
+              [`🌡️ ${t.temperature}`,  `${reading?.temperature?.toFixed(1) ?? '--'}°C`],
+              [`💦 ${t.humidity}`,     `${reading?.humidity?.toFixed(0) ?? '--'}%`],
+              [`🛡️ ${t.dualSensorHealth}`, reading?.sensor_health ?? 'NORMAL'],
+              [`🕐 ${t.lastUpdated}`, reading ? new Date(reading.created_at).toLocaleTimeString() : '--'],
+              ['📡 Node ID',       reading?.device_id ?? 'SDAS-ESP32-01'],
             ].map(([label, val]) => (
               <View key={label} style={styles.detailItem}>
                 <Text style={styles.detailLabel}>{label}</Text>
@@ -115,7 +125,7 @@ export default function OperatorDashboard() {
         {/* Active Alerts */}
         {activeAlerts.length > 0 && (
           <View style={styles.alertsCard}>
-            <Text style={styles.detailTitle}>🚨 Active Alerts ({activeAlerts.length})</Text>
+            <Text style={styles.detailTitle}>🚨 {t.alertsTitle} ({activeAlerts.length})</Text>
             {activeAlerts.slice(0, 5).map((a) => (
               <View key={a.id} style={styles.alertRow}>
                 <Text style={styles.alertType}>{a.alert_type.replace('_', ' ')}</Text>
@@ -131,11 +141,13 @@ export default function OperatorDashboard() {
 
 const styles = StyleSheet.create({
   container:    { flex: 1 },
-  header:       { backgroundColor: '#1B2A3B', padding: 20, paddingTop: 50, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  headerTitle:  { fontSize: 20, fontWeight: 'bold', color: '#FFF' },
+  header:       { backgroundColor: '#1B2A3B', padding: 20, paddingTop: 48 },
+  headerTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerTitle:  { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
   headerSub:    { color: '#90CAF9', fontSize: 11, marginTop: 2 },
   logoutBtn:    { backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6 },
-  logoutText:   { color: '#EF9A9A', fontSize: 13 },
+  logoutText:   { color: '#EF9A9A', fontSize: 12, fontWeight: '700' },
+  langBar:      { marginTop: 10 },
   scroll:       { padding: 16, paddingBottom: 40 },
   gaugeCard:    { backgroundColor: '#FFF', borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, elevation: 4 },
   statusLabel:  { fontSize: 18, fontWeight: 'bold', marginTop: 10 },

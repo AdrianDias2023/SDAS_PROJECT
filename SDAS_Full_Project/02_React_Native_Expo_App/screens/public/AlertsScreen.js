@@ -1,5 +1,5 @@
 // SDAS — Public Alerts Screen
-// Shows alert history list with severity colours
+// Shows alert history list with severity colours & 3-language translations
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import { fetchAlerts, acknowledgeAlert } from '../../services/alerts';
 import { subscribeAlerts } from '../../services/realtime';
+import { useLanguage } from '../../services/i18n';
+import LanguageSelector from '../../components/LanguageSelector';
 
 const SEVERITY_COLORS = {
   INFO:      '#27AE60',
@@ -24,6 +26,7 @@ const SEVERITY_EMOJI = {
 };
 
 export default function AlertsScreen() {
+  const { t } = useLanguage();
   const [alerts, setAlerts]       = useState([]);
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -60,7 +63,7 @@ export default function AlertsScreen() {
     const emoji = SEVERITY_EMOJI[item.severity]  ?? '📢';
     const time  = new Date(item.created_at).toLocaleString();
     return (
-      <View style={[styles.card, { borderLeftColor: color, opacity: item.acknowledged ? 0.55 : 1 }]}>
+      <View style={[styles.card, { borderLeftColor: color, opacity: item.acknowledged ? 0.6 : 1 }]}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardEmoji}>{emoji}</Text>
           <View style={styles.cardInfo}>
@@ -72,10 +75,12 @@ export default function AlertsScreen() {
           )}
         </View>
         <Text style={styles.cardMsg}>{item.message}</Text>
-        {!item.acknowledged && (
+        {!item.acknowledged ? (
           <TouchableOpacity style={styles.ackBtn} onPress={() => handleAck(item.id)}>
-            <Text style={styles.ackText}>✓ Acknowledge</Text>
+            <Text style={styles.ackText}>✓ {t.acknowledged}</Text>
           </TouchableOpacity>
+        ) : (
+          <Text style={styles.ackBadge}>✓ {t.acknowledged}</Text>
         )}
       </View>
     );
@@ -84,8 +89,11 @@ export default function AlertsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>🚨 Alert History</Text>
-        <Text style={styles.headerSub}>{alerts.length} records</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.headerTitle}>🚨 {t.alertsTitle}</Text>
+          <LanguageSelector compact={true} />
+        </View>
+        <Text style={styles.headerSub}>{alerts.length} {t.alertsTitle.toLowerCase()}</Text>
       </View>
       <FlatList
         data={alerts}
@@ -95,7 +103,7 @@ export default function AlertsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadAlerts(); }} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>{loading ? 'Loading...' : '✅ No alerts — all normal'}</Text>
+            <Text style={styles.emptyText}>{loading ? '...' : `✅ ${t.noAlerts}`}</Text>
           </View>
         }
       />
@@ -105,9 +113,10 @@ export default function AlertsScreen() {
 
 const styles = StyleSheet.create({
   container:   { flex: 1, backgroundColor: '#F0F4F8' },
-  header:      { backgroundColor: '#0F4C81', padding: 20, paddingTop: 50 },
-  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFF' },
-  headerSub:   { color: '#90CAF9', fontSize: 12, marginTop: 2 },
+  header:      { backgroundColor: '#0F4C81', padding: 20, paddingTop: 48 },
+  headerTop:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  headerSub:   { color: '#90CAF9', fontSize: 12, marginTop: 4 },
   list:        { padding: 16 },
   card:        { backgroundColor: '#FFF', borderRadius: 14, padding: 14, marginBottom: 12, borderLeftWidth: 4, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
   cardHeader:  { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
@@ -119,6 +128,7 @@ const styles = StyleSheet.create({
   cardMsg:     { color: '#2C3E50', fontSize: 13, lineHeight: 19 },
   ackBtn:      { alignSelf: 'flex-end', marginTop: 8, backgroundColor: '#EBF5FB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 6 },
   ackText:     { color: '#2980B9', fontSize: 12, fontWeight: '600' },
+  ackBadge:    { alignSelf: 'flex-end', marginTop: 6, fontSize: 11, color: '#10B981', fontWeight: '600' },
   empty:       { padding: 40, alignItems: 'center' },
-  emptyText:   { color: '#7F8C8D', fontSize: 15 },
+  emptyText:   { color: '#7F8C8D', fontSize: 14, textAlign: 'center', lineHeight: 22 },
 });

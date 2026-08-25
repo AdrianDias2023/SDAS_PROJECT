@@ -1,5 +1,5 @@
 // SDAS — Gate Control Screen (Operator Only)
-// Manual gate override with slider control
+// Manual gate override with slider control & 3-language translations
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -8,15 +8,16 @@ import {
 } from 'react-native';
 import { sendGateCommand } from '../../services/alerts';
 import { subscribeGateControl } from '../../services/realtime';
+import { useLanguage } from '../../services/i18n';
+import LanguageSelector from '../../components/LanguageSelector';
 
 const PRESETS = [
-  { label: 'CLOSE',  pct: 0,   color: '#27AE60', emoji: '🔒' },
-  { label: '30%',    pct: 30,  color: '#F39C12', emoji: '🚧' },
-  { label: '70%',    pct: 70,  color: '#E67E22', emoji: '⚠️' },
-  { label: 'FULL',   pct: 100, color: '#E74C3C', emoji: '🚨' },
+  { label: '0% (CLOSE)', pct: 0,   color: '#27AE60', emoji: '🔒' },
+  { label: '30%',        pct: 30,  color: '#F39C12', emoji: '🚧' },
+  { label: '70%',        pct: 70,  color: '#E67E22', emoji: '⚠️' },
+  { label: '100% (FULL)',pct: 100, color: '#E74C3C', emoji: '🚨' },
 ];
 
-// Simple slider using TouchableOpacity steps
 function StepSlider({ value, onChange }) {
   const steps = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
   return (
@@ -50,6 +51,7 @@ const sliderStyles = StyleSheet.create({
 });
 
 export default function GateControlScreen() {
+  const { t } = useLanguage();
   const [percentage, setPercentage] = useState(0);
   const [sending,    setSending]    = useState(false);
   const [lastCmd,    setLastCmd]    = useState(null);
@@ -66,12 +68,12 @@ export default function GateControlScreen() {
 
   const sendCmd = async (pct) => {
     Alert.alert(
-      'Confirm Gate Command',
-      `Set gate to ${pct}% open (MANUAL mode)?`,
+      t.gateControl,
+      `${t.setGatePercentage}: ${pct}% (${mode})?`,
       [
         { text: 'Cancel' },
         {
-          text: 'Confirm',
+          text: t.applyGateCommand,
           style: pct > 50 ? 'destructive' : 'default',
           onPress: async () => {
             setSending(true);
@@ -82,7 +84,7 @@ export default function GateControlScreen() {
                 command: pct === 0 ? 'CLOSE' : `OPEN_${pct}`,
               });
               setPercentage(pct);
-              Alert.alert('✅ Command Sent', `Gate set to ${pct}%`);
+              Alert.alert('✅ OK', `Gate position transmitted: ${pct}%`);
             } catch (e) {
               Alert.alert('Error', e.message);
             } finally {
@@ -104,21 +106,24 @@ export default function GateControlScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>🚪 Gate Control</Text>
-        <Text style={styles.headerSub}>Manual Override — Operator Access</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.headerTitle}>🚪 {t.gateControl}</Text>
+          <LanguageSelector compact={true} />
+        </View>
+        <Text style={styles.headerSub}>{mode === 'AUTO' ? t.modeAuto : t.modeManual}</Text>
       </View>
 
       {/* Current Status */}
       <View style={styles.statusCard}>
-        <Text style={styles.statusLabel}>Current Gate Position</Text>
+        <Text style={styles.statusLabel}>{t.gateOpen}</Text>
         <Text style={[styles.statusValue, { color: gateColor }]}>{percentage}%</Text>
         <View style={styles.progressBg}>
           <View style={[styles.progressFill, { width: `${percentage}%`, backgroundColor: gateColor }]} />
         </View>
-        <Text style={styles.modeLabel}>Mode: {lastCmd?.mode ?? mode}</Text>
+        <Text style={styles.modeLabel}>{t.gateMode}: {lastCmd?.mode ?? mode}</Text>
         {lastCmd && (
           <Text style={styles.lastCmdLabel}>
-            Last command: {new Date(lastCmd.created_at).toLocaleTimeString()}
+            {t.lastUpdated}: {new Date(lastCmd.created_at).toLocaleTimeString()}
           </Text>
         )}
       </View>
@@ -126,13 +131,13 @@ export default function GateControlScreen() {
       {/* Warning */}
       <View style={styles.warningBox}>
         <Text style={styles.warningText}>
-          ⚠️ Manual mode overrides automatic control. Always revert to AUTO mode after manual operation.
+          ⚠️ {t.modeManual} overrides automated logic. Return to AUTO mode once operation concludes.
         </Text>
       </View>
 
       {/* Preset Buttons */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Presets</Text>
+        <Text style={styles.sectionTitle}>Presets</Text>
         <View style={styles.presetGrid}>
           {PRESETS.map((p) => (
             <TouchableOpacity
@@ -150,7 +155,7 @@ export default function GateControlScreen() {
 
       {/* Custom Step Slider */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Custom Position</Text>
+        <Text style={styles.sectionTitle}>{t.setGatePercentage}</Text>
         <StepSlider value={percentage} onChange={setPercentage} />
         <TouchableOpacity
           style={[styles.sendBtn, sending && { opacity: 0.6 }]}
@@ -159,7 +164,7 @@ export default function GateControlScreen() {
         >
           {sending
             ? <ActivityIndicator color="#FFF" />
-            : <Text style={styles.sendBtnText}>Send Command: {percentage}% Open</Text>}
+            : <Text style={styles.sendBtnText}>{t.applyGateCommand}: {percentage}%</Text>}
         </TouchableOpacity>
       </View>
 
@@ -167,18 +172,18 @@ export default function GateControlScreen() {
       <TouchableOpacity
         style={styles.autoBtn}
         onPress={() =>
-          Alert.alert('Return to AUTO', 'Disable manual override and return to automatic control?', [
+          Alert.alert(t.modeAuto, 'Revert gate control to automatic controller?', [
             { text: 'Cancel' },
             {
               text: 'Confirm', onPress: async () => {
                 await sendGateCommand({ percentage, mode: 'AUTO', command: 'AUTO' });
-                Alert.alert('✅ Returned to AUTO mode');
+                Alert.alert('✅ Reverted to AUTO Mode');
               },
             },
           ])
         }
       >
-        <Text style={styles.autoBtnText}>🔄 Return to AUTO Mode</Text>
+        <Text style={styles.autoBtnText}>🔄 {t.modeAuto}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -187,15 +192,16 @@ export default function GateControlScreen() {
 const styles = StyleSheet.create({
   container:       { flex: 1, backgroundColor: '#F0F4F8' },
   scroll:          { paddingBottom: 40 },
-  header:          { backgroundColor: '#1B2A3B', padding: 20, paddingTop: 50 },
-  headerTitle:     { fontSize: 22, fontWeight: 'bold', color: '#FFF' },
-  headerSub:       { color: '#90CAF9', fontSize: 12, marginTop: 2 },
+  header:          { backgroundColor: '#1B2A3B', padding: 20, paddingTop: 48 },
+  headerTop:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerTitle:     { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+  headerSub:       { color: '#90CAF9', fontSize: 11, marginTop: 2 },
   statusCard:      { margin: 16, backgroundColor: '#FFF', borderRadius: 16, padding: 20, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 8, elevation: 3, alignItems: 'center' },
   statusLabel:     { color: '#7F8C8D', fontSize: 13, marginBottom: 6 },
   statusValue:     { fontSize: 52, fontWeight: 'bold', marginBottom: 12 },
   progressBg:      { width: '100%', height: 12, backgroundColor: '#ECF0F1', borderRadius: 6, overflow: 'hidden', marginBottom: 10 },
   progressFill:    { height: '100%', borderRadius: 6 },
-  modeLabel:       { color: '#7F8C8D', fontSize: 12 },
+  modeLabel:       { color: '#7F8C8D', fontSize: 12, fontWeight: '600' },
   lastCmdLabel:    { color: '#BDC3C7', fontSize: 11, marginTop: 4 },
   warningBox:      { marginHorizontal: 16, backgroundColor: '#FEF9E7', borderRadius: 12, padding: 12, borderLeftWidth: 3, borderLeftColor: '#F39C12', marginBottom: 16 },
   warningText:     { color: '#784212', fontSize: 12, lineHeight: 18 },
@@ -204,7 +210,7 @@ const styles = StyleSheet.create({
   presetGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   presetBtn:       { flex: 1, minWidth: '40%', borderWidth: 2, borderRadius: 14, padding: 16, alignItems: 'center' },
   presetEmoji:     { fontSize: 28, marginBottom: 6 },
-  presetLabel:     { fontWeight: 'bold', fontSize: 16 },
+  presetLabel:     { fontWeight: 'bold', fontSize: 14 },
   sendBtn:         { backgroundColor: '#0F4C81', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 12 },
   sendBtnText:     { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
   autoBtn:         { marginHorizontal: 16, borderWidth: 2, borderColor: '#27AE60', borderRadius: 14, paddingVertical: 14, alignItems: 'center' },

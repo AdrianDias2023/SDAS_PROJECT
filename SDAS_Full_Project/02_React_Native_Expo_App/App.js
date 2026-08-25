@@ -1,9 +1,8 @@
-// SDAS App.js — Root entry point with auth-based routing
-
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { supabase } from './services/supabase';
 import AppNavigator from './navigation/AppNavigator';
+import { LanguageProvider } from './services/i18n';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 export default function App() {
@@ -34,9 +33,11 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <AppNavigator session={session} />
-    </NavigationContainer>
+    <LanguageProvider>
+      <NavigationContainer>
+        <AppNavigator session={session} />
+      </NavigationContainer>
+    </LanguageProvider>
   );
 }
 
