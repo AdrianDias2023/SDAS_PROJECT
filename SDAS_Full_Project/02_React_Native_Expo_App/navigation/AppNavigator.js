@@ -18,6 +18,7 @@ import LoginScreen         from '../screens/operator/LoginScreen';
 import OperatorDashboard   from '../screens/operator/OperatorDashboard';
 import GateControlScreen   from '../screens/operator/GateControlScreen';
 import SystemHealthScreen  from '../screens/operator/SystemHealthScreen';
+import AnalyticsScreen     from '../screens/operator/AnalyticsScreen';
 import SimulationScreen    from '../screens/operator/SimulationScreen';
 import AuditLogsScreen     from '../screens/operator/AuditLogsScreen';
 import ContactsScreen      from '../screens/operator/ContactsScreen';
@@ -84,7 +85,7 @@ function OperatorTabs() {
       screenOptions={{
         headerShown:       false,
         tabBarStyle:       { backgroundColor: '#1B2A3B', borderTopWidth: 0, height: 62 },
-        tabBarLabelStyle:  { color: '#FFFFFF', fontSize: 9, marginBottom: 6 },
+        tabBarLabelStyle:  { color: '#FFFFFF', fontSize: 8.5, marginBottom: 6 },
         tabBarActiveTintColor:   '#4FC3F7',
         tabBarInactiveTintColor: '#90CAF9',
       }}
@@ -98,6 +99,11 @@ function OperatorTabs() {
         name="Gate"
         component={GateControlScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚪" focused={focused} />, tabBarLabel: 'Gate' }}
+      />
+      <Tab.Screen
+        name="Analytics"
+        component={AnalyticsScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📈" focused={focused} />, tabBarLabel: 'Analytics' }}
       />
       <Tab.Screen
         name="Health"

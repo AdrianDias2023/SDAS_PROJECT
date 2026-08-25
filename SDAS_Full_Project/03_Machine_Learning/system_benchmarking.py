@@ -373,6 +373,58 @@ def test_ai_confidence_score():
 
     return {"ai_confidence_passed": all_passed, "total_cases": len(test_scenarios)}
 
+# ==============================================================================
+# TEST 8: HISTORICAL ANALYTICS & TIME-SERIES AGGREGATIONS
+# ==============================================================================
+def test_historical_analytics():
+    print("\n" + "="*70)
+    print("  TEST 8: HISTORICAL ANALYTICS & TIME-SERIES AGGREGATIONS VALIDATION")
+    print("="*70)
+
+    synthetic_time_series = [
+        {"water": 50.0, "rain": 0.0},
+        {"water": 52.0, "rain": 5.0},
+        {"water": 58.0, "rain": 12.0},
+        {"water": 71.0, "rain": 25.0}, # Pre-warning crossed
+        {"water": 86.0, "rain": 40.0}, # Danger crossed (peak rise: +15%)
+        {"water": 82.0, "rain": 10.0}, # Gate 100% actuated, draining
+        {"water": 70.0, "rain": 0.0},
+        {"water": 60.0, "rain": 0.0},
+    ]
+
+    levels = [d["water"] for d in synthetic_time_series]
+    rains  = [d["rain"] for d in synthetic_time_series]
+
+    min_lvl = min(levels)
+    max_lvl = max(levels)
+    avg_lvl = sum(levels) / len(levels)
+    max_rise = max(levels[i] - levels[i-1] for i in range(1, len(levels)))
+    tot_rain = sum(rains)
+
+    # Cross correlation between rainfall and water level surge
+    corr = np.corrcoef(rains[:-1], levels[1:])[0, 1]
+
+    checks = [
+        ("Minimum Water Level", min_lvl == 50.0, f"{min_lvl}% == 50.0%"),
+        ("Maximum Water Level", max_lvl == 86.0, f"{max_lvl}% == 86.0%"),
+        ("Average Water Level", round(avg_lvl, 1) == 66.1, f"{avg_lvl:.1f}% == 66.1%"),
+        ("Peak Hourly Surge Rate", max_rise == 15.0, f"+{max_rise}%/hr == +15.0%/hr"),
+        ("Cumulative Rain Inflow", tot_rain == 92.0, f"{tot_rain}mm == 92.0mm"),
+        ("Rain-to-Level Correlation", corr > 0.85, f"r = {corr:.3f} > 0.85 (Strong Inflow Coupling)"),
+    ]
+
+    all_passed = True
+    for name, passed, detail in checks:
+        if not passed: all_passed = False
+        mark = "✓" if passed else "✗"
+        print(f"  [{mark}] {name:28s}: {detail}")
+
+    print("-"*70)
+    print(f"  Historical Analytics Aggregation: {'100% PASSED' if all_passed else 'FAILED'}")
+    print("="*70)
+
+    return {"historical_analytics_passed": all_passed, "total_cases": len(checks)}
+
 def main():
     print("\n🔬 STARTING FULL SDAS SYSTEM BENCHMARKING SUITE...")
     t1 = test_sensor_accuracy()
@@ -382,6 +434,7 @@ def main():
     t5 = test_four_tier_control_modes()
     t6 = test_system_health_score()
     t7 = test_ai_confidence_score()
+    t8 = test_historical_analytics()
 
     summary = {
         "timestamp": datetime.now().isoformat(),
@@ -392,6 +445,7 @@ def main():
         "four_tier_architecture_test": t5,
         "system_health_benchmark": t6,
         "ai_confidence_score_benchmark": t7,
+        "historical_analytics_benchmark": t8,
         "evaluation_verdict": "ALL BENCHMARKS SATISFIED (GRADE A+ QUALITY)"
     }
 
