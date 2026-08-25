@@ -1,5 +1,5 @@
 // SDAS — Public Home Screen
-// Real-time water level gauge + Live Weather API & Satellite Rainfall Radar
+// Real-time water level gauge + Live Weather API & Rainfall Forecast Data
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {

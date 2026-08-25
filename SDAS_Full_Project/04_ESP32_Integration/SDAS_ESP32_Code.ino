@@ -7,16 +7,16 @@
      - ESP32 DevKit V1
      - JSN-SR04T Waterproof Ultrasonic Sensor x2 (dual redundancy)
      - DHT11 or DHT22 Temperature/Humidity Sensor
-     - MG996R Servo Motor (Gate Control, 0–180°)
+     - MG996R Servo Motor (Prototype Gate Control, calibrated 0–90° operational range)
      - SIM800L GSM Module (SMS Alerts via Serial2)
      - RGB LED Common-Cathode (Status Indicator)
      - Active Buzzer
 
-   Alert Levels (per proposal):
-     NORMAL      < 70%              : Gate closed,      Green  LED
-     PRE-WARNING 70–85%, stable     : Gate 30% open,    Yellow LED, SMS to contacts
-     CLEAR-AREA  70–85%, rising     : Gate 70% open,    Orange LED, SMS "Clear the area"
-     DANGER      > 85%              : Gate 100% open,   Red    LED, SMS emergency + Buzzer
+   Alert Levels:
+     NORMAL      < 70%              : Gate closed (0°),    Green  LED
+     PRE-WARNING 70–85%, stable     : Gate closed (0°),    Yellow LED, monitor weather & inflow
+     WARNING     70–85%, rising     : Gate 20% open (36°), Orange LED, gradual buffer release
+     DANGER      > 85%              : Gate 50% controlled emergency release, Red LED, SMS emergency + Buzzer
 
    Features:
      - Dual JSN-SR04T with temperature-compensated distance
@@ -108,7 +108,7 @@ const int SMS_CONTACT_COUNT = 3;
 #define BUZZER_PIN 14
 
 // ─── PHYSICAL EMERGENCY MANUAL CONTROL BUTTONS (Active LOW with internal pull-up) ─
-#define BTN_OPEN_PIN   32   // Physical Emergency OPEN Button (100% / 180°)
+#define BTN_OPEN_PIN   32   // Physical Emergency OPEN Button (50% / 90° max prototype opening)
 #define BTN_CLOSE_PIN  33   // Physical Emergency CLOSE Button (0% / 0°)
 #define BTN_STOP_PIN   23   // Physical Emergency STOP/HOLD Button (Lock current position)
 
@@ -121,7 +121,7 @@ float CALIB_EMPTY_DIST_CM  = 100.0f; // Sensor reading when reservoir is EMPTY (
 float CALIB_HALF_DIST_CM   = 55.0f;  // Sensor reading when reservoir is HALF FULL (50% water level)
 float CALIB_FULL_DIST_CM   = 10.0f;  // Sensor reading when reservoir is FULL (100% water level) -> Min distance
 
-// ─── SERVO GATE ANGLES (MG996R 0–180° CALIBRATED FOR SAFE OPERATIONAL MANAGEMENT)
+// ─── SERVO GATE ANGLES (MG996R PROTOTYPE CALIBRATED 0–90° OPERATIONAL RANGE)
 #define GATE_CLOSED     0     //   0% open (0°)   : NORMAL — Store water, maximum conservation
 #define GATE_PRE_WARN   0     //   0% open (0°)   : PRE-WARNING — Safe storage available / monitor
 #define GATE_WARNING    36    //  20% open (36°)  : WARNING / CONTROLLED RELEASE — Gradual buffer release
@@ -362,7 +362,7 @@ void checkEmergencyButtons() {
     lastBtnPressMs = now;
     physicalManualOverride = true;
     currentSystemMode      = MODE_MANUAL;
-    Serial.println(F("\n[MANUAL OVERRIDE] Physical OPEN Pressed → Actuating Gate to 100% (180°)"));
+    Serial.println(F("\n[MANUAL OVERRIDE] Physical OPEN Pressed → Actuating Gate to 50% (90°)"));
     setGate(GATE_FULL_OPEN);
     triggerBuzzer(2, 100, 50);
   }
@@ -518,7 +518,7 @@ void offlineControl(float waterLevel, float riseRate) {
     // Direct local actuators
     if (currentLevel == LEVEL_DANGER) {
       triggerBuzzer(6, 400, 150);
-      Serial.println(F("[OFFLINE EMERGENCY] Full Spillway Release (100%) + 85dB Siren ACTIVE!"));
+      Serial.println(F("[OFFLINE EMERGENCY] Controlled Emergency Spillway Release (50%) + 85dB Siren ACTIVE!"));
     } else if (currentLevel == LEVEL_CLEAR_AREA) {
       triggerBuzzer(3, 300, 200);
     } else if (currentLevel == LEVEL_PRE_WARN) {

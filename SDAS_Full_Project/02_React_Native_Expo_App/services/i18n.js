@@ -24,7 +24,7 @@ export const translations = {
     termsP1Title: "1. Purpose of Application",
     termsP1Desc: "SDAS provides real-time dam telemetry, water level monitoring, and emergency notifications to support public safety and proactive disaster management.",
     termsP2Title: "2. Alert & AI Prediction Disclaimer",
-    termsP2Desc: "Alerts and forecasts are synthesized from IoT sensor readings, rainfall radar, and AI models. Always follow official instructions issued by the Disaster Management Centre (DMC) during dangerous events.",
+    termsP2Desc: "Alerts and forecasts are synthesized from IoT sensor readings, rainfall forecast data and AI models. Always follow official instructions issued by the Disaster Management Centre (DMC) during dangerous events.",
     termsP3Title: "3. Data Usage & Privacy",
     termsP3Desc: "Public users are completely anonymous. No personal tracking or location harvesting is performed. Only reservoir telemetry and operator audit actions are securely stored.",
     termsP4Title: "4. Operator Accountability",

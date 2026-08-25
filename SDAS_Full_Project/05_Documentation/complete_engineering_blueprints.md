@@ -16,7 +16,7 @@ graph TD
         WDT["Hardware Task WDT (8s Timeout)"]
         RTC["NTP Time Sync (UTC+5:30)"]
         ESP["ESP32 Dual-Core 240MHz SoC"]
-        SERVO["MG996R Servo (PWM 13, 0-180 deg)"]
+        SERVO["MG996R Servo (PWM 13, calibrated prototype gate range 0-90 deg)"]
         BUZZ["85dB Active Siren (Pin 27)"]
         RGB["RGB Status LED (Pins 12, 14, 26)"]
         GSM["SIM800L Cellular GSM (Serial2 16/17)"]
@@ -61,11 +61,11 @@ graph TD
         LSTM["Stage 1: LSTM Deep Time-Series Forecaster"]
         RF["Stage 2: Random Forest Risk and Inflow Classifier"]
         AE["Stage 3: Deep Autoencoder Sensor Guardian"]
-        RADAR["Open-Meteo Satellite Weather Radar API"]
+        WEATHER["Open-Meteo Weather Forecast API"]
         CONF["Multi-Factor AI Confidence Engine"]
         
         LSTM --> RF
-        RADAR --> RF
+        WEATHER --> RF
         AE --> CONF
         LSTM --> CONF
         RF --> CONF
@@ -99,7 +99,7 @@ graph TD
 | **JSN-SR04T Sensor 1** | `GPIO 5` (Trig), `GPIO 18` (Echo) | Digital I/O | $5.0\text{V}$ (Logic Level 3.3V) | Primary Water Level Measurement |
 | **JSN-SR04T Sensor 2** | `GPIO 19` (Trig), `GPIO 21` (Echo)| Digital I/O | $5.0\text{V}$ (Logic Level 3.3V) | Secondary Redundant Cross-Check |
 | **DHT22 Met Sensor**   | `GPIO 4` (Data) | 1-Wire Digital | $3.3\text{V}$ | Speed-of-Sound Calibration & Humidity |
-| **MG996R Servo**       | `GPIO 13` (PWM) | 50Hz PWM ($500-2400\mu\text{s}$) | $5.0\text{V} - 6.8\text{V}$ ($2\text{A}$ Peak) | Spillway Gate Actuator ($0-180^\circ$) |
+| **MG996R Servo**       | `GPIO 13` (PWM) | 50Hz PWM ($500-2400\mu\text{s}$) | $5.0\text{V} - 6.8\text{V}$ ($2\text{A}$ Peak) | Spillway Gate Actuator (Calibrated Prototype Range $0-90^\circ$) |
 | **SIM800L GSM Module** | `GPIO 16` (RX2), `GPIO 17` (TX2) | Hardware UART2 ($9600\text{ baud}$) | $3.7\text{V} - 4.2\text{V}$ ($2\text{A}$ Burst) | Autonomous Direct Cellular SMS |
 | **RGB Status LED**     | `GPIO 12` (R), `GPIO 14` (G), `GPIO 26` (B) | Active-HIGH Digital | $3.3\text{V}$ | 4-Tier Optical Status Indicator |
 | **Active 85dB Buzzer** | `GPIO 27` | Active-HIGH Digital | $5.0\text{V}$ | Emergency Evacuation Siren |
@@ -257,7 +257,7 @@ flowchart TD
 | Alert Tier | Water Level (%) | Available Storage | Gate Aperture | Servo Angle | Operational Action & Notification |
 |---|---|---|---|---|---|
 | **🟢 NORMAL** | `< 70.0%` | `> 30.0%` | **0% CLOSED** | $0^\circ$ | Store water safely, continuous 60s cloud telemetry logging. |
-| **🟡 PRE-WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | **0% CLOSED** | $0^\circ$ | Water preserved; monitor rainfall radar & AI lookahead. |
+| **🟡 PRE-WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | **0% CLOSED** | $0^\circ$ | Water preserved; monitor rainfall forecast data & AI lookahead. |
 | **🟠 WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | **20% OPEN** | $36^\circ$ | Controlled buffer release during rapid inflow surge. SMS alert dispatched. |
 | **🔴 DANGER** | `> 85.0%` | `< 15.0%` | **50% OPEN** | $90^\circ$ | Controlled emergency release; 85dB siren active; direct GSM SMS alert communication to configured emergency contacts. |
 
@@ -279,4 +279,4 @@ float CALIB_FULL_DIST_CM   = 10.0f;  // Distance when reservoir is FULL (100% wa
 
 * **Digital Twin Console:** Real-time synchronized bi-directional link to Supabase PostgreSQL and ESP32 Edge hardware.
 * **Role-Based Views:** Public Civilian Portal (Unrestricted, trilingual) + Operator Tactical Console (Authenticated via Supabase Auth).
-* **Multi-Parameter Verification:** Combines real-time transducer feeds, speed-of-sound adjustments, Open-Meteo satellite rain radar, and 3-stage ML inference metrics.
+* **Multi-Parameter Verification:** Combines real-time transducer feeds, speed-of-sound adjustments, Open-Meteo weather forecast API, and 3-stage ML inference metrics.

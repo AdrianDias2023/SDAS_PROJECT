@@ -14,7 +14,7 @@
 
 ---
 
-## 📽️ Slide 2: Problem Statement & Industrial Motivation
+## 📽️ Slide 2: Problem Statement & Research Motivation
 * **The Global & Local Crisis:** Extreme tropical precipitation in Sri Lanka (Puttalam/Deduru Oya basin) causes sudden reservoir overtopping, costing lives and infrastructure.
 * **Limitations of Existing Systems:**
   1. *Manual / Reactive Management:* Telemetry relies on periodic manual gauge readings without predictive lookahead.

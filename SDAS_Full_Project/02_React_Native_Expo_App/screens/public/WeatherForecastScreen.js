@@ -1,5 +1,5 @@
 // SDAS — Public Weather & Rainfall Forecast Screen
-// Matches Prototype Design Screen 4: Live Radar Weather, 6-Hour Forecast & Rainfall Probability
+// Matches Prototype Design Screen 4: Weather Forecast, 6-Hour Forecast & Rainfall Probability
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -41,7 +41,7 @@ export default function WeatherForecastScreen() {
           <Text style={styles.headerTitle}>🌧️ Weather & Forecast</Text>
           <LanguageSelector compact={true} />
         </View>
-        <Text style={styles.headerSub}>Satellite Rain Radar & Hydrological Inflow Feed</Text>
+        <Text style={styles.headerSub}>Weather Forecast API & Hydrological Inflow Feed</Text>
       </View>
 
       {loading ? (
