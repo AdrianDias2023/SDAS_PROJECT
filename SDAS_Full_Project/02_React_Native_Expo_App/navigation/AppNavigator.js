@@ -21,6 +21,7 @@ import { useLanguage }        from '../services/i18n';
 import LoginScreen             from '../screens/operator/LoginScreen';
 import OperatorDashboard       from '../screens/operator/OperatorDashboard';
 import GateControlScreen       from '../screens/operator/GateControlScreen';
+import OperatorCommunityScreen from '../screens/operator/OperatorCommunityScreen';
 import SystemHealthScreen      from '../screens/operator/SystemHealthScreen';
 import AnalyticsScreen         from '../screens/operator/AnalyticsScreen';
 import SimulationScreen        from '../screens/operator/SimulationScreen';
@@ -64,12 +65,7 @@ function PublicTabs() {
       <Tab.Screen
         name="Alerts"
         component={AlertsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚨" focused={focused} />, tabBarLabel: 'Alerts' }}
-      />
-      <Tab.Screen
-        name="Safety"
-        component={SafetyInfoScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🛡️" focused={focused} />, tabBarLabel: 'Safety' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🔔" focused={focused} />, tabBarLabel: 'Alerts' }}
       />
       <Tab.Screen
         name="Community"
@@ -77,9 +73,14 @@ function PublicTabs() {
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📢" focused={focused} />, tabBarLabel: 'Community' }}
       />
       <Tab.Screen
+        name="Safety"
+        component={SafetyInfoScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🛡️" focused={focused} />, tabBarLabel: 'Safety' }}
+      />
+      <Tab.Screen
         name="More"
         component={AboutScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⋯" focused={focused} />, tabBarLabel: 'More' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />, tabBarLabel: 'More' }}
       />
     </Tab.Navigator>
   );
@@ -92,7 +93,7 @@ function OperatorTabs() {
       screenOptions={{
         headerShown:       false,
         tabBarStyle:       { backgroundColor: '#0B132B', borderTopWidth: 1, borderColor: '#1E293B', height: 64, paddingBottom: 6 },
-        tabBarLabelStyle:  { fontSize: 10, marginBottom: 4, fontWeight: '700' },
+        tabBarLabelStyle:  { fontSize: 9, marginBottom: 4, fontWeight: '700' },
         tabBarActiveTintColor:   '#38BDF8',
         tabBarInactiveTintColor: '#64748B',
       }}
@@ -113,14 +114,19 @@ function OperatorTabs() {
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚪" focused={focused} />, tabBarLabel: 'Gate' }}
       />
       <Tab.Screen
+        name="CommunityReview"
+        component={OperatorCommunityScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📢" focused={focused} />, tabBarLabel: 'Reports' }}
+      />
+      <Tab.Screen
         name="HealthTab"
         component={SystemHealthScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🛡️" focused={focused} />, tabBarLabel: 'Health' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="❤️" focused={focused} />, tabBarLabel: 'Health' }}
       />
       <Tab.Screen
         name="Logs"
         component={AuditLogsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📋" focused={focused} />, tabBarLabel: 'Logs' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📜" focused={focused} />, tabBarLabel: 'Logs' }}
       />
     </Tab.Navigator>
   );
@@ -144,6 +150,7 @@ export default function AppNavigator({ session }) {
       {/* Operator Screens */}
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="OperatorTabs" component={OperatorTabs} />
+      <Stack.Screen name="OperatorCommunity" component={OperatorCommunityScreen} />
       <Stack.Screen name="ManualOverride" component={ManualOverrideScreen} />
       <Stack.Screen name="Settings" component={OperatorSettingsScreen} />
       <Stack.Screen name="Health" component={SystemHealthScreen} />

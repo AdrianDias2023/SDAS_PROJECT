@@ -118,15 +118,19 @@ CREATE TRIGGER on_auth_user_created
 
 -- ─── COMMUNITY REPORTS ───────────────────────────────────────
 CREATE TABLE IF NOT EXISTS community_reports (
-  id                  BIGSERIAL PRIMARY KEY,
-  user_id             UUID REFERENCES profiles(id),
-  location            TEXT NOT NULL,
-  report_type         TEXT NOT NULL CHECK (report_type IN ('WATER_RISING', 'ROAD_FLOODED', 'DIFFICULT_PASS', 'HEAVY_RAIN', 'OTHER')),
-  description         TEXT NOT NULL,
-  image_url           TEXT,
-  confirmation_count  INTEGER NOT NULL DEFAULT 1,
-  status              TEXT NOT NULL DEFAULT 'PENDING_REVIEW' CHECK (status IN ('PENDING_REVIEW', 'APPROVED', 'REJECTED')),
-  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id                   BIGSERIAL PRIMARY KEY,
+  user_id              UUID REFERENCES profiles(id),
+  latitude             FLOAT NOT NULL DEFAULT 8.0421,
+  longitude            FLOAT NOT NULL DEFAULT 79.8310,
+  location_name        TEXT NOT NULL,
+  category             TEXT NOT NULL CHECK (category IN ('WATER_RISING', 'HEAVY_RAIN', 'ROAD_FLOODING', 'WATER_ENTERING', 'OTHER')),
+  description          TEXT NOT NULL,
+  image_url            TEXT,
+  confirmation_count   INTEGER NOT NULL DEFAULT 1,
+  status               TEXT NOT NULL DEFAULT 'PENDING_REVIEW' CHECK (status IN ('PENDING_REVIEW', 'APPROVED', 'REJECTED')),
+  operator_note        TEXT,
+  distance_from_dam_km FLOAT DEFAULT 2.4,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_community_created ON community_reports (created_at DESC);

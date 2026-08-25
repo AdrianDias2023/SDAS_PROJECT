@@ -1,7 +1,7 @@
-// SDAS — Community Alert Sharing Screen
-// Public crowd-sourced situation reporting with peer confirmations and operator verification workflow
+// SDAS — Public Community Alert Sharing Screen
+// Option B: Automatic GPS Location + Manual Correction with Distance from Dam calculation
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,57 +16,71 @@ import {
 } from 'react-native';
 import { supabase } from '../../services/supabase';
 
-const SITUATIONS = [
-  { id: 'WATER_RISING', label: '🌊 Water Rising', color: '#EF4444' },
-  { id: 'ROAD_FLOODED', label: '🚗 Road Flooded', color: '#F97316' },
-  { id: 'DIFFICULT_PASS', label: '🚧 Area Difficult to Pass', color: '#F59E0B' },
+// Tabbowa Dam Base Reference Coordinates
+const DAM_LAT = 8.0362;
+const DAM_LNG = 79.8283;
+
+// Categories matching official specification
+const CATEGORIES = [
+  { id: 'WATER_RISING', label: '💧 Water Rising', color: '#EF4444' },
   { id: 'HEAVY_RAIN', label: '🌧️ Heavy Rain', color: '#38BDF8' },
+  { id: 'ROAD_FLOODING', label: '🚧 Road Flooding', color: '#F97316' },
+  { id: 'WATER_ENTERING', label: '🏠 Water Entering Area', color: '#EF4444' },
   { id: 'OTHER', label: '⚠️ Other Incident', color: '#94A3B8' },
 ];
 
 export default function CommunityReportsScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedSituation, setSelectedSituation] = useState('WATER_RISING');
-  const [location, setLocation] = useState('Puttalam Lower Basin (Sector 3)');
+  const [selectedCategory, setSelectedCategory] = useState('WATER_RISING');
+  
+  // GPS State (Option B: Auto GPS + Manual Correction)
+  const [gpsLat, setGpsLat] = useState(8.0421);
+  const [gpsLng, setGpsLng] = useState(79.8310);
+  const [locationName, setLocationName] = useState('Puttalam Low-Lying Sector (Downstream)');
+  const [manualLocationMode, setManualLocationMode] = useState(false);
+  
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Initial seed reports
+  // Initial community reports feed
   const [reports, setReports] = useState([
     {
       id: '1',
-      type: 'WATER_RISING',
-      typeLabel: '🌊 Water Rising',
+      category: 'WATER_RISING',
+      categoryLabel: '🔴 Water Rising',
       color: '#EF4444',
-      time: '10 minutes ago',
+      distance: '2.4 km away',
+      time: '5 minutes ago',
       location: 'Puttalam Downstream Causeway',
-      description: 'Water level increasing near bridge approach road. Drainage channel overflowed.',
-      confirmations: 14,
+      description: 'Water entered road approach near bridge culvert. Runoff increasing rapidly.',
+      confirmations: 18,
       status: 'PENDING_REVIEW',
       confirmedByUser: false,
     },
     {
       id: '2',
-      type: 'ROAD_FLOODED',
-      typeLabel: '🚗 Road Flooded',
-      color: '#F97316',
-      time: '25 minutes ago',
-      location: 'Old Mannar Road Junction',
-      description: 'About 6 inches of water covering road. Low clearance vehicles unable to pass.',
-      confirmations: 8,
-      status: 'PENDING_REVIEW',
+      category: 'HEAVY_RAIN',
+      categoryLabel: '🟡 Heavy Rain',
+      color: '#F59E0B',
+      distance: '1.1 km away',
+      time: '20 minutes ago',
+      location: 'Tabbowa North Catchment Basin',
+      description: 'Torrential rains observed for over 45 minutes. Catchment streams overflowing.',
+      confirmations: 12,
+      status: 'APPROVED',
       confirmedByUser: false,
     },
     {
       id: '3',
-      type: 'HEAVY_RAIN',
-      typeLabel: '🌧️ Heavy Rain',
-      color: '#38BDF8',
-      time: '45 minutes ago',
-      location: 'Tabbowa Catchment North',
-      description: 'Continuous torrential downpour for over 1 hour. Surface runoff flowing fast.',
-      confirmations: 21,
-      status: 'APPROVED',
+      category: 'ROAD_FLOODING',
+      categoryLabel: '🟠 Road Flooding',
+      color: '#F97316',
+      distance: '3.8 km away',
+      time: '35 minutes ago',
+      location: 'Old Mannar Road Low Sector',
+      description: 'Road covered with approx 6 inches of flood water. Light vehicles cannot pass.',
+      confirmations: 9,
+      status: 'PENDING_REVIEW',
       confirmedByUser: false,
     },
   ]);
@@ -82,7 +96,7 @@ export default function CommunityReportsScreen({ navigation }) {
               confirmedByUser: false,
             };
           } else {
-            Alert.alert('Thank You', 'Your confirmation helps improve community situation awareness.');
+            Alert.alert('Report Confirmed', 'Thank you! Your confirmation helps improve community situation awareness.');
             return {
               ...rep,
               confirmations: rep.confirmations + 1,
@@ -95,6 +109,13 @@ export default function CommunityReportsScreen({ navigation }) {
     );
   };
 
+  const handleOpenReportModal = () => {
+    // Simulate Automatic GPS Capture
+    setGpsLat(8.0421);
+    setGpsLng(79.8310);
+    setModalVisible(true);
+  };
+
   const handleSubmitReport = async () => {
     if (!description.trim()) {
       Alert.alert('Missing Details', 'Please provide a short description of the water situation.');
@@ -102,15 +123,21 @@ export default function CommunityReportsScreen({ navigation }) {
     }
 
     setSubmitting(true);
-    const chosen = SITUATIONS.find((s) => s.id === selectedSituation);
+    const chosen = CATEGORIES.find((c) => c.id === selectedCategory);
+
+    // Calculate approximate distance from Dam
+    const dLat = (gpsLat - DAM_LAT) * 111;
+    const dLng = (gpsLng - DAM_LNG) * 111;
+    const distFromDam = Math.sqrt(dLat * dLat + dLng * dLng).toFixed(1);
 
     const newReport = {
       id: String(Date.now()),
-      type: selectedSituation,
-      typeLabel: chosen?.label || 'Water Situation',
+      category: selectedCategory,
+      categoryLabel: chosen?.label || 'Water Situation',
       color: chosen?.color || '#EF4444',
+      distance: `${distFromDam} km from dam`,
       time: 'Just now',
-      location: location.trim() || 'Puttalam Local Area',
+      location: locationName.trim() || 'Puttalam Local Sector',
       description: description.trim(),
       confirmations: 1,
       status: 'PENDING_REVIEW',
@@ -120,11 +147,14 @@ export default function CommunityReportsScreen({ navigation }) {
     try {
       await supabase.from('community_reports').insert([
         {
-          location: newReport.location,
-          report_type: newReport.type,
+          latitude: gpsLat,
+          longitude: gpsLng,
+          location_name: newReport.location,
+          category: newReport.category,
           description: newReport.description,
           confirmation_count: 1,
           status: 'PENDING_REVIEW',
+          distance_from_dam_km: parseFloat(distFromDam),
         },
       ]);
     } catch (e) {
@@ -137,7 +167,7 @@ export default function CommunityReportsScreen({ navigation }) {
     setDescription('');
     Alert.alert(
       'Report Submitted',
-      'Your community report has been received. SDAS operators and nearby residents can now see your situation update.'
+      'Your community report has been logged. Nearby residents can now confirm your observation and SDAS operators are notified.'
     );
   };
 
@@ -147,12 +177,12 @@ export default function CommunityReportsScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>COMMUNITY ALERTS</Text>
+        <Text style={styles.headerTitle}>📢 COMMUNITY ALERTS</Text>
         <TouchableOpacity
           onPress={() =>
             Alert.alert(
-              'About Community Reports',
-              'Reports are submitted by residents in affected areas. Multiple user confirmations help inform SDAS operators for early response.'
+              'Community Intelligence',
+              'Community reports allow residents in affected areas to share real-time water conditions. Multiple peer confirmations inform SDAS operators for faster response.'
             )
           }
           activeOpacity={0.7}
@@ -162,25 +192,9 @@ export default function CommunityReportsScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Call to Action Banner */}
-        <View style={styles.heroCtaCard}>
-          <Text style={styles.heroCtaTitle}>Have you noticed a water situation?</Text>
-          <Text style={styles.heroCtaSub}>
-            Help keep your neighborhood safe by reporting road flooding, rapid water rise, or blocked channels.
-          </Text>
-
-          <TouchableOpacity
-            style={styles.reportBtn}
-            onPress={() => setModalVisible(true)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.reportBtnText}>+ Report Current Situation</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Community Reports Feed Title */}
+        {/* Nearby Reports Section Header */}
         <View style={styles.feedHeaderRow}>
-          <Text style={styles.feedSectionTitle}>RECENT COMMUNITY REPORTS</Text>
+          <Text style={styles.feedSectionTitle}>NEARBY SITUATION REPORTS</Text>
           <View style={styles.liveIndicator}>
             <View style={styles.liveDot} />
             <Text style={styles.liveText}>Live Feed</Text>
@@ -190,7 +204,7 @@ export default function CommunityReportsScreen({ navigation }) {
         {/* Safety Advisory Banner */}
         <View style={styles.advisoryBox}>
           <Text style={styles.advisoryText}>
-            ℹ️ Community reports are crowd-sourced observations. Official dam operations follow verified reservoir sensors.
+            ℹ️ Community reports are crowd-sourced observations. SDAS monitoring team reviews all submissions.
           </Text>
         </View>
 
@@ -199,19 +213,19 @@ export default function CommunityReportsScreen({ navigation }) {
           <View key={item.id} style={[styles.reportCard, { borderLeftColor: item.color, borderLeftWidth: 4 }]}>
             <View style={styles.reportHeader}>
               <View style={styles.typeBadgeWrapper}>
-                <Text style={[styles.typeText, { color: item.color }]}>{item.typeLabel}</Text>
+                <Text style={[styles.typeText, { color: item.color }]}>{item.categoryLabel}</Text>
               </View>
-              <Text style={styles.reportTime}>{item.time}</Text>
+              <Text style={styles.distanceText}>📍 {item.distance}</Text>
             </View>
 
             <View style={styles.locationRow}>
-              <Text style={styles.locationPin}>📍</Text>
               <Text style={styles.locationText}>{item.location}</Text>
+              <Text style={styles.timeText}>• {item.time}</Text>
             </View>
 
             <Text style={styles.reportDesc}>"{item.description}"</Text>
 
-            {/* Operator Verification Badge */}
+            {/* Operator Review Status Badge */}
             <View style={styles.statusRow}>
               <View
                 style={[
@@ -228,16 +242,16 @@ export default function CommunityReportsScreen({ navigation }) {
                     { color: item.status === 'APPROVED' ? '#10B981' : '#F59E0B' },
                   ]}
                 >
-                  {item.status === 'APPROVED' ? '✓ Verified by SDAS Operator' : '⏳ Community Report • Under Review'}
+                  {item.status === 'APPROVED' ? '✓ Verified by SDAS Operator' : '⏳ Community Report • Pending Review'}
                 </Text>
               </View>
             </View>
 
-            {/* Confirmation Action Footer */}
+            {/* Footer with Confirmations */}
             <View style={styles.reportFooter}>
               <View style={styles.confirmCountBox}>
-                <Text style={styles.userIcon}>👥</Text>
-                <Text style={styles.confirmCountText}>{item.confirmations} people confirmed</Text>
+                <Text style={styles.userIcon}>👤</Text>
+                <Text style={styles.confirmCountText}>{item.confirmations} users confirmed</Text>
               </View>
 
               <TouchableOpacity
@@ -260,78 +274,110 @@ export default function CommunityReportsScreen({ navigation }) {
             </View>
           </View>
         ))}
+
+        {/* Big Report Situation CTA Button */}
+        <TouchableOpacity
+          style={styles.bigReportBtn}
+          onPress={handleOpenReportModal}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.bigReportBtnText}>+ REPORT SITUATION</Text>
+        </TouchableOpacity>
       </ScrollView>
 
-      {/* Report Modal Form */}
+      {/* Report Situation Modal Form */}
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Report Water Situation</Text>
+              <Text style={styles.modalTitle}>REPORT SITUATION</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Text style={styles.closeBtn}>✕</Text>
               </TouchableOpacity>
             </View>
 
             <ScrollView contentContainerStyle={styles.modalScroll}>
-              {/* Location Selector */}
-              <Text style={styles.fieldLabel}>Location</Text>
-              <View style={styles.locationInputBox}>
-                <Text style={styles.pinIcon}>📍</Text>
-                <TextInput
-                  style={styles.locationInput}
-                  value={location}
-                  onChangeText={setLocation}
-                  placeholder="Enter location or street..."
-                  placeholderTextColor="#64748B"
-                />
+              {/* Option B: Automatic GPS Location Card */}
+              <View style={styles.gpsCard}>
+                <Text style={styles.fieldLabel}>YOUR LOCATION</Text>
+                <View style={styles.gpsRow}>
+                  <Text style={styles.gpsPin}>📍</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.gpsTitle}>Current GPS Location</Text>
+                    <Text style={styles.gpsCoords}>
+                      Latitude: {gpsLat.toFixed(4)} • Longitude: {gpsLng.toFixed(4)}
+                    </Text>
+                  </View>
+                </View>
+
+                {manualLocationMode ? (
+                  <View style={styles.manualInputBox}>
+                    <Text style={styles.manualLabel}>Manual Location Correction:</Text>
+                    <TextInput
+                      style={styles.locationInput}
+                      value={locationName}
+                      onChangeText={setLocationName}
+                      placeholder="e.g. Near Bridge Approach, Puttalam"
+                      placeholderTextColor="#64748B"
+                    />
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.changeLocBtn}
+                    onPress={() => setManualLocationMode(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.changeLocText}>[ Change Location ]</Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
-              {/* Situation Category Radio Selection */}
-              <Text style={styles.fieldLabel}>Situation Type</Text>
-              <View style={styles.situationGrid}>
-                {SITUATIONS.map((sit) => {
-                  const isSelected = selectedSituation === sit.id;
+              {/* Select Situation */}
+              <Text style={styles.fieldLabel}>SELECT SITUATION</Text>
+              <View style={styles.categoryGrid}>
+                {CATEGORIES.map((cat) => {
+                  const isSelected = selectedCategory === cat.id;
                   return (
                     <TouchableOpacity
-                      key={sit.id}
+                      key={cat.id}
                       style={[
-                        styles.situationChoice,
-                        isSelected && { borderColor: sit.color, backgroundColor: 'rgba(30, 41, 59, 0.9)' },
+                        styles.categoryChoice,
+                        isSelected && { borderColor: cat.color, backgroundColor: 'rgba(30, 41, 59, 0.95)' },
                       ]}
-                      onPress={() => setSelectedSituation(sit.id)}
+                      onPress={() => setSelectedCategory(cat.id)}
                       activeOpacity={0.8}
                     >
-                      <Text style={[styles.situationChoiceText, isSelected && { color: sit.color, fontWeight: '800' }]}>
-                        {sit.label}
+                      <Text style={[styles.categoryChoiceText, isSelected && { color: cat.color, fontWeight: '800' }]}>
+                        {cat.label}
                       </Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
 
-              {/* Description Input */}
-              <Text style={styles.fieldLabel}>Description</Text>
+              {/* Description */}
+              <Text style={styles.fieldLabel}>DESCRIPTION</Text>
               <TextInput
                 style={styles.descInput}
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Describe what you see (e.g. water rising, road flooded)..."
+                placeholder="Water level increasing near my area..."
                 placeholderTextColor="#64748B"
                 multiline
                 numberOfLines={3}
               />
 
-              {/* Simulated Photo Upload */}
+              {/* Photo Upload */}
+              <Text style={styles.fieldLabel}>PHOTO</Text>
               <TouchableOpacity
-                style={styles.photoUploadBtn}
-                onPress={() => Alert.alert('Photo Selected', 'Camera image attached to situation report.')}
+                style={styles.photoBtn}
+                onPress={() => Alert.alert('Photo Attached', 'Device camera preview simulated.')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.photoUploadText}>📷 Add Photo (Optional)</Text>
+                <Text style={styles.photoBtnText}>📷 Add Image (Optional)</Text>
               </TouchableOpacity>
 
-              {/* Submit Button */}
+              {/* Submit Report Button */}
               <TouchableOpacity
                 style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
                 onPress={handleSubmitReport}
@@ -339,7 +385,7 @@ export default function CommunityReportsScreen({ navigation }) {
                 activeOpacity={0.85}
               >
                 <Text style={styles.submitBtnText}>
-                  {submitting ? 'Submitting...' : 'Submit Community Report'}
+                  {submitting ? 'SUBMITTING...' : 'SUBMIT REPORT'}
                 </Text>
               </TouchableOpacity>
             </ScrollView>
@@ -376,52 +422,13 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 36,
     gap: 14,
-  },
-  heroCtaCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  heroCtaTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  heroCtaSub: {
-    fontSize: 12,
-    color: '#94A3B8',
-    lineHeight: 18,
-    marginTop: 6,
-    marginBottom: 14,
-  },
-  reportBtn: {
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    shadowColor: '#007AFF',
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  reportBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
   },
   feedHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 6,
     paddingHorizontal: 2,
   },
   feedSectionTitle: {
@@ -480,26 +487,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   typeText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '900',
   },
-  reportTime: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '600',
+  distanceText: {
+    fontSize: 12,
+    color: '#38BDF8',
+    fontWeight: '700',
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
-  locationPin: {
-    fontSize: 13,
+    gap: 6,
   },
   locationText: {
     fontSize: 13,
     fontWeight: '700',
     color: '#CBD5E1',
+  },
+  timeText: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '600',
   },
   reportDesc: {
     fontSize: 13,
@@ -564,6 +573,23 @@ const styles = StyleSheet.create({
   confirmBtnTextActive: {
     color: '#10B981',
   },
+  bigReportBtn: {
+    backgroundColor: '#007AFF',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#007AFF',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+    marginTop: 8,
+  },
+  bigReportBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
@@ -574,7 +600,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 20,
-    maxHeight: '85%',
+    maxHeight: '88%',
     borderWidth: 1,
     borderColor: '#334155',
   },
@@ -582,15 +608,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderColor: '#334155',
   },
   modalTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '900',
     color: '#FFFFFF',
+    letterSpacing: 1,
   },
   closeBtn: {
     fontSize: 20,
@@ -603,36 +630,72 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   fieldLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
-    color: '#CBD5E1',
+    color: '#94A3B8',
+    letterSpacing: 1,
     marginTop: 4,
   },
-  locationInputBox: {
+  gpsCard: {
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+    gap: 8,
+  },
+  gpsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    gap: 10,
+  },
+  gpsPin: {
+    fontSize: 20,
+  },
+  gpsTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  gpsCoords: {
+    fontSize: 11,
+    color: '#38BDF8',
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  changeLocBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+  },
+  changeLocText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#38BDF8',
+  },
+  manualInputBox: {
+    marginTop: 4,
+  },
+  manualLabel: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginBottom: 4,
+  },
+  locationInput: {
+    backgroundColor: '#1E293B',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 40,
+    color: '#FFFFFF',
+    fontSize: 12,
     borderWidth: 1,
     borderColor: '#334155',
   },
-  pinIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  locationInput: {
-    flex: 1,
-    height: 44,
-    color: '#FFFFFF',
-    fontSize: 13,
-  },
-  situationGrid: {
+  categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  situationChoice: {
+  categoryChoice: {
     backgroundColor: '#0F172A',
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -640,7 +703,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
   },
-  situationChoiceText: {
+  categoryChoiceText: {
     fontSize: 12,
     color: '#94A3B8',
     fontWeight: '600',
@@ -656,7 +719,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
   },
-  photoUploadBtn: {
+  photoBtn: {
     backgroundColor: '#0F172A',
     borderRadius: 10,
     paddingVertical: 12,
@@ -664,9 +727,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
     borderStyle: 'dashed',
-    marginTop: 4,
   },
-  photoUploadText: {
+  photoBtnText: {
     fontSize: 13,
     color: '#38BDF8',
     fontWeight: '700',
@@ -686,5 +748,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '900',
+    letterSpacing: 1,
   },
 });
