@@ -1,6 +1,8 @@
 # 📐 SDAS — Complete Engineering Blueprints & Technical Schematics
 ## University Thesis Technical Specification Portfolio
 
+> **Single Dam Simulation Environment:** Implemented a configurable simulated dam profile based on the Tabbowa Dam environment to demonstrate water-level monitoring, AI prediction, automated gate control, and emergency alert workflows.
+
 ---
 
 ## 1. Unified Cyber-Physical System Architecture

@@ -1,6 +1,8 @@
 # 🧪 SDAS — Viva Voce Live Demonstration Guide
 ## Step-by-Step Examiner Demonstration Script & Verification Protocol
 
+> **Single Dam Simulation Environment:** Implemented a configurable simulated dam profile based on the Tabbowa Dam environment to demonstrate water-level monitoring, AI prediction, automated gate control, and emergency alert workflows.
+
 This guide outlines the **5-Stage Live Demonstration Protocol** to perform in front of evaluators and viva examiners using the physical hardware and the **Digital Twin Simulation Console** ([`SimulationScreen.js`](file:///c:/Users/adria/Downloads/SDAS_Final_Project/SDAS_Full_Project/02_React_Native_Expo_App/screens/operator/SimulationScreen.js)).
 
 ---

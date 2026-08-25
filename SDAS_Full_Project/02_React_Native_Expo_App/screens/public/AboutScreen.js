@@ -108,15 +108,15 @@ export default function AboutScreen() {
                 <Text style={[styles.thresholdTitle, { color: '#A16207' }]}>PRE-WARNING</Text>
                 <Text style={styles.thresholdRange}>70% – 85%</Text>
               </View>
-              <Text style={styles.thresholdDesc}>Gate: 30% (54°) • LED: Yellow • Operator SMS alert dispatched</Text>
+              <Text style={styles.thresholdDesc}>Gate: 0% (Closed) • LED: Yellow • Safe storage available, monitoring active</Text>
             </View>
 
             <View style={[styles.thresholdRow, { backgroundColor: '#FFF7ED', borderLeftColor: '#F97316' }]}>
               <View style={styles.thresholdBadge}>
-                <Text style={[styles.thresholdTitle, { color: '#C2410C' }]}>CLEAR AREA</Text>
+                <Text style={[styles.thresholdTitle, { color: '#C2410C' }]}>WARNING</Text>
                 <Text style={styles.thresholdRange}>70%–85% Rising</Text>
               </View>
-              <Text style={styles.thresholdDesc}>Gate: 70% (126°) • LED: Orange • Evacuation warning SMS broadcast</Text>
+              <Text style={styles.thresholdDesc}>Gate: 20% (36°) • LED: Orange • Rapid surge controlled buffer release</Text>
             </View>
 
             <View style={[styles.thresholdRow, { backgroundColor: '#FEF2F2', borderLeftColor: '#EF4444' }]}>
@@ -124,7 +124,7 @@ export default function AboutScreen() {
                 <Text style={[styles.thresholdTitle, { color: '#B91C1C' }]}>DANGER</Text>
                 <Text style={styles.thresholdRange}>&gt; 85%</Text>
               </View>
-              <Text style={styles.thresholdDesc}>Gate: 100% (180°) • LED: Red • Siren Buzzer active + Emergency DMC Alert</Text>
+              <Text style={styles.thresholdDesc}>Gate: 50% (90°) • LED: Red • Siren Buzzer active + Emergency Evacuation Alert</Text>
             </View>
           </View>
         </View>
@@ -137,6 +137,7 @@ export default function AboutScreen() {
           <Text style={styles.listItem}>{t.aboutObj3}</Text>
           <Text style={styles.listItem}>{t.aboutObj4}</Text>
           <Text style={styles.listItem}>{t.aboutObj5}</Text>
+          {t.aboutObj6 && <Text style={styles.listItem}>{t.aboutObj6}</Text>}
         </View>
 
         {/* Project Authors */}

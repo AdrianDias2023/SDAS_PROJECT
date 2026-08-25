@@ -9,6 +9,8 @@
   <em>An End-to-End IoT & AI-Driven Flood Management System for the Puttalam District, Sri Lanka</em>
 </p>
 
+> **Single Dam Simulation Environment:** Implemented a configurable simulated dam profile based on the Tabbowa Dam environment to demonstrate water-level monitoring, AI prediction, automated gate control, and emergency alert workflows.
+
 <p align="center">
   <img src="https://img.shields.io/badge/MCU-ESP32%20DevKit%20V1-003366?style=for-the-badge&logo=espressif&logoColor=white" />
   <img src="https://img.shields.io/badge/Cloud-Supabase%20PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />

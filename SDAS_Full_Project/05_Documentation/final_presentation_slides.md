@@ -21,6 +21,7 @@
   2. *Single-Point-of-Failure:* Cloud-only IoT architectures collapse when severe storms knock out cellular/WiFi towers.
   3. *Unexplainable Black-Box ML:* Operators reject predictions without confidence scoring or manual override guards.
 * **SDAS Solution:** A 4-Tier fault-tolerant cyber-physical system integrating on-chip edge safety, hybrid predictive AI, and physical manual interlocks.
+* **Single Dam Simulation Environment:** Implemented a configurable simulated dam profile based on the Tabbowa Dam environment to demonstrate water-level monitoring, AI prediction, automated gate control, and emergency alert workflows.
 
 ---
 
