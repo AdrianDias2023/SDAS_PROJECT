@@ -1,5 +1,5 @@
 // SDAS — Public Hybrid AI Prediction Screen
-// Showcases 3-Stage Hybrid AI (LSTM Forecasting + Random Forest Flood Risk + Autoencoder Anomaly Detection)
+// Showcases 3-Stage Hybrid AI (LSTM Forecasting + Random Forest Flood Risk + Autoencoder Anomaly Detection) + Weather API
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -7,6 +7,7 @@ import {
   RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { fetchLatestPrediction, fetchReadingsLastHours } from '../../services/alerts';
+import { fetchLivePuttalamWeather } from '../../services/weather';
 import { useLanguage } from '../../services/i18n';
 import LanguageSelector from '../../components/LanguageSelector';
 
@@ -61,17 +62,20 @@ export default function PredictionScreen() {
   const { t } = useLanguage();
   const [prediction,  setPrediction]  = useState(null);
   const [history,     setHistory]     = useState([]);
+  const [weather,     setWeather]     = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [refreshing,  setRefreshing]  = useState(false);
 
   const loadData = useCallback(async () => {
     try {
-      const [pred, hist] = await Promise.all([
+      const [pred, hist, w] = await Promise.all([
         fetchLatestPrediction().catch(() => null),
-        fetchReadingsLastHours(24),
+        fetchReadingsLastHours(24).catch(() => []),
+        fetchLivePuttalamWeather().catch(() => null),
       ]);
       setPrediction(pred);
       setHistory(hist ?? []);
+      setWeather(w);
     } catch (e) {
       console.error('PredictionScreen error:', e);
     } finally {
@@ -82,12 +86,27 @@ export default function PredictionScreen() {
 
   useEffect(() => { loadData(); }, []);
 
-  const riskLevel = prediction?.risk_level ?? 'LOW';
+  const isHeavyRain = weather?.isHeavyRainIncoming ?? false;
+  const forecastRainMm = weather?.forecast6hRainMm ?? 0.0;
+  
+  // Calculate dynamic flood risk combining predicted level + 6-hour forecast rain
+  const predictedVal = prediction?.predicted_level ?? (history.length > 0 ? history[history.length - 1].water_level : 68.0);
+  
+  let riskLevel = prediction?.risk_level ?? 'LOW';
+  if (predictedVal >= 85 || (predictedVal >= 75 && isHeavyRain)) {
+    riskLevel = 'CRITICAL';
+  } else if (predictedVal >= 70 || (predictedVal >= 60 && forecastRainMm >= 30)) {
+    riskLevel = 'HIGH';
+  } else if (predictedVal >= 55 || forecastRainMm >= 15) {
+    riskLevel = 'MEDIUM';
+  } else {
+    riskLevel = 'LOW';
+  }
+
   const riskColor = RISK_COLORS[riskLevel] ?? RISK_COLORS.LOW;
 
-  // Calculate synthetic / simulated flood probability if not in database yet
-  const predictedVal = prediction?.predicted_level ?? (history.length > 0 ? history[history.length - 1].water_level : 65.0);
-  const floodProb = Math.min(99.0, Math.max(2.0, (predictedVal > 70 ? (predictedVal - 50) * 2.8 : predictedVal * 0.3)));
+  // Calibrated Flood probability percentage
+  const floodProb = Math.min(99.4, Math.max(3.0, (predictedVal * 0.7) + (forecastRainMm * 0.8)));
 
   return (
     <View style={styles.container}>
@@ -106,6 +125,25 @@ export default function PredictionScreen() {
           contentContainerStyle={styles.scroll}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} />}
         >
+          {/* Live Weather Forecast Inflow Card */}
+          {weather && (
+            <View style={[styles.card, isHeavyRain && { borderColor: '#F87171', backgroundColor: '#FEF2F2' }]}>
+              <View style={styles.cardHeaderRow}>
+                <Text style={[styles.badgeNum, { backgroundColor: '#0284C7' }]}>API</Text>
+                <Text style={styles.cardTitle}>{t.liveWeatherTitle}</Text>
+              </View>
+              <View style={styles.weatherStatRow}>
+                <Text style={styles.weatherIconLarge}>{weather.conditionIcon}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.weatherHeadline}>{weather.conditionLabel} • {weather.currentTemp.toFixed(1)}°C</Text>
+                  <Text style={styles.weatherForecastText}>
+                    🌧️ 6h Rain Forecast: <Text style={{ fontWeight: 'bold' }}>{weather.forecast6hRainMm} mm</Text> ({weather.maxPrecipProb}% chance)
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           {/* Stage 1: Continuous LSTM Forecast Card */}
           <View style={styles.card}>
             <View style={styles.cardHeaderRow}>
@@ -202,6 +240,10 @@ const styles = StyleSheet.create({
   badgeNum:     { backgroundColor: '#0F4C81', color: '#FFF', fontSize: 11, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginRight: 8 },
   cardTitle:    { fontSize: 15, fontWeight: '700', color: '#0F172A' },
   cardDesc:     { fontSize: 12, color: '#64748B', lineHeight: 17, marginTop: 8 },
+  weatherStatRow:{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 },
+  weatherIconLarge:{ fontSize: 32 },
+  weatherHeadline:{ fontSize: 13, fontWeight: '700', color: '#0F172A' },
+  weatherForecastText:{ fontSize: 12, color: '#334155', marginTop: 2 },
   predRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginVertical: 8 },
   predItem:     { alignItems: 'center' },
   predLabel:    { color: '#64748B', fontSize: 12, fontWeight: '600' },

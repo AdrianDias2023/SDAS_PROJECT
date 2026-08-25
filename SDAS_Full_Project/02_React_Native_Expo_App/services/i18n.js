@@ -36,6 +36,13 @@ export const translations = {
     operatorLoginPrompt: "Operator Access",
     operatorLoginBtn: "Login as Dam Operator",
     
+    // Weather & Rainfall Forecast API
+    liveWeatherTitle: "Satellite Weather & Rain Radar",
+    forecast6h: "Next 6-Hour Rainfall Forecast",
+    precipProb: "Precipitation Probability",
+    rainAlertIncoming: "⛈️ Heavy rain forecast (>30mm). Pre-warning threshold activated earlier for proactive safety.",
+    rainNormal: "🌤️ Stable meteorological conditions in Puttalam basin.",
+    
     // Alerts Screen
     alertsTitle: "Active & Past Alerts",
     noAlerts: "No active alerts. Dam levels are within normal range.",
@@ -52,7 +59,7 @@ export const translations = {
     forecast1h: "Next 1-Hour Water Level",
     forecastDesc: "Stage 1: 2-Layer LSTM forecasting water depth from 24h meteorological & sensor sequences.",
     floodProbTitle: "Flood / Overtopping Probability",
-    floodProbDesc: "Stage 2: Calibrated Random Forest ensemble predicting spill risk based on seasonal inflow & LSTM prediction.",
+    floodProbDesc: "Stage 2: Calibrated Random Forest ensemble predicting spill risk based on 6h forecast rain & LSTM prediction.",
     predictedLevel: "Predicted Level",
     currentLevel: "Current Level",
     floodProbability: "Flood Probability",
@@ -76,7 +83,7 @@ export const translations = {
     aboutObj2: "• 4-tier safety threshold controller (Normal <70%, Pre-Warning 70-85%, Clear Area 70-85% rising, Danger >85%).",
     aboutObj3: "• Automated MG996R servo gate control and SIM800L emergency GSM SMS broadcast.",
     aboutObj4: "• Real-time cloud synchronization via Supabase PostgreSQL & Row-Level Security.",
-    aboutObj5: "• Hybrid AI pipeline (2-Layer LSTM + Random Forest Ensemble + Autoencoder).",
+    aboutObj5: "• Real-time Satellite Weather API + Hybrid AI pipeline (LSTM + Random Forest Ensemble).",
     aboutTeam: "Project Team",
     teamRole1: "Dias Adrian — Cyber Security",
     teamRole2: "AAA Aadhil — Data Science",
@@ -145,6 +152,13 @@ export const translations = {
     operatorLoginPrompt: "ක්‍රියාකරු පිවිසුම",
     operatorLoginBtn: "ක්‍රියාකරු ලෙස පිවිසෙන්න",
     
+    // Weather & Rainfall Forecast API
+    liveWeatherTitle: "සැටලයිට් කාලගුණ සහ වර්ෂාපතන රේඩාර්",
+    forecast6h: "ඉදිරි පැය 6 ක වර්ෂාපතන පුරෝකථනය",
+    precipProb: "වර්ෂාපතන සම්භාවිතාව",
+    rainAlertIncoming: "⛈️ අධික වර්ෂාවක් පුරෝකථනය කර ඇත (>30mm). පෙර අනතුරු ඇඟවීමේ මට්ටම කල්තියා ක්‍රියාත්මක විය.",
+    rainNormal: "🌤️ පුත්තලම ද්‍රෝණියේ කාලගුණය සාමාන්‍ය මට්ටමේ පවතී.",
+    
     // Alerts Screen
     alertsTitle: "අනතුරු ඇඟවීම් ඉතිහාසය",
     noAlerts: "සක්‍රිය අනතුරු ඇඟවීම් නොමැත. ජල මට්ටම සාමාන්‍ය මට්ටමේ පවතී.",
@@ -161,7 +175,7 @@ export const translations = {
     forecast1h: "පැය 1 කට පසු ජල මට්ටම",
     forecastDesc: "1 වන අදියර: 24-පැය කාලගුණ දත්ත මඟින් පුරෝකථනය කරන ලද 2-Layer LSTM ආකෘතිය.",
     floodProbTitle: "ගංවතුර / පිටාර ගැලීමේ සම්භාවිතාව",
-    floodProbDesc: "2 වන අදියර: මෝසම් සාධක සහ LSTM ප්‍රතිදානය මත පදනම් වූ Random Forest අවදානම් තක්සේරුව.",
+    floodProbDesc: "2 වන අදියර: පැය 6 ක වර්ෂාපතන පුරෝකථනය සහ LSTM ප්‍රතිදානය මත පදනම් වූ Random Forest අවදානම් තක්සේරුව.",
     predictedLevel: "පුරෝකථනය කළ මට්ටම",
     currentLevel: "වත්මන් ජල මට්ටම",
     floodProbability: "ගංවතුර සම්භාවිතාව",
@@ -185,7 +199,7 @@ export const translations = {
     aboutObj2: "• සිව්-මට්ටමේ ආරක්ෂිත එළිපත්ත පාලකය (සාමාන්‍ය <70%, පූර්ව අනතුරු ඇඟවීම 70-85%, ඉවත් කිරීමේ 70-85% වේගයෙන් ඉහළ යන, අන්තරාය >85%).",
     aboutObj3: "• MG996R මඟින් ස්වයංක්‍රීය දොරටු පාලනය සහ SIM800L මඟින් හදිසි SMS යැවීම.",
     aboutObj4: "• Supabase PostgreSQL ක්ලවුඩ් දත්ත සමුදාය සහ තත්‍ය කාලීන ආරක්ෂණ ප්‍රතිපත්ති.",
-    aboutObj5: "• LSTM, Random Forest සහ Autoencoder සංයුක්ත AI ආකෘති මඟින් ගංවතුර පුරෝකථනය.",
+    aboutObj5: "• කාලගුණ API සහ LSTM, Random Forest සංයුක්ත AI ආකෘති මඟින් ගංවතුර පුරෝකථනය.",
     aboutTeam: "ව්‍යාපෘති කණ්ඩායම",
     teamRole1: "ඩයස් ඒඩ්‍රියන් — සයිබර් ආරක්ෂාව (Cyber Security)",
     teamRole2: "ඒ.ඒ.ඒ. ආදිල් — දත්ත විද්‍යාව (Data Science)",
@@ -224,7 +238,7 @@ export const translations = {
   
   ta: {
     appName: "SDAS",
-    appFullName: "ස්மார்ட் அணை எச்சரிக்கை அமைப்பு",
+    appFullName: "ஸ்மார்ட் அணை எச்சரிக்கை அமைப்பு",
     tagline: "இன்று பாதுகாப்பானது, நாளை உறுதியானது",
     
     // Tabs & Navigation
@@ -254,6 +268,13 @@ export const translations = {
     operatorLoginPrompt: "இயக்குநர் அணுகல்",
     operatorLoginBtn: "இயக்குநராக உள்நுழையவும்",
     
+    // Weather & Rainfall Forecast API
+    liveWeatherTitle: "செயற்கைக்கோள் வானிலை மற்றும் மழை ரேடார்",
+    forecast6h: "அடுத்த 6 மணி நேர மழை முன்னறிவிப்பு",
+    precipProb: "மழை பெய்யும் நிகழ்தகவு",
+    rainAlertIncoming: "⛈️ அதிக மழை பெய்ய வாய்ப்புள்ளது (>30mm). பாதுகாப்பு கருதி முன் எச்சரிக்கை முன்கூட்டியே தூண்டப்பட்டுள்ளது.",
+    rainNormal: "🌤️ புத்தளம் பகுதியில் வானிலை சாதாரணமாக உள்ளது.",
+    
     // Alerts Screen
     alertsTitle: "எச்சரிக்கை வரலாறு",
     noAlerts: "செயலில் எச்சரிக்கைகள் இல்லை. நீர் மட்டம் சாதாரணமாக உள்ளது.",
@@ -270,7 +291,7 @@ export const translations = {
     forecast1h: "அடுத்த 1 மணி நேர நீர் மட்டம்",
     forecastDesc: "நிலை 1: 24 மணி நேர தரவுகளிலிருந்து கணிக்கப்பட்ட 2-Layer LSTM மாதிரி.",
     floodProbTitle: "வெள்ளம் / நிரம்பி வழியும் நிகழ்தகவு",
-    floodProbDesc: "நிலை 2: பருவமழை மற்றும் LSTM கணிப்பின் அடிப்படையிலான Random Forest அபாய மதிப்பீடு.",
+    floodProbDesc: "நிலை 2: அடுத்த 6 மணி நேர மழை கணிப்பு மற்றும் LSTM முடிவுகளின் அடிப்படையிலான Random Forest அபாய மதிப்பீடு.",
     predictedLevel: "கணிக்கப்பட்ட நீர் மட்டம்",
     currentLevel: "தற்போதைய நீர் மட்டம்",
     floodProbability: "வெள்ள நிகழ்தகவு",
@@ -290,15 +311,15 @@ export const translations = {
     aboutProject: "திட்டத்தின் கண்ணோட்டம்",
     aboutProjectDesc: "இலங்கையின் புத்தளம் பகுதியில் தானியங்கி அணை கண்காணிப்பு இல்லாததால் வெள்ளப்பெருக்கு அடிக்கடி ஏற்படுகிறது. கைமுறையாக மதகுகளை திறக்க 30+ நிமிடங்கள் ஆகும். SDAS அமைப்பு தானியங்கி சென்சார்கள், உடனடி எச்சரிக்கைகள், தானியங்கி கதவு கட்டுப்பாடு மற்றும் AI முன்னறிவிப்பு மூலம் வெள்ள அபாயத்தை குறைக்கிறது.",
     aboutObjectives: "முக்கிய சிறப்பம்சங்கள்",
-    aboutObj1: "• ±2 செ.மீ துல்லியத்துடன் இரட்டை JSN-SR04T நீர் புகா மீயொலி சென்சார்கள் மற்றும் வெப்பநிலை இழப்பீட்டு அமைப்பு.",
+    aboutObj1: "• ±2 செ.மீ துல்லியத்துடன் இரட்டை JSN-SR04T நீர் புகா மீயොலி சென்சார்கள் மற்றும் வெப்பநிலை இழப்பீட்டு அமைப்பு.",
     aboutObj2: "• 4-நிலை பாதுகாப்பு வரம்பு கட்டுப்படுத்தி (சாதாரண <70%, முன் எச்சரிக்கை 70-85%, வெளியேற்றம் 70-85%, ஆபத்து >85%).",
     aboutObj3: "• MG996R மோட்டார் மூலம் தானியங்கி கதவு கட்டுப்பாடு மற்றும் SIM800L மூலம் அவசர SMS அனுப்புதல்.",
     aboutObj4: "• Supabase PostgreSQL கிளவுட் தரவுத்தளம் மற்றும் நேரடி பாதுகாப்பு கொள்கைகள்.",
-    aboutObj5: "• LSTM, Random Forest மற்றும் Autoencoder கலப்பு AI மாதிரிகள் மூலம் வெள்ள முன்னறிவிப்பு.",
+    aboutObj5: "• நேரடி வானிலை API மற்றும் LSTM, Random Forest கலப்பு AI மாதிரிகள் மூலம் வெள்ள முன்னறிவிப்பு.",
     aboutTeam: "திட்டக் குழு",
     teamRole1: "டயஸ் ஏட்ரியன் — சைபர் பாதுகாப்பு (Cyber Security)",
     teamRole2: "ஏ.ඒ.ஏ. ஆதில் — தரவு அறிவியல் (Data Science)",
-    teamRole3: "ஜே.எம்.ஆர்.ஏ. தில்ஷான் — மென்பொருள் பொறியியல் (Software Engineering)",
+    teamRole3: "ஜே.எம்.ஆர்.ඒ. தில்ஷான் — மென்பொருள் பொறியியல் (Software Engineering)",
     aboutSupervisors: "மேற்பார்வையாளர்கள்",
     supervisor1: "டாக்டர் சனிகா விஜேசேகர (தரவு அறிவியல் & சைபர் பாதுகாப்பு)",
     supervisor2: "திரு. கவிந்த தரிந்து (தரவு அறிவியல்)",

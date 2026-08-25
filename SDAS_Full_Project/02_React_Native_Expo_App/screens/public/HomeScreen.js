@@ -1,5 +1,5 @@
 // SDAS — Public Home Screen
-// Shows real-time water level gauge with colour-coded alert status & 3-language support
+// Real-time water level gauge + Live Weather API & Satellite Rainfall Radar
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -9,22 +9,24 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { fetchLatestReading } from '../../services/alerts';
 import { subscribeSensorReadings } from '../../services/realtime';
+import { fetchLivePuttalamWeather } from '../../services/weather';
 import { useLanguage } from '../../services/i18n';
 import WaterLevelGauge from '../../components/WaterLevelGauge';
 import AlertBanner from '../../components/AlertBanner';
 import LanguageSelector from '../../components/LanguageSelector';
 
-function getAlertLevel(pct) {
+function getAlertLevel(pct, isHeavyRain = false) {
   if (pct >= 85) return 'DANGER';
-  if (pct >= 70) return 'PRE_WARNING';
+  if (pct >= 70 || (pct >= 60 && isHeavyRain)) return 'PRE_WARNING';
   return 'NORMAL';
 }
 
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { t } = useLanguage();
-  const [reading, setReading]     = useState(null);
-  const [loading, setLoading]     = useState(true);
+  const [reading, setReading]       = useState(null);
+  const [weather, setWeather]       = useState(null);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
 
@@ -37,8 +39,12 @@ export default function HomeScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const r = await fetchLatestReading();
+      const [r, w] = await Promise.all([
+        fetchLatestReading().catch(() => null),
+        fetchLivePuttalamWeather().catch(() => null),
+      ]);
       setReading(r);
+      setWeather(w);
       setLastUpdate(new Date());
     } catch (e) {
       console.error('HomeScreen fetch error:', e);
@@ -62,9 +68,10 @@ export default function HomeScreen() {
 
   const onRefresh = () => { setRefreshing(true); loadData(); };
 
-  const level    = reading ? getAlertLevel(reading.water_level) : 'NORMAL';
-  const levelCfg = LEVELS[level] || LEVELS.NORMAL;
-  const pct      = reading?.water_level ?? 0;
+  const isHeavyRain = weather?.isHeavyRainIncoming ?? false;
+  const level       = reading ? getAlertLevel(reading.water_level, isHeavyRain) : 'NORMAL';
+  const levelCfg    = LEVELS[level] || LEVELS.NORMAL;
+  const pct         = reading?.water_level ?? 0;
 
   return (
     <View style={[styles.container, { backgroundColor: levelCfg.bg }]}>
@@ -109,6 +116,39 @@ export default function HomeScreen() {
           <AlertBanner level={level} config={levelCfg} />
         )}
 
+        {/* Live Satellite Weather & Rain Forecast Card */}
+        {weather && (
+          <View style={[styles.weatherCard, isHeavyRain && styles.weatherCardAlert]}>
+            <View style={styles.weatherHeaderRow}>
+              <View style={styles.weatherCondition}>
+                <Text style={styles.weatherIcon}>{weather.conditionIcon}</Text>
+                <View>
+                  <Text style={styles.weatherTitle}>{t.liveWeatherTitle}</Text>
+                  <Text style={styles.weatherSub}>{weather.conditionLabel} • {weather.currentTemp.toFixed(1)}°C</Text>
+                </View>
+              </View>
+              <Text style={styles.weatherSync}>🔄 {weather.syncedAt}</Text>
+            </View>
+
+            <View style={styles.weatherMetricsRow}>
+              <View style={styles.weatherCol}>
+                <Text style={styles.weatherMetricLabel}>{t.forecast6h}</Text>
+                <Text style={[styles.weatherMetricVal, isHeavyRain && { color: '#DC2626' }]}>
+                  {weather.forecast6hRainMm} mm
+                </Text>
+              </View>
+              <View style={styles.weatherCol}>
+                <Text style={styles.weatherMetricLabel}>{t.precipProb}</Text>
+                <Text style={styles.weatherMetricVal}>{weather.maxPrecipProb}%</Text>
+              </View>
+            </View>
+
+            <Text style={[styles.weatherAdvice, isHeavyRain && styles.weatherAdviceAlert]}>
+              {isHeavyRain ? t.rainAlertIncoming : t.rainNormal}
+            </Text>
+          </View>
+        )}
+
         {/* Water Level Gauge */}
         <View style={styles.gaugeCard}>
           <WaterLevelGauge percentage={pct} color={levelCfg.color} loading={loading} />
@@ -121,12 +161,12 @@ export default function HomeScreen() {
         <View style={styles.infoRow}>
           <View style={styles.infoCard}>
             <Text style={styles.infoEmoji}>🌡️</Text>
-            <Text style={styles.infoValue}>{reading?.temperature?.toFixed(1) ?? '--'}°C</Text>
+            <Text style={styles.infoValue}>{reading?.temperature?.toFixed(1) ?? weather?.currentTemp?.toFixed(1) ?? '--'}°C</Text>
             <Text style={styles.infoLabel}>{t.temperature}</Text>
           </View>
           <View style={styles.infoCard}>
             <Text style={styles.infoEmoji}>💦</Text>
-            <Text style={styles.infoValue}>{reading?.humidity?.toFixed(0) ?? '--'}%</Text>
+            <Text style={styles.infoValue}>{reading?.humidity?.toFixed(0) ?? weather?.currentHumidity?.toFixed(0) ?? '--'}%</Text>
             <Text style={styles.infoLabel}>{t.humidity}</Text>
           </View>
           <View style={styles.infoCard}>
@@ -180,6 +220,20 @@ const styles = StyleSheet.create({
   operatorBtnText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
   langBar:       { marginTop: 12, alignItems: 'flex-start' },
   scroll:        { padding: 16, paddingBottom: 40 },
+  weatherCard:   { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  weatherCardAlert:{ borderColor: '#FCA5A5', backgroundColor: '#FEF2F2' },
+  weatherHeaderRow:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  weatherCondition:{ flexDirection: 'row', alignItems: 'center', gap: 8 },
+  weatherIcon:   { fontSize: 28 },
+  weatherTitle:  { fontSize: 13, fontWeight: '800', color: '#0F172A' },
+  weatherSub:    { fontSize: 11, color: '#64748B', fontWeight: '500' },
+  weatherSync:   { fontSize: 10, color: '#94A3B8' },
+  weatherMetricsRow:{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 6, backgroundColor: '#F8FAFC', borderRadius: 10, marginBottom: 8 },
+  weatherCol:    { alignItems: 'center' },
+  weatherMetricLabel:{ fontSize: 11, color: '#64748B', fontWeight: '600' },
+  weatherMetricVal:  { fontSize: 16, fontWeight: '800', color: '#0F4C81', marginTop: 2 },
+  weatherAdvice: { fontSize: 11, color: '#475569', lineHeight: 16, textAlign: 'center' },
+  weatherAdviceAlert:{ color: '#B91C1C', fontWeight: '600' },
   gaugeCard:     { backgroundColor: '#FFF', borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, elevation: 4 },
   statusLabel:   { fontSize: 18, fontWeight: '800', marginTop: 12, textAlign: 'center' },
   infoRow:       { flexDirection: 'row', gap: 10, marginBottom: 16 },
