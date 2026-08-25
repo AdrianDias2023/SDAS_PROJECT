@@ -125,7 +125,7 @@ function OperatorTabs() {
 // ─── Root Navigator ───────────────────────────────────────────
 export default function AppNavigator({ session }) {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="PublicTabs">
       {/* Default: Public App */}
       <Stack.Screen name="PublicTabs" component={PublicTabs} />
       
@@ -138,7 +138,6 @@ export default function AppNavigator({ session }) {
       {/* Operator Screens */}
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="OperatorTabs" component={OperatorTabs} />
-      <Stack.Screen name="OperatorStack" component={session ? OperatorTabs : LoginScreen} />
       <Stack.Screen name="ManualOverride" component={ManualOverrideScreen} />
       <Stack.Screen name="Settings" component={OperatorSettingsScreen} />
       <Stack.Screen name="Health" component={SystemHealthScreen} />

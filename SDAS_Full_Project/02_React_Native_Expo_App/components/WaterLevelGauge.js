@@ -16,18 +16,22 @@ export default function WaterLevelGauge({
   loading = false,
   maxMeters = 355.0,
 }) {
+  const safePct = typeof percentage === 'number' && !isNaN(percentage) ? percentage : parseFloat(percentage) || 0;
+  const safeMax = typeof maxMeters === 'number' && !isNaN(maxMeters) ? maxMeters : parseFloat(maxMeters) || 355.0;
+  const safeColor = color || '#27AE60';
+  const safeLabel = statusLabel || 'NORMAL';
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.spring(anim, {
-      toValue: Math.min(100, Math.max(0, percentage)),
+      toValue: Math.min(100, Math.max(0, safePct)),
       friction: 8,
       tension: 40,
       useNativeDriver: false,
     }).start();
-  }, [percentage]);
+  }, [safePct]);
 
-  const currentMeters = ((percentage / 100) * maxMeters).toFixed(1);
+  const currentMeters = ((safePct / 100) * safeMax).toFixed(1);
   const strokeDash = Math.PI * RADIUS; // Half circumference for 180 deg arc
   
   const strokeDashoffset = anim.interpolate({
@@ -64,7 +68,7 @@ export default function WaterLevelGauge({
           {/* Animated Value Arc */}
           <AnimatedPath
             d={arcPath}
-            stroke={color}
+            stroke={safeColor}
             strokeWidth={STROKE}
             fill="none"
             strokeLinecap="round"
@@ -76,13 +80,13 @@ export default function WaterLevelGauge({
         {/* Center Telemetry Content */}
         <View style={styles.centerContent}>
           <Text style={[styles.pctText, { color: '#0F172A' }]}>
-            {loading ? '...' : `${percentage.toFixed(1)}%`}
+            {loading ? '...' : `${safePct.toFixed(1)}%`}
           </Text>
           <Text style={styles.metersText}>
-            ({currentMeters} m / {maxMeters.toFixed(1)} m)
+            ({currentMeters} m / {safeMax.toFixed(1)} m)
           </Text>
-          <View style={[styles.statusBadge, { backgroundColor: `${color}18`, borderColor: color }]}>
-            <Text style={[styles.statusBadgeText, { color }]}>{statusLabel}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: `${safeColor}18`, borderColor: safeColor }]}>
+            <Text style={[styles.statusBadgeText, { color: safeColor }]}>{safeLabel}</Text>
           </View>
         </View>
       </View>
@@ -97,7 +101,13 @@ export default function WaterLevelGauge({
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center' },
-  markers:   { marginTop: 8, alignItems: 'center' },
-  marker:    { fontSize: 11, marginVertical: 1 },
+  container:     { alignItems: 'center' },
+  svgWrapper:    { position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  centerContent: { position: 'absolute', top: 50, alignItems: 'center', justifyContent: 'center' },
+  pctText:       { fontSize: 34, fontWeight: '900', letterSpacing: -0.5 },
+  metersText:    { fontSize: 13, color: '#64748B', fontWeight: '600', marginTop: 2 },
+  statusBadge:   { marginTop: 8, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, borderWidth: 1 },
+  statusBadgeText:{ fontSize: 12, fontWeight: '800' },
+  boundsRow:     { flexDirection: 'row', justifyContent: 'space-between', width: SIZE - 20, marginTop: -10 },
+  boundLabel:    { color: '#94A3B8', fontSize: 12, fontWeight: '700' },
 });

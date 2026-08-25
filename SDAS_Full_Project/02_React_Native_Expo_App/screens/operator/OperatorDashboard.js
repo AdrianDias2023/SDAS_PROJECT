@@ -132,9 +132,10 @@ export default function OperatorDashboard({ navigation }) {
     return () => sc.unsubscribe();
   }, [selectedDamId]);
 
-  const level    = reading ? getAlertLevel(reading.water_level) : 'NORMAL';
+  const rawLevel = reading?.water_level;
+  const pct      = (typeof rawLevel === 'number' && !isNaN(rawLevel)) ? rawLevel : (parseFloat(rawLevel) || 72.4);
+  const level    = getAlertLevel(pct);
   const levelCfg = LEVELS[level] || LEVELS.NORMAL;
-  const pct      = reading?.water_level ?? 72.4;
 
   return (
     <View style={styles.container}>

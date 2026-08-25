@@ -23,18 +23,25 @@ export default function LoginScreen({ navigation }) {
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: password,
-    });
-    setLoading(false);
-    if (error) {
-      Alert.alert('Login Failed', error.message);
-    } else if (data?.session) {
-      if (navigation?.navigate) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
+      if (error) {
+        Alert.alert('Login Failed', error.message);
+      } else {
         navigation.navigate('OperatorTabs');
       }
+    } catch (err) {
+      Alert.alert('Login Error', err?.message || 'Authentication failed');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleDemoLogin = () => {
+    navigation.navigate('OperatorTabs');
   };
 
   return (
@@ -106,7 +113,7 @@ export default function LoginScreen({ navigation }) {
         {/* Prototype Quick Access */}
         <TouchableOpacity
           style={styles.demoBtn}
-          onPress={() => navigation.navigate('OperatorTabs')}
+          onPress={handleDemoLogin}
           activeOpacity={0.8}
         >
           <Text style={styles.demoBtnText}>⚡ Quick Operator Demo Login</Text>

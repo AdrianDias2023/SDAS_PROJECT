@@ -67,25 +67,28 @@ export default function AlertsScreen() {
   });
 
   const renderAlert = ({ item }) => {
-    const color = SEVERITY_COLORS[item.severity] ?? '#7F8C8D';
-    const emoji = SEVERITY_EMOJI[item.severity]  ?? '📢';
-    const time  = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const isDanger = item.severity === 'EMERGENCY' || item.alert_type?.includes('DANGER');
-    const isWarn = item.severity === 'WARNING' || item.severity === 'CRITICAL';
+    if (!item) return null;
+    const severity = item.severity || 'INFO';
+    const color = SEVERITY_COLORS[severity] ?? '#7F8C8D';
+    const emoji = SEVERITY_EMOJI[severity]  ?? '📢';
+    const time  = item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live';
+    const alertType = item.alert_type ? String(item.alert_type).replace(/_/g, ' ') : severity;
+    const isDanger = severity === 'EMERGENCY' || String(item.alert_type || '').includes('DANGER');
+    const isWarn = severity === 'WARNING' || severity === 'CRITICAL';
 
     return (
       <View style={[styles.card, { borderLeftColor: color, backgroundColor: isDanger ? '#FEF2F2' : isWarn ? '#FFFBEB' : '#FFF' }]}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardEmoji}>{emoji}</Text>
           <View style={styles.cardInfo}>
-            <Text style={[styles.cardType, { color }]}>{item.alert_type.replace(/_/g, ' ')}</Text>
+            <Text style={[styles.cardType, { color }]}>{alertType}</Text>
             <Text style={styles.cardTime}>{time}</Text>
           </View>
           <Text style={styles.cardBell}>{isDanger || isWarn ? '🔔' : 'ℹ️'}</Text>
         </View>
-        <Text style={styles.cardMsg}>{item.message}</Text>
-        {item.water_level != null && (
-          <Text style={styles.waterLevelText}>Water Level: {item.water_level.toFixed(1)}%</Text>
+        <Text style={styles.cardMsg}>{item.message || 'Alert broadcast from monitoring node.'}</Text>
+        {item.water_level != null && !isNaN(item.water_level) && (
+          <Text style={styles.waterLevelText}>Water Level: {Number(item.water_level).toFixed(1)}%</Text>
         )}
       </View>
     );
