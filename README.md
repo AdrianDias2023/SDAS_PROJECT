@@ -78,33 +78,33 @@ graph TD
     end
 
     %% CONNECTIONS & DATA FLOW
-    S1 -->|Echo / Trigger| ESP
-    S2 -->|One-Wire Data| ESP
-    EXT1 -->|JSON Rainfall REST API| ESP
+    S1 --> ESP
+    S2 --> ESP
+    EXT1 --> ESP
     
     ESP --> FUSION
-    FUSION -->|Immediate Local Alarm| LOCAL_ACT
-    FUSION -->|Offline Direct SMS| GSM
+    FUSION --> LOCAL_ACT
+    FUSION --> GSM
     GSM --> DMC
-    FUSION -->|HTTPS REST JSON (WiFi/GPRS)| DB
+    FUSION --> DB
 
     DB --> TRIGGERS
     DB --> REALTIME
     DB --> AUTH
 
-    TRIGGERS -->|Async Webhook| SERVER
+    TRIGGERS --> SERVER
     SERVER --> LSTM
     SERVER --> AE
-    LSTM -->|Save Forecast| DB
-    AE -->|Flag Anomaly| DB
+    LSTM --> DB
+    AE --> DB
 
-    REALTIME -->|Live Push| APP_PUB
-    REALTIME -->|Live Push| APP_OP
+    REALTIME --> APP_PUB
+    REALTIME --> APP_OP
 
-    APP_OP -->|Manual Override Command| DB
-    DB -->|Fetch Command 5s Polling| ESP
-    FUSION -->|PWM Signal 50Hz| SERVO
-    SERVO -.->|Position Confirmation| ESP
+    APP_OP --> DB
+    DB --> ESP
+    FUSION --> SERVO
+    SERVO -.-> ESP
 ```
 
 ### 2. Comprehensive ASCII Data Flow Diagram

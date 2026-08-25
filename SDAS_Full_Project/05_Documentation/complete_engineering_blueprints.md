@@ -8,17 +8,17 @@
 ```mermaid
 graph TD
     subgraph Edge_Hardware_Layer ["1. Edge Hardware Node (ESP32)"]
-        JSN1["JSN-SR04T Sensor #1 (Trig: 5, Echo: 18)"]
-        JSN2["JSN-SR04T Sensor #2 (Trig: 19, Echo: 21)"]
-        DHT["DHT22 Met Sensor (Data: 4)"]
+        JSN1["JSN-SR04T Sensor 1 (Trig 5, Echo 18)"]
+        JSN2["JSN-SR04T Sensor 2 (Trig 19, Echo 21)"]
+        DHT["DHT22 Met Sensor (Data 4)"]
         WDT["Hardware Task WDT (8s Timeout)"]
         RTC["NTP Time Sync (UTC+5:30)"]
         ESP["ESP32 Dual-Core 240MHz SoC"]
-        SERVO["MG996R Servo (PWM: 13, 0-180°)"]
-        BUZZ["85dB Active Siren (Pin: 27)"]
-        RGB["RGB Status LED (Pins: 12, 14, 26)"]
-        GSM["SIM800L Cellular GSM (Serial2: 16/17)"]
-        BTNS["Physical Push Buttons (Pins: 32, 33, 23)"]
+        SERVO["MG996R Servo (PWM 13, 0-180 deg)"]
+        BUZZ["85dB Active Siren (Pin 27)"]
+        RGB["RGB Status LED (Pins 12, 14, 26)"]
+        GSM["SIM800L Cellular GSM (Serial2 16/17)"]
+        BTNS["Physical Push Buttons (Pins 32, 33, 23)"]
         
         JSN1 --> ESP
         JSN2 --> ESP
@@ -56,11 +56,11 @@ graph TD
     end
 
     subgraph AI_Predictive_Pipeline ["3. Hybrid AI Pipeline (FastAPI / PyTorch)"]
-        LSTM["Stage 1: LSTM Deep Time-Series Forecaster (1h Horizon)"]
-        RF["Stage 2: Random Forest Risk & Inflow Classifier"]
+        LSTM["Stage 1: LSTM Deep Time-Series Forecaster"]
+        RF["Stage 2: Random Forest Risk and Inflow Classifier"]
         AE["Stage 3: Deep Autoencoder Sensor Guardian"]
         RADAR["Open-Meteo Satellite Weather Radar API"]
-        CONF["Multi-Factor AI Confidence Engine (Method 3)"]
+        CONF["Multi-Factor AI Confidence Engine"]
         
         LSTM --> RF
         RADAR --> RF
@@ -70,20 +70,20 @@ graph TD
     end
 
     subgraph Client_Applications ["4. Mobile & Web Application Suite (Expo React Native)"]
-        PUB_APP["Public Early Warning Portal (Trilingual: EN/SI/TA)"]
-        OP_APP["Operator Control Console & Digital Twin"]
-        MAPS["Leaflet / Google Maps Evacuation Engine"]
-        ANALYTICS["Historical Analytics & Incident Replay"]
+        PUB_APP["Public Early Warning Portal (Trilingual EN/SI/TA)"]
+        OP_APP["Operator Control Console and Digital Twin"]
+        MAPS["Leaflet and Google Maps Evacuation Engine"]
+        ANALYTICS["Historical Analytics and Incident Replay"]
     end
 
-    ESP ==>|WiFi HTTPS / REST| REST
-    REST ==>|Readings Sequence| LSTM
-    REST ==>|Telemetry Snapshot| AE
-    CONF ==>|Inference & Confidence| ML_TBL
-    WS ==>|Push Notifications <1s| PUB_APP
-    WS ==>|State Synchronization| OP_APP
-    OP_APP ==>|Manual Override Command| GC_TBL
-    GC_TBL ==>|Actuator Pull| ESP
+    ESP ==> REST
+    REST ==> LSTM
+    REST ==> AE
+    CONF ==> ML_TBL
+    WS ==> PUB_APP
+    WS ==> OP_APP
+    OP_APP ==> GC_TBL
+    GC_TBL ==> ESP
     PUB_APP --- MAPS
     OP_APP --- ANALYTICS
 ```
@@ -225,25 +225,25 @@ erDiagram
 
 ```mermaid
 flowchart TD
-    START(["System Boot & Sensor Read (2s)"]) --> SENSORS["Read Dual Ultrasonic Transducers + DHT22"]
+    START(["System Boot & Sensor Read 2s"]) --> SENSORS["Read Dual Ultrasonic Transducers and DHT22"]
     SENSORS --> DATA_CHECK{"Data Plausibility Check (0-100%, Delta <30%)"}
     
-    DATA_CHECK -- Invalid / Corrupted --> REJECT["Reject Reading & Flag Telemetry Anomaly"]
-    DATA_CHECK -- Valid --> SENSOR_HEALTH{"Dual Sensor Discrepancy < 5cm?"}
+    DATA_CHECK -->|Corrupted| REJECT["Reject Reading and Flag Telemetry Anomaly"]
+    DATA_CHECK -->|Valid| SENSOR_HEALTH{"Dual Sensor Discrepancy < 5cm?"}
     
-    SENSOR_HEALTH -- Discrepancy > 5cm --> FAIL_SAFE["Activate MODE 4: FAIL-SAFE<br/>• Suspend Auto Actuation<br/>• Safe Hold Position<br/>• Amber LED + Alert Operator"]
+    SENSOR_HEALTH -->|Discrepancy| FAIL_SAFE["Activate MODE 4: FAIL-SAFE<br/>• Suspend Auto Actuation<br/>• Safe Hold Position<br/>• Amber LED and Alert Operator"]
     
-    SENSOR_HEALTH -- Healthy --> NET_CHECK{"Internet / WiFi Connected?"}
+    SENSOR_HEALTH -->|Healthy| NET_CHECK{"Internet / WiFi Connected?"}
     
-    NET_CHECK -- Connected --> MODE1["MODE 1: AUTO CLOUD<br/>• Supabase Sync<br/>• 3-Stage Hybrid AI Lookahead<br/>• Predictive Gate Actuation<br/>• Realtime WebSocket Push"]
+    NET_CHECK -->|Connected| MODE1["MODE 1: AUTO CLOUD<br/>• Supabase Sync<br/>• 3-Stage Hybrid AI Lookahead<br/>• Predictive Gate Actuation<br/>• Realtime WebSocket Push"]
     
-    NET_CHECK -- Disconnected > 30s --> MODE2["MODE 2: AUTO OFFLINE EMERGENCY<br/>• Autonomous Local Edge Rules<br/>• Direct Servo Actuation<br/>• Direct SIM800L GSM SMS<br/>• 85dB Acoustic Siren"]
+    NET_CHECK -->|Offline >30s| MODE2["MODE 2: AUTO OFFLINE EMERGENCY<br/>• Autonomous Local Edge Rules<br/>• Direct Servo Actuation<br/>• Direct SIM800L GSM SMS<br/>• 85dB Acoustic Siren"]
     
     MODE1 --> MANUAL_CHECK{"Operator Override or Button Pressed?"}
     MODE2 --> MANUAL_CHECK
     
-    MANUAL_CHECK -- Yes --> INTERLOCK{"Is Command 'CLOSE' AND Water Level >= 85%?"}
+    MANUAL_CHECK -->|Yes| INTERLOCK{"Is Command CLOSE AND Water Level >= 85%?"}
     
-    INTERLOCK -- Yes (Critical Flood) --> REJECT_CMD["⛔ Command Rejected by Safety Interlock<br/>Prohibit Dam Overtopping Closure"]
-    INTERLOCK -- No (Safe) --> MODE3["MODE 3: MANUAL OPERATOR<br/>Execute Tactical OPEN / CLOSE / STOP"]
+    INTERLOCK -->|Yes - Danger| REJECT_CMD["⛔ Command Rejected by Safety Interlock<br/>Prohibit Dam Overtopping Closure"]
+    INTERLOCK -->|No - Safe| MODE3["MODE 3: MANUAL OPERATOR<br/>Execute Tactical OPEN / CLOSE / STOP"]
 ```
