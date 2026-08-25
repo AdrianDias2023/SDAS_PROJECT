@@ -17,20 +17,20 @@ Usage:
 
 import json
 import os
+import sys
 import joblib
 import numpy as np
 import pandas as pd
 from typing import List, Dict, Optional
 from datetime import datetime
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 import tensorflow as tf
 
-app = FastAPI(
-    title="SDAS Hybrid ML Inference Server",
-    description="LSTM forecasting + Random Forest risk probability + Autoencoder anomaly detection for Puttalam Dam",
-    version="2.0.0",
-)
+# Force UTF-8 on Windows consoles
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 # ── Global model state ─────────────────────────────────────────
 lstm_model        = None
@@ -42,45 +42,55 @@ anomaly_threshold = None
 models_loaded     = False
 
 
-# ── Load models on startup ─────────────────────────────────────
-@app.on_event("startup")
-def load_models():
+def load_all_models():
     global lstm_model, autoencoder_model, rf_model, rf_features, scaler, anomaly_threshold, models_loaded
     try:
-        print("Loading LSTM model...")
+        print("[SDAS ML] Loading LSTM model...")
         lstm_model = tf.keras.models.load_model('models/lstm_model.h5', compile=False)
 
-        print("Loading Autoencoder model...")
+        print("[SDAS ML] Loading Autoencoder model...")
         autoencoder_model = tf.keras.models.load_model('models/autoencoder_model.h5', compile=False)
 
-        print("Loading Random Forest risk model...")
+        print("[SDAS ML] Loading Random Forest risk model...")
         rf_model = joblib.load('models/random_forest_risk.pkl')
         rf_features = joblib.load('models/rf_features.pkl')
 
-        print("Loading scaler...")
+        print("[SDAS ML] Loading scaler...")
         scaler = joblib.load('dataset/scaler.pkl')
 
-        print("Loading anomaly threshold...")
+        print("[SDAS ML] Loading anomaly threshold...")
         with open('models/anomaly_threshold.json') as f:
             threshold_data = json.load(f)
         anomaly_threshold = threshold_data['mse_threshold']
 
         models_loaded = True
-        print(f"✅ All 3 models loaded. Anomaly threshold: {anomaly_threshold:.6f}")
+        print(f"[SDAS ML] [OK] All 3 models loaded successfully. Anomaly threshold: {anomaly_threshold:.6f}")
     except Exception as e:
-        print(f"⚠️ Model loading failed: {e}")
+        print(f"[SDAS ML] [ERROR] Model loading failed: {e}")
         models_loaded = False
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    load_all_models()
+    yield
+
+app = FastAPI(
+    title="SDAS Hybrid ML Inference Server",
+    description="LSTM forecasting + Random Forest risk probability + Autoencoder anomaly detection for Puttalam Dam",
+    version="2.0.0",
+    lifespan=lifespan
+)
 
 # ── Request / Response schemas ─────────────────────────────────
 
 class SensorSequence(BaseModel):
     """24 hourly sensor readings for LSTM & Hybrid input."""
-    water_levels: List[float] = Field(..., min_items=24, max_items=24,
+    water_levels: List[float] = Field(..., min_length=24, max_length=24,
                                       description="Water level % for last 24 hours")
-    temperatures: List[float] = Field(..., min_items=24, max_items=24)
-    humidities:   List[float] = Field(..., min_items=24, max_items=24)
-    rainfalls:    List[float] = Field(..., min_items=24, max_items=24)
+    temperatures: List[float] = Field(..., min_length=24, max_length=24)
+    humidities:   List[float] = Field(..., min_length=24, max_length=24)
+    rainfalls:    List[float] = Field(..., min_length=24, max_length=24)
 
 
 class SingleReading(BaseModel):
