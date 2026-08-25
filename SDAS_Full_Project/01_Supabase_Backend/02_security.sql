@@ -59,6 +59,11 @@ CREATE POLICY "Operators can insert gate commands"
   WITH CHECK (TRUE);
 
 -- ─── PROFILES ────────────────────────────────────────────────
+-- Users can insert their profile (or trigger)
+CREATE POLICY "Allow profile insert"
+  ON profiles FOR INSERT TO anon, authenticated
+  WITH CHECK (TRUE);
+
 -- Users can read their own profile
 CREATE POLICY "Users can read own profile"
   ON profiles FOR SELECT TO authenticated
