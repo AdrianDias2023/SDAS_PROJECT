@@ -21,7 +21,7 @@
    Features:
      - Dual JSN-SR04T with temperature-compensated distance
      - 3% hysteresis on all level transitions
-     - Rate-of-rise detection (CLEAR-AREA vs PRE-WARNING)
+     - Rate-of-rise detection (WARNING CONTROLLED RELEASE vs PRE-WARNING)
      - Smooth servo movement (1°/15ms)
      - SIM800L SMS broadcast to stored contact list
      - Supabase REST API upload every 60 s
@@ -72,30 +72,22 @@ const char* SMS_CONTACTS[] = {
 };
 const int SMS_CONTACT_COUNT = 3;
 
-// Rate-of-rise threshold to trigger CLEAR-AREA (% per 2-second reading)
-// If water rises faster than this, upgrade PRE-WARNING → CLEAR-AREA
+// Rate-of-rise threshold to trigger WARNING / CONTROLLED RELEASE (% per 2-second reading)
+// If water rises faster than this, upgrade PRE-WARNING → WARNING / CONTROLLED RELEASE
 #define RISE_RATE_THRESHOLD  0.3f   // 0.3% per 2 seconds = ~9%/min
 
 // ════════════════════════════════════════════════════════════════════════════════
 
 
-// ─── PIN DEFINITIONS ───────────────────────────────────────────────────────────
+// ─── PIN DEFINITIONS (DO NOT CHANGE unless custom PCB) ─────────────────────────
+#define JSN1_TRIG_PIN  5    // Primary JSN-SR04T Trig
+#define JSN1_ECHO_PIN  18   // Primary JSN-SR04T Echo
+#define JSN2_TRIG_PIN  19   // Secondary JSN-SR04T Trig (Redundancy)
+#define JSN2_ECHO_PIN  21   // Secondary JSN-SR04T Echo (Redundancy)
+#define DHT_PIN        4    // DHT22 Temperature sensor
+#define SERVO_PIN      13   // MG996R PWM gate servo
 
-// JSN-SR04T Sensor 1 (Primary)
-#define TRIG_1     5
-#define ECHO_1     18
-
-// JSN-SR04T Sensor 2 (Redundancy)
-#define TRIG_2     19
-#define ECHO_2     21
-
-// DHT Sensor
-#define DHT_PIN    4
-
-// MG996R Servo Gate
-#define SERVO_PIN  13
-
-// SIM800L — Serial2 (TX=17 → SIM RX, RX=16 → SIM TX)
+// SIM800L UART Pins (Hardware Serial 2)
 #define SIM_TX_PIN 17
 #define SIM_RX_PIN 16
 
@@ -113,10 +105,11 @@ const int SMS_CONTACT_COUNT = 3;
 #define BTN_STOP_PIN   23   // Physical Emergency STOP/HOLD Button (Lock current position)
 
 // ─── ALERT THRESHOLDS ──────────────────────────────────────────────────────────
-#define THRESH_NORMAL      70.0f   // Below this = NORMAL
-#define THRESH_DANGER      85.0f   // Above this = DANGER
-// ─── PHYSICAL SENSOR DISTANCE CALIBRATION (IN CENTIMETERS - 3-POINT CALIBRATION) ─
-// Measure with a ruler on your physical dam model and adjust these values:
+#define THRESH_NORMAL    70.0f  // < 70%: NORMAL
+#define THRESH_DANGER    85.0f  // > 85%: DANGER
+#define HYSTERESIS        3.0f  // 3% deadband to stop rapid hunting
+
+// Physical Tank Distance Ruler Calibration (cm)
 float CALIB_EMPTY_DIST_CM  = 100.0f; // Sensor reading when reservoir is EMPTY (0% water level) -> Max distance
 float CALIB_HALF_DIST_CM   = 55.0f;  // Sensor reading when reservoir is HALF FULL (50% water level)
 float CALIB_FULL_DIST_CM   = 10.0f;  // Sensor reading when reservoir is FULL (100% water level) -> Min distance
@@ -125,9 +118,7 @@ float CALIB_FULL_DIST_CM   = 10.0f;  // Sensor reading when reservoir is FULL (1
 #define GATE_CLOSED     0     //   0% open (0°)   : NORMAL — Store water, maximum conservation
 #define GATE_PRE_WARN   0     //   0% open (0°)   : PRE-WARNING — Safe storage available / monitor
 #define GATE_WARNING    36    //  20% open (36°)  : WARNING / CONTROLLED RELEASE — Gradual buffer release
-#define GATE_CLEAR      36    //  20% open (Alias for backward compatibility)
 #define GATE_DANGER     90    //  50% open (90°)  : DANGER — Emergency release (50% max safe opening)
-#define GATE_FULL_OPEN  90    //  50% open (Alias for backward compatibility)
 
 // ─── TIMING ────────────────────────────────────────────────────────────────────
 #define SENSOR_INTERVAL_MS  2000    // Read sensors every 2 s
@@ -142,7 +133,7 @@ enum AlertLevel : uint8_t {
   LEVEL_NORMAL             = 0,  // Tier 1: NORMAL — Store water, normal operation (<70%, Gate 0%)
   LEVEL_PRE_WARN           = 1,  // Tier 2: PRE-WARNING — Monitor storage, safe capacity available (70-85%, Gate 0%)
   LEVEL_CONTROLLED_RELEASE = 2,  // Tier 3: WARNING / CONTROLLED RELEASE — Rapid surge (70-85%, Gate 20%)
-  LEVEL_CLEAR_AREA         = 2,  // Alias for backward compatibility
+  LEVEL_WARNING            = 2,  // Alias for Tier 3
   LEVEL_DANGER             = 3   // Tier 4: DANGER — Emergency flood protection (>85%, Gate 50%)
 };
 
@@ -247,15 +238,15 @@ AlertLevel evaluateLevel(float pct, float rateOfRise, AlertLevel current) {
     return LEVEL_DANGER;
   }
 
-  // ── PRE-WARNING/CLEAR-AREA band (70–85%) ───────────────────────────────────
+  // ── PRE-WARNING/WARNING band (70–85%) ───────────────────────────────────
   if (pct >= THRESH_NORMAL) {
-    // If rising fast → CLEAR-AREA
+    // If rising fast → WARNING / CONTROLLED RELEASE
     if (rateOfRise >= RISE_RATE_THRESHOLD) {
-      return LEVEL_CLEAR_AREA;
+      return LEVEL_CONTROLLED_RELEASE;
     }
-    // Already at CLEAR or DANGER coming down — keep CLEAR until hysteresis
-    if (current >= LEVEL_CLEAR_AREA) {
-      return LEVEL_CLEAR_AREA;
+    // Already at WARNING or DANGER coming down — keep WARNING until hysteresis
+    if (current >= LEVEL_CONTROLLED_RELEASE) {
+      return LEVEL_CONTROLLED_RELEASE;
     }
     return LEVEL_PRE_WARN;
   }
@@ -264,12 +255,12 @@ AlertLevel evaluateLevel(float pct, float rateOfRise, AlertLevel current) {
   switch (current) {
     case LEVEL_DANGER:
       // Must drop below (THRESH_DANGER - HYSTERESIS) before stepping down
-      if (pct < THRESH_DANGER - HYSTERESIS) return LEVEL_CLEAR_AREA;
+      if (pct < THRESH_DANGER - HYSTERESIS) return LEVEL_CONTROLLED_RELEASE;
       return LEVEL_DANGER;
 
-    case LEVEL_CLEAR_AREA:
+    case LEVEL_CONTROLLED_RELEASE:
       if (pct < THRESH_NORMAL - HYSTERESIS) return LEVEL_NORMAL;
-      return LEVEL_CLEAR_AREA;
+      return LEVEL_CONTROLLED_RELEASE;
 
     case LEVEL_PRE_WARN:
       if (pct < THRESH_NORMAL - HYSTERESIS) return LEVEL_NORMAL;
@@ -293,10 +284,10 @@ void setLED(bool r, bool g, bool b) {
 
 void applyStatusLED(AlertLevel level) {
   switch (level) {
-    case LEVEL_NORMAL:     setLED(0, 1, 0); break; // 🟢 Green
-    case LEVEL_PRE_WARN:   setLED(1, 1, 0); break; // 🟡 Yellow  (R+G)
-    case LEVEL_CLEAR_AREA: setLED(1, 1, 0); break; // 🟠 Orange  (R+G dim — hardware PWM optional)
-    case LEVEL_DANGER:     setLED(1, 0, 0); break; // 🔴 Red
+    case LEVEL_NORMAL:             setLED(0, 1, 0); break; // 🟢 Green
+    case LEVEL_PRE_WARN:           setLED(1, 1, 0); break; // 🟡 Yellow  (R+G)
+    case LEVEL_CONTROLLED_RELEASE: setLED(1, 1, 0); break; // 🟠 Orange  (R+G dim — hardware PWM optional)
+    case LEVEL_DANGER:             setLED(1, 0, 0); break; // 🔴 Red
   }
 }
 
@@ -344,10 +335,10 @@ void applyGate(AlertLevel level) {
     return;
   }
   switch (level) {
-    case LEVEL_NORMAL:     setGate(GATE_CLOSED);    break;
-    case LEVEL_PRE_WARN:   setGate(GATE_PRE_WARN);  break;
-    case LEVEL_CLEAR_AREA: setGate(GATE_CLEAR);     break;
-    case LEVEL_DANGER:     setGate(GATE_FULL_OPEN); break;
+    case LEVEL_NORMAL:             setGate(GATE_CLOSED);  break;
+    case LEVEL_PRE_WARN:           setGate(GATE_PRE_WARN);break;
+    case LEVEL_CONTROLLED_RELEASE: setGate(GATE_WARNING); break;
+    case LEVEL_DANGER:             setGate(GATE_DANGER);  break;
   }
 }
 
@@ -363,7 +354,7 @@ void checkEmergencyButtons() {
     physicalManualOverride = true;
     currentSystemMode      = MODE_MANUAL;
     Serial.println(F("\n[MANUAL OVERRIDE] Physical OPEN Pressed → Actuating Gate to 50% (90°)"));
-    setGate(GATE_FULL_OPEN);
+    setGate(GATE_DANGER);
     triggerBuzzer(2, 100, 50);
   }
   // 2. Emergency CLOSE Button Pressed (with Safety Interlock Guard)
@@ -519,7 +510,7 @@ void offlineControl(float waterLevel, float riseRate) {
     if (currentLevel == LEVEL_DANGER) {
       triggerBuzzer(6, 400, 150);
       Serial.println(F("[OFFLINE EMERGENCY] Controlled Emergency Spillway Release (50%) + 85dB Siren ACTIVE!"));
-    } else if (currentLevel == LEVEL_CLEAR_AREA) {
+    } else if (currentLevel == LEVEL_CONTROLLED_RELEASE) {
       triggerBuzzer(3, 300, 200);
     } else if (currentLevel == LEVEL_PRE_WARN) {
       triggerBuzzer(1, 300, 0);
@@ -855,10 +846,10 @@ void loop() {
 
         // Buzzer pattern per level
         switch (currentLevel) {
-          case LEVEL_PRE_WARN:   triggerBuzzer(1, 300, 0);   break;
-          case LEVEL_CLEAR_AREA: triggerBuzzer(3, 300, 200); break;
-          case LEVEL_DANGER:     triggerBuzzer(6, 400, 150); break;
-          case LEVEL_NORMAL:     triggerBuzzer(1, 100, 0);   break;
+          case LEVEL_PRE_WARN:           triggerBuzzer(1, 300, 0);   break;
+          case LEVEL_CONTROLLED_RELEASE: triggerBuzzer(3, 300, 200); break;
+          case LEVEL_DANGER:             triggerBuzzer(6, 400, 150); break;
+          case LEVEL_NORMAL:             triggerBuzzer(1, 100, 0);   break;
         }
       }
 

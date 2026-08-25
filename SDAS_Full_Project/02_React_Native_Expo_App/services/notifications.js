@@ -15,7 +15,7 @@ export function triggerEmergencyAlarm(level, message) {
   if (Platform.OS !== 'web') {
     if (level === 'DANGER') {
       Vibration.vibrate([0, 1000, 500, 1500, 500, 2000], true); // continuous SOS pulse
-    } else if (level === 'CLEAR_AREA' || level === 'PRE_WARNING') {
+    } else if (level === 'WARNING' || level === 'PRE_WARNING') {
       Vibration.vibrate([0, 600, 300, 600], false);
     }
   }
@@ -24,7 +24,7 @@ export function triggerEmergencyAlarm(level, message) {
   if (level === 'DANGER') {
     Alert.alert(
       '🚨 CRITICAL FLOOD ALERT: DANGER',
-      message || 'Water level exceeds 85%. Spill gates are 100% OPEN. Please evacuate immediately to designated high ground.',
+      message || 'DANGER: Critical water level detected. Gate opened 50% controlled emergency release. Move to a safe location and follow official safety instructions.',
       [
         { text: 'Silence Alarm', onPress: () => Vibration.cancel(), style: 'cancel' },
         { text: 'View Safe Zones', onPress: () => {}, style: 'destructive' },
