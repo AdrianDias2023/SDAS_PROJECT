@@ -1,82 +1,96 @@
-// SDAS — Water Level Gauge Component
-// Circular gauge showing water level percentage with animation
+// SDAS — Modern Semi-Circular Water Level Gauge Component
+// Matches Prototype Design Screen 2: 72.4% (257.3 m / 355.0 m)
 
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import Svg, { Circle, Text as SvgText } from 'react-native-svg';
+import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 
-const SIZE   = 200;
-const RADIUS = 80;
-const STROKE = 16;
-const CIRC   = 2 * Math.PI * RADIUS;
+const SIZE = 240;
+const RADIUS = 90;
+const STROKE = 14;
 
-export default function WaterLevelGauge({ percentage = 0, color = '#27AE60', loading = false }) {
+export default function WaterLevelGauge({
+  percentage = 0,
+  color = '#27AE60',
+  statusLabel = 'NORMAL',
+  loading = false,
+  maxMeters = 355.0,
+}) {
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(anim, {
-      toValue:         percentage,
-      duration:        800,
+    Animated.spring(anim, {
+      toValue: Math.min(100, Math.max(0, percentage)),
+      friction: 8,
+      tension: 40,
       useNativeDriver: false,
     }).start();
   }, [percentage]);
 
+  const currentMeters = ((percentage / 100) * maxMeters).toFixed(1);
+  const strokeDash = Math.PI * RADIUS; // Half circumference for 180 deg arc
+  
   const strokeDashoffset = anim.interpolate({
-    inputRange:  [0, 100],
-    outputRange: [CIRC, 0],
+    inputRange: [0, 100],
+    outputRange: [strokeDash, 0],
   });
 
-  // AnimatedCircle component
-  const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+  const AnimatedPath = Animated.createAnimatedComponent(Path);
+
+  // SVG Arc from 180 deg to 0 deg (top half semi-circle)
+  const arcPath = `M ${SIZE / 2 - RADIUS} ${SIZE / 2} A ${RADIUS} ${RADIUS} 0 0 1 ${SIZE / 2 + RADIUS} ${SIZE / 2}`;
 
   return (
     <View style={styles.container}>
-      <Svg width={SIZE} height={SIZE}>
-        {/* Background ring */}
-        <Circle
-          cx={SIZE / 2} cy={SIZE / 2}
-          r={RADIUS}
-          stroke="#E8EDF2"
-          strokeWidth={STROKE}
-          fill="none"
-        />
-        {/* Progress ring */}
-        <AnimatedCircle
-          cx={SIZE / 2} cy={SIZE / 2}
-          r={RADIUS}
-          stroke={color}
-          strokeWidth={STROKE}
-          fill="none"
-          strokeDasharray={CIRC}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          rotation="-90"
-          origin={`${SIZE / 2}, ${SIZE / 2}`}
-        />
-        {/* Centre text */}
-        <SvgText
-          x={SIZE / 2} y={SIZE / 2 - 8}
-          textAnchor="middle"
-          fontSize="32"
-          fontWeight="bold"
-          fill={color}
-        >
-          {loading ? '--' : `${percentage.toFixed(1)}`}
-        </SvgText>
-        <SvgText
-          x={SIZE / 2} y={SIZE / 2 + 16}
-          textAnchor="middle"
-          fontSize="14"
-          fill="#7F8C8D"
-        >
-          % capacity
-        </SvgText>
-      </Svg>
+      <View style={styles.svgWrapper}>
+        <Svg width={SIZE} height={SIZE / 2 + 30} viewBox={`0 0 ${SIZE} ${SIZE / 2 + 30}`}>
+          <Defs>
+            <LinearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <Stop offset="0%" stopColor="#10B981" />
+              <Stop offset="50%" stopColor="#F59E0B" />
+              <Stop offset="100%" stopColor="#EF4444" />
+            </LinearGradient>
+          </Defs>
 
-      {/* Threshold markers */}
-      <View style={styles.markers}>
-        <Text style={[styles.marker, { color: '#E74C3C' }]}>⚠ DANGER 85%</Text>
-        <Text style={[styles.marker, { color: '#F39C12' }]}>⚠ WARN 70%</Text>
+          {/* Background Arc Track */}
+          <Path
+            d={arcPath}
+            stroke="#E2E8F0"
+            strokeWidth={STROKE}
+            fill="none"
+            strokeLinecap="round"
+          />
+
+          {/* Animated Value Arc */}
+          <AnimatedPath
+            d={arcPath}
+            stroke={color}
+            strokeWidth={STROKE}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={strokeDash}
+            strokeDashoffset={strokeDashoffset}
+          />
+        </Svg>
+
+        {/* Center Telemetry Content */}
+        <View style={styles.centerContent}>
+          <Text style={[styles.pctText, { color: '#0F172A' }]}>
+            {loading ? '...' : `${percentage.toFixed(1)}%`}
+          </Text>
+          <Text style={styles.metersText}>
+            ({currentMeters} m / {maxMeters.toFixed(1)} m)
+          </Text>
+          <View style={[styles.statusBadge, { backgroundColor: `${color}18`, borderColor: color }]}>
+            <Text style={[styles.statusBadgeText, { color }]}>{statusLabel}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* 0% and 100% Boundary Labels */}
+      <View style={styles.boundsRow}>
+        <Text style={styles.boundLabel}>0%</Text>
+        <Text style={styles.boundLabel}>100%</Text>
       </View>
     </View>
   );

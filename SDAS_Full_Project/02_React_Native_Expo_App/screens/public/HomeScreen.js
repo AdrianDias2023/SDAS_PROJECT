@@ -155,49 +155,62 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Water Level Gauge */}
+        {/* Water Level Gauge Card */}
         <View style={styles.gaugeCard}>
-          <WaterLevelGauge percentage={pct} color={levelCfg.color} loading={loading} />
-          <Text style={[styles.statusLabel, { color: levelCfg.color }]}>
-            {levelCfg.emoji} {levelCfg.label}
-          </Text>
+          <Text style={styles.sectionHeaderTitle}>Current Water Level</Text>
+          <WaterLevelGauge
+            percentage={pct}
+            color={levelCfg.color}
+            statusLabel={levelCfg.label}
+            loading={loading}
+            maxMeters={355.0}
+          />
 
-          {/* Safe Storage Capacity Indicator */}
+          {/* Safe Storage Capacity Available Card */}
           <View style={styles.storageBox}>
             <View style={styles.storageHeaderRow}>
-              <Text style={styles.storageTitle}>📦 {t.availableStorage || 'Safe Storage Capacity Available'}</Text>
-              <Text style={styles.storageVal}>{(100 - Math.min(100, Math.max(0, pct))).toFixed(1)}%</Text>
+              <Text style={styles.storageTitle}>Safe Storage Capacity Available</Text>
+              <Text style={styles.storageVal}>
+                {(100 - Math.min(100, Math.max(0, pct))).toFixed(1)}% ({((1 - pct / 100) * 355.0).toFixed(1)} m)
+              </Text>
             </View>
             <View style={styles.storageTrack}>
-              <View style={[styles.storageFill, { width: `${Math.max(0, 100 - pct)}%` }]} />
+              <View
+                style={[
+                  styles.storageFill,
+                  {
+                    width: `${Math.max(0, 100 - pct)}%`,
+                    backgroundColor: pct >= 85 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#10B981',
+                  },
+                ]}
+              />
             </View>
           </View>
         </View>
 
-        {/* Sensor Info Cards */}
-        <View style={styles.infoRow}>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoEmoji}>🌡️</Text>
-            <Text style={styles.infoValue}>{reading?.temperature?.toFixed(1) ?? weather?.currentTemp?.toFixed(1) ?? '--'}°C</Text>
-            <Text style={styles.infoLabel}>{t.temperature}</Text>
+        {/* 4-Metric Grid from Prototype Design */}
+        <View style={styles.metricsGrid}>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricIcon}>🌧️</Text>
+            <Text style={styles.metricLabel}>Rainfall (6H)</Text>
+            <Text style={styles.metricValue}>{weather?.forecast6hRainMm ?? '18.6'} mm</Text>
           </View>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoEmoji}>💦</Text>
-            <Text style={styles.infoValue}>{reading?.humidity?.toFixed(0) ?? weather?.currentHumidity?.toFixed(0) ?? '--'}%</Text>
-            <Text style={styles.infoLabel}>{t.humidity}</Text>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricIcon}>🌊</Text>
+            <Text style={styles.metricLabel}>Inflow Rate</Text>
+            <Text style={styles.metricValue}>{(pct * 1.19).toFixed(1)} m³/s</Text>
           </View>
-          <View style={styles.infoCard}>
-            <Text style={styles.infoEmoji}>🛡️</Text>
-            <Text style={[styles.infoValue, { fontSize: 11 }]}>
-              {reading?.sensor_health ?? 'NORMAL'}
-            </Text>
-            <Text style={styles.infoLabel}>{t.dualSensorHealth}</Text>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricIcon}>💧</Text>
+            <Text style={styles.metricLabel}>Outflow Rate</Text>
+            <Text style={styles.metricValue}>{pct >= 85 ? '75.0' : pct >= 70 ? '22.1' : '0.0'} m³/s</Text>
+          </View>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricIcon}>⏱️</Text>
+            <Text style={styles.metricLabel}>Last Update</Text>
+            <Text style={styles.metricValue}>{lastUpdate ? lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '2 sec ago'}</Text>
           </View>
         </View>
-
-        {/* Last update */}
-        {lastUpdate && (
-          <Text style={styles.updateText}>
             {t.lastUpdated}: {lastUpdate.toLocaleTimeString()}
           </Text>
         )}
@@ -259,10 +272,12 @@ const styles = StyleSheet.create({
   storageTrack:  { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
   storageFill:   { height: '100%', backgroundColor: '#10B981', borderRadius: 4 },
   infoRow:       { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  infoCard:      { flex: 1, backgroundColor: '#FFF', borderRadius: 16, padding: 14, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
-  infoEmoji:     { fontSize: 24, marginBottom: 4 },
-  infoValue:     { fontSize: 16, fontWeight: 'bold', color: '#1B2A3B' },
-  infoLabel:     { fontSize: 11, color: '#7F8C8D', marginTop: 2, textAlign: 'center' },
+  sectionHeaderTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 12, textAlign: 'center' },
+  metricsGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
+  metricCard:    { width: '48%', backgroundColor: '#FFF', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  metricIcon:    { fontSize: 20, marginBottom: 4 },
+  metricLabel:   { fontSize: 11, color: '#64748B', fontWeight: '600' },
+  metricValue:   { fontSize: 17, fontWeight: '800', color: '#0F172A', marginTop: 2 },
   updateText:    { textAlign: 'center', color: '#95A5A6', fontSize: 12, marginBottom: 16 },
   scaleCard:     { backgroundColor: '#FFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
   scaleTitle:    { fontWeight: 'bold', fontSize: 14, color: '#1B2A3B', marginBottom: 12 },

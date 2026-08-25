@@ -73,7 +73,6 @@ export default function EvacuationMapScreen() {
   const region = DAM_REGIONS[selectedDamId] || DAM_REGIONS.ESP32_PUTTALAM_01;
   const currentDam = region.dam;
   const safeZones = region.safeZones;
-  const [selectedZone, setSelectedZone] = useState(safeZones[0]);
 
   const openInMaps = (lat, lng, label) => {
     const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
@@ -93,110 +92,120 @@ export default function EvacuationMapScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>🗺️ {t.mapTitle ?? 'Evacuation Safe Zones'}</Text>
+          <Text style={styles.headerTitle}>🗺️ Evacuation & Safety</Text>
           <LanguageSelector compact={true} />
         </View>
         <Text style={styles.headerSub}>{currentDam.district} Disaster Response Corridor</Text>
-        <DamSelector selectedDamId={selectedDamId} onSelectDam={(id) => { setSelectedDamId(id); setSelectedZone(DAM_REGIONS[id].safeZones[0]); }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Dam Location Hazard Card */}
-        <View style={styles.hazardCard}>
-          <View style={styles.hazardHeader}>
-            <Text style={styles.hazardIcon}>⚠️</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.hazardTitle}>
-                {lang === 'si' ? currentDam.nameSi : lang === 'ta' ? currentDam.nameTa : currentDam.name}
-              </Text>
-              <Text style={styles.hazardSub}>Elevation: {currentDam.elevation} • {currentDam.hazardLevel}</Text>
+        {/* Prototype Map Container */}
+        <View style={styles.mapCard}>
+          <View style={styles.mapHeaderRow}>
+            <Text style={styles.mapTitle}>Evacuation Zones (Prototype)</Text>
+            <View style={styles.liveGpsBadge}>
+              <Text style={styles.liveGpsText}>📍 GPS ACTIVE</Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.mapPinBtn}
-            onPress={() => openInMaps(currentDam.lat, currentDam.lng, currentDam.name)}
-          >
-            <Text style={styles.mapPinBtnText}>📍 View Dam Sluice on Google Maps</Text>
-          </TouchableOpacity>
+
+          {/* Graphical Map Representation */}
+          <View style={styles.mapGraphic}>
+            <View style={styles.damPin}>
+              <Text style={styles.pinIcon}>💧</Text>
+              <Text style={styles.pinDamText}>Tabbowa Dam</Text>
+            </View>
+            <View style={[styles.shelterPin, { top: 20, left: 30 }]}>
+              <Text style={styles.pinIcon}>🟢</Text>
+              <Text style={styles.pinText}>Zone 1</Text>
+            </View>
+            <View style={[styles.shelterPin, { bottom: 25, left: 80 }]}>
+              <Text style={styles.pinIcon}>🟢</Text>
+              <Text style={styles.pinText}>Zone 2</Text>
+            </View>
+            <View style={[styles.shelterPin, { top: 30, right: 35 }]}>
+              <Text style={styles.pinIcon}>🟢</Text>
+              <Text style={styles.pinText}>Zone 3</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Section Title */}
-        <Text style={styles.sectionHeading}>HIGH-GROUND RELIEF CENTERS & SHELTERS</Text>
+        {/* Nearest Safe Locations List */}
+        <Text style={styles.sectionHeading}>Nearest Safe Locations</Text>
+        
+        {safeZones.map((zone, index) => (
+          <TouchableOpacity
+            key={zone.id}
+            style={styles.zoneCard}
+            onPress={() => openInMaps(zone.lat, zone.lng, zone.name)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.zoneNumCircle}>
+              <Text style={styles.zoneNumText}>{index + 1}</Text>
+            </View>
+            <View style={styles.zoneInfoCol}>
+              <Text style={styles.zoneName}>{lang === 'si' ? zone.nameSi : lang === 'ta' ? zone.nameTa : zone.name}</Text>
+              <Text style={styles.zoneSub}>
+                Distance: <Text style={styles.zoneBold}>{zone.distance}</Text> • Elevation: <Text style={styles.zoneBold}>{zone.elevation.split(' ')[0]}</Text>
+              </Text>
+            </View>
+            <Text style={styles.zoneChevron}>›</Text>
+          </TouchableOpacity>
+        ))}
 
-        {/* Safe Zones List */}
-        {safeZones.map((zone) => {
-          const isSelected = selectedZone?.id === zone.id;
-          const zoneName = lang === 'si' ? zone.nameSi : lang === 'ta' ? zone.nameTa : zone.name;
-
-          return (
-            <TouchableOpacity
-              key={zone.id}
-              style={[styles.zoneCard, isSelected && styles.zoneCardActive]}
-              onPress={() => setSelectedZone(zone)}
-              activeOpacity={0.85}
-            >
-              <View style={styles.zoneTopRow}>
-                <View style={styles.badgeSafe}>
-                  <Text style={styles.badgeSafeText}>SAFE SHELTER</Text>
-                </View>
-                <Text style={styles.zoneDistText}>🚗 {zone.distance}</Text>
-              </View>
-
-              <Text style={styles.zoneNameText}>{zoneName}</Text>
-              <Text style={styles.zoneElevationText}>⛰️ {zone.elevation} • 👥 Capacity: {zone.capacity}</Text>
-              <Text style={styles.zoneRouteText}>🧭 {zone.route}</Text>
-
-              {/* Action Buttons */}
-              <View style={styles.actionRow}>
-                <TouchableOpacity
-                  style={styles.navButton}
-                  onPress={() => openInMaps(zone.lat, zone.lng, zoneName)}
-                >
-                  <Text style={styles.navButtonText}>🗺️ Navigate (GPS)</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.callButton}
-                  onPress={() => callHotline(zone.contact)}
-                >
-                  <Text style={styles.callButtonText}>📞 Emergency Call</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+        {/* DMC Emergency Hotline 117 Card */}
+        <TouchableOpacity
+          style={styles.hotlineCard}
+          onPress={() => callHotline('117')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.hotlineLeft}>
+            <Text style={styles.hotlineEmoji}>🚨</Text>
+            <View>
+              <Text style={styles.hotlineTitle}>DMC Hotline</Text>
+              <Text style={styles.hotlineNumber}>117</Text>
+            </View>
+          </View>
+          <View style={styles.phoneCircle}>
+            <Text style={styles.phoneIcon}>📞</Text>
+          </View>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container:        { flex: 1, backgroundColor: '#F8FAFC' },
-  header:           { backgroundColor: '#0F4C81', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 14 },
-  headerTop:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle:      { fontSize: 20, fontWeight: '800', color: '#FFF' },
-  headerSub:        { color: '#90CAF9', fontSize: 12, fontWeight: '500', marginTop: 2 },
-  scroll:           { padding: 16, paddingBottom: 40 },
-  hazardCard:       { backgroundColor: '#FEF2F2', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1.5, borderColor: '#FCA5A5' },
-  hazardHeader:     { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  hazardIcon:       { fontSize: 28 },
-  hazardTitle:      { fontSize: 15, fontWeight: '800', color: '#991B1B' },
-  hazardSub:        { fontSize: 11, color: '#B91C1C', marginTop: 2, fontWeight: '600' },
-  mapPinBtn:        { backgroundColor: '#DC2626', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
-  mapPinBtnText:    { color: '#FFF', fontWeight: '800', fontSize: 12 },
-  sectionHeading:   { fontSize: 11, fontWeight: '800', color: '#64748B', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 },
-  zoneCard:         { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1.5, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
-  zoneCardActive:   { borderColor: '#0284C7', backgroundColor: '#F0F9FF' },
-  zoneTopRow:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  badgeSafe:        { backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  badgeSafeText:    { color: '#166534', fontSize: 10, fontWeight: '800' },
-  zoneDistText:     { fontSize: 12, fontWeight: '700', color: '#0284C7' },
-  zoneNameText:     { fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
-  zoneElevationText:{ fontSize: 12, color: '#15803D', fontWeight: '600', marginBottom: 4 },
-  zoneRouteText:    { fontSize: 11, color: '#64748B', lineHeight: 16, marginBottom: 12 },
-  actionRow:        { flexDirection: 'row', gap: 10 },
-  navButton:        { flex: 1, backgroundColor: '#0284C7', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
-  navButtonText:    { color: '#FFF', fontWeight: '700', fontSize: 12 },
-  callButton:       { flex: 1, backgroundColor: '#10B981', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
-  callButtonText:   { color: '#FFF', fontWeight: '700', fontSize: 12 },
+  container:      { flex: 1, backgroundColor: '#F8FAFC' },
+  header:         { backgroundColor: '#0F4C81', padding: 20, paddingTop: 48 },
+  headerTop:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerTitle:    { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  headerSub:      { color: '#90CAF9', fontSize: 12, marginTop: 4 },
+  scroll:         { padding: 16, paddingBottom: 40 },
+  mapCard:        { backgroundColor: '#FFF', borderRadius: 16, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  mapHeaderRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  mapTitle:       { fontSize: 13, fontWeight: '800', color: '#0F172A' },
+  liveGpsBadge:   { backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  liveGpsText:    { fontSize: 9, fontWeight: '800', color: '#166534' },
+  mapGraphic:     { height: 160, backgroundColor: '#E0F2FE', borderRadius: 12, position: 'relative', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#BAE6FD' },
+  damPin:         { alignItems: 'center', backgroundColor: '#FFF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.1, elevation: 3 },
+  pinIcon:        { fontSize: 16 },
+  pinDamText:     { fontSize: 10, fontWeight: '800', color: '#0284C7' },
+  shelterPin:     { position: 'absolute', alignItems: 'center' },
+  pinText:        { fontSize: 9, fontWeight: '700', color: '#166534' },
+  sectionHeading: { fontSize: 14, fontWeight: '800', color: '#0F172A', marginBottom: 10 },
+  zoneCard:       { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+  zoneNumCircle:  { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  zoneNumText:    { fontSize: 13, fontWeight: '800', color: '#0F4C81' },
+  zoneInfoCol:    { flex: 1 },
+  zoneName:       { fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 2 },
+  zoneSub:        { fontSize: 11, color: '#64748B' },
+  zoneBold:       { fontWeight: '700', color: '#334155' },
+  zoneChevron:    { fontSize: 20, color: '#94A3B8', fontWeight: 'bold', marginLeft: 8 },
+  hotlineCard:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1.5, borderColor: '#FCA5A5', shadowColor: '#EF4444', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
+  hotlineLeft:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  hotlineEmoji:   { fontSize: 26 },
+  hotlineTitle:   { fontSize: 11, color: '#64748B', fontWeight: '700' },
+  hotlineNumber:  { fontSize: 22, fontWeight: '900', color: '#DC2626' },
+  phoneCircle:    { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
+  phoneIcon:      { fontSize: 20 },
 });

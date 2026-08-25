@@ -4,362 +4,146 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  Image,
   SafeAreaView,
+  TouchableOpacity,
 } from 'react-native';
 import { useLanguage } from '../../services/i18n';
 import LanguageSelector from '../../components/LanguageSelector';
+import { supabase } from '../../services/supabase';
 
-export default function AboutScreen() {
-  const { t } = useLanguage();
+export default function AboutScreen({ navigation }) {
+  const { lang, t } = useLanguage();
+
+  const handleLogout = () => {
+    supabase.auth.signOut();
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Header with Official Logo */}
+        {/* Header */}
         <View style={styles.header}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.appTitle}>{t.appFullName}</Text>
-          <Text style={styles.tagline}>"{t.tagline}"</Text>
-          
-          <View style={styles.langSelectorWrapper}>
-            <LanguageSelector />
+          <Text style={styles.headerTitle}>⚙️ Settings & More</Text>
+          <Text style={styles.headerSub}>Preferences, Dam Profiles & Technical Docs</Text>
+        </View>
+
+        {/* ── SETTINGS MENU ITEMS ── */}
+        <View style={styles.menuCard}>
+          {/* Dam Profile */}
+          <View style={styles.menuRow}>
+            <View style={styles.menuRowLeft}>
+              <Text style={styles.menuEmoji}>🏛️</Text>
+              <View>
+                <Text style={styles.menuTitle}>Dam Profile</Text>
+                <Text style={styles.menuSub}>Tabbowa Prototype Dam (Simulation)</Text>
+              </View>
+            </View>
+            <Text style={styles.chevron}>›</Text>
           </View>
-        </View>
 
-        {/* Project Overview Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>🌊 {t.aboutProject}</Text>
-          <Text style={styles.bodyText}>{t.aboutProjectDesc}</Text>
-        </View>
-
-        {/* System Architecture & End-to-End Data Flow Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>📐 End-to-End System Architecture</Text>
-          <View style={styles.flowList}>
-            <View style={styles.flowStep}>
-              <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>1</Text></View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Sensing & Telemetry Layer</Text>
-                <Text style={styles.stepDesc}>Dual JSN-SR04T ultrasonic sensors (±2cm precision) + DHT22 temp-speed-of-sound calibration + OpenWeatherMap live rainfall API.</Text>
+          {/* Language Selector */}
+          <View style={styles.menuRow}>
+            <View style={styles.menuRowLeft}>
+              <Text style={styles.menuEmoji}>🌐</Text>
+              <View>
+                <Text style={styles.menuTitle}>Language / භාෂාව / தமிழ்</Text>
+                <Text style={styles.menuSub}>{lang === 'si' ? 'සිංහල' : lang === 'ta' ? 'தமிழ்' : 'English'}</Text>
               </View>
             </View>
-
-            <View style={styles.flowArrow}><Text style={styles.flowArrowText}>↓</Text></View>
-
-            <View style={styles.flowStep}>
-              <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>2</Text></View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>ESP32 Edge Safety Node</Text>
-                <Text style={styles.stepDesc}>Sensor fusion, local outlier filtering, fail-safe 4-tier autonomous threshold controller, RGB LED & local 85dB siren.</Text>
-              </View>
-            </View>
-
-            <View style={styles.flowArrow}><Text style={styles.flowArrowText}>↓</Text></View>
-
-            <View style={styles.flowStep}>
-              <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>3</Text></View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Supabase Cloud Backend</Text>
-                <Text style={styles.stepDesc}>PostgreSQL time-series store, Row-Level Security (RLS), instant DB auto-alert triggers & sub-second Realtime WebSocket broker.</Text>
-              </View>
-            </View>
-
-            <View style={styles.flowArrow}><Text style={styles.flowArrowText}>↓</Text></View>
-
-            <View style={styles.flowStep}>
-              <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>4</Text></View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>AI & Predictive Analytics Engine</Text>
-                <Text style={styles.stepDesc}>FastAPI server: 2-layer stacked LSTM (1-hour flood forecast) + deep symmetric Autoencoder (sensor drift & surge anomaly detection).</Text>
-              </View>
-            </View>
-
-            <View style={styles.flowArrow}><Text style={styles.flowArrowText}>↓</Text></View>
-
-            <View style={styles.flowStep}>
-              <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>5</Text></View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepTitle}>Client Apps & Physical Actuation</Text>
-                <Text style={styles.stepDesc}>Public/Operator React Native App (3 Languages) + SIM800L emergency GSM SMS broadcast + MG996R automated servo gate actuation.</Text>
-              </View>
-            </View>
+            <LanguageSelector compact={true} />
           </View>
-        </View>
 
-        {/* 4-Tier Early Warning Thresholds */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>🚨 4-Level Safety Decision Matrix</Text>
-          <View style={styles.thresholdTable}>
-            <View style={[styles.thresholdRow, { backgroundColor: '#ECFDF5', borderLeftColor: '#10B981' }]}>
-              <View style={styles.thresholdBadge}>
-                <Text style={[styles.thresholdTitle, { color: '#047857' }]}>NORMAL</Text>
-                <Text style={styles.thresholdRange}>&lt; 70%</Text>
+          {/* Notification Settings */}
+          <View style={styles.menuRow}>
+            <View style={styles.menuRowLeft}>
+              <Text style={styles.menuEmoji}>🔔</Text>
+              <View>
+                <Text style={styles.menuTitle}>Notification Settings</Text>
+                <Text style={styles.menuSub}>Audible Siren, In-App & SMS Alerts</Text>
               </View>
-              <Text style={styles.thresholdDesc}>Gate: 0° (Closed) • LED: Green • Regular 60s cloud telemetry</Text>
             </View>
+            <Text style={styles.chevron}>›</Text>
+          </View>
 
-            <View style={[styles.thresholdRow, { backgroundColor: '#FEFCE8', borderLeftColor: '#EAB308' }]}>
-              <View style={styles.thresholdBadge}>
-                <Text style={[styles.thresholdTitle, { color: '#A16207' }]}>PRE-WARNING</Text>
-                <Text style={styles.thresholdRange}>70% – 85%</Text>
+          {/* Alert Contacts */}
+          <TouchableOpacity
+            style={styles.menuRow}
+            onPress={() => navigation?.navigate && navigation.navigate('Contacts')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.menuRowLeft}>
+              <Text style={styles.menuEmoji}>📱</Text>
+              <View>
+                <Text style={styles.menuTitle}>Alert Contacts</Text>
+                <Text style={styles.menuSub}>SIM800L Emergency SMS Dispatch List</Text>
               </View>
-              <Text style={styles.thresholdDesc}>Gate: 0% (Closed) • LED: Yellow • Safe storage available, monitoring active</Text>
             </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
 
-            <View style={[styles.thresholdRow, { backgroundColor: '#FFF7ED', borderLeftColor: '#F97316' }]}>
-              <View style={styles.thresholdBadge}>
-                <Text style={[styles.thresholdTitle, { color: '#C2410C' }]}>WARNING</Text>
-                <Text style={styles.thresholdRange}>70%–85% Rising</Text>
+          {/* System Information */}
+          <View style={styles.menuRow}>
+            <View style={styles.menuRowLeft}>
+              <Text style={styles.menuEmoji}>ℹ️</Text>
+              <View>
+                <Text style={styles.menuTitle}>System Information</Text>
+                <Text style={styles.menuSub}>ESP32 Edge + 3-Stage Hybrid AI Server</Text>
               </View>
-              <Text style={styles.thresholdDesc}>Gate: 20% (36°) • LED: Orange • Rapid surge controlled buffer release</Text>
             </View>
+            <Text style={styles.chevron}>›</Text>
+          </View>
 
-            <View style={[styles.thresholdRow, { backgroundColor: '#FEF2F2', borderLeftColor: '#EF4444' }]}>
-              <View style={styles.thresholdBadge}>
-                <Text style={[styles.thresholdTitle, { color: '#B91C1C' }]}>DANGER</Text>
-                <Text style={styles.thresholdRange}>&gt; 85%</Text>
+          {/* Help & Documentation */}
+          <View style={styles.menuRow}>
+            <View style={styles.menuRowLeft}>
+              <Text style={styles.menuEmoji}>📖</Text>
+              <View>
+                <Text style={styles.menuTitle}>Help & Documentation</Text>
+                <Text style={styles.menuSub}>User Guide & 4-Tier Safety Decision Matrix</Text>
               </View>
-              <Text style={styles.thresholdDesc}>Gate: 50% (90°) • LED: Red • Siren Buzzer active + Emergency Evacuation Alert</Text>
             </View>
+            <Text style={styles.chevron}>›</Text>
           </View>
+
+          {/* Log Out */}
+          <TouchableOpacity style={[styles.menuRow, { borderBottomWidth: 0 }]} onPress={handleLogout} activeOpacity={0.8}>
+            <View style={styles.menuRowLeft}>
+              <Text style={styles.menuEmoji}>🚪</Text>
+              <Text style={[styles.menuTitle, { color: '#EF4444', fontWeight: '800' }]}>Log Out</Text>
+            </View>
+            <Text style={[styles.chevron, { color: '#EF4444' }]}>›</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Key System Innovations */}
+        {/* Project Attribution Card */}
         <View style={styles.card}>
-          <Text style={styles.cardHeader}>⚙️ {t.aboutObjectives}</Text>
-          <Text style={styles.listItem}>{t.aboutObj1}</Text>
-          <Text style={styles.listItem}>{t.aboutObj2}</Text>
-          <Text style={styles.listItem}>{t.aboutObj3}</Text>
-          <Text style={styles.listItem}>{t.aboutObj4}</Text>
-          <Text style={styles.listItem}>{t.aboutObj5}</Text>
-          {t.aboutObj6 && <Text style={styles.listItem}>{t.aboutObj6}</Text>}
-        </View>
-
-        {/* Project Authors */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>👥 {t.aboutTeam}</Text>
-          <View style={styles.teamMember}>
-            <Text style={styles.memberName}>{t.teamRole1}</Text>
-          </View>
-          <View style={styles.teamMember}>
-            <Text style={styles.memberName}>{t.teamRole2}</Text>
-          </View>
-          <View style={styles.teamMember}>
-            <Text style={styles.memberName}>{t.teamRole3}</Text>
-          </View>
-        </View>
-
-        {/* Supervision & Institution */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>🎓 {t.aboutSupervisors}</Text>
-          <Text style={styles.supervisorText}>• {t.supervisor1}</Text>
-          <Text style={styles.supervisorText}>• {t.supervisor2}</Text>
-          <View style={styles.divider} />
-          <Text style={styles.institutionText}>{t.institution}</Text>
-        </View>
-
-        {/* Terms & Privacy Policy Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>⚖️ {t.termsTitle}</Text>
-          <Text style={styles.paragraph}>
-            {t.termsP1Desc}
-          </Text>
-          <Text style={[styles.paragraph, { marginTop: 6 }]}>
-            {t.termsP3Desc}
-          </Text>
-          <View style={styles.divider} />
-          <Text style={{ fontSize: 11, color: '#0F4C81', fontWeight: '700' }}>
-            ✓ {t.termsP5Desc}
+          <Text style={styles.cardHeader}>🎓 SLTC Research & Evaluation</Text>
+          <Text style={styles.cardDesc}>
+            SDAS is an AI-Enabled IoT Smart Dam Alert System prototype designed for flood mitigation and real-time hydrological monitoring.
           </Text>
         </View>
 
-        <Text style={styles.versionText}>SDAS Mobile v1.2.0 • Build 2026</Text>
+        <Text style={styles.versionText}>SDAS v1.2.0 (Prototype)</Text>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  container: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingVertical: 12,
-  },
-  logo: {
-    width: 140,
-    height: 140,
-    marginBottom: 12,
-  },
-  appTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0F172A',
-    textAlign: 'center',
-  },
-  tagline: {
-    fontSize: 14,
-    fontStyle: 'italic',
-    fontWeight: '600',
-    color: '#0284C7',
-    marginTop: 4,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  langSelectorWrapper: {
-    marginTop: 6,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  cardHeader: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0F4C81',
-    marginBottom: 12,
-  },
-  bodyText: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#334155',
-  },
-  flowList: {
-    gap: 4,
-  },
-  flowStep: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  stepNumBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#0F4C81',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-    marginTop: 2,
-  },
-  stepNumText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  stepContent: {
-    flex: 1,
-  },
-  stepTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 2,
-  },
-  stepDesc: {
-    fontSize: 12,
-    color: '#475569',
-    lineHeight: 17,
-  },
-  flowArrow: {
-    alignItems: 'center',
-    marginVertical: -2,
-  },
-  flowArrowText: {
-    fontSize: 14,
-    color: '#94A3B8',
-    fontWeight: '800',
-  },
-  thresholdTable: {
-    gap: 8,
-  },
-  thresholdRow: {
-    padding: 10,
-    borderRadius: 10,
-    borderLeftWidth: 4,
-  },
-  thresholdBadge: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  thresholdTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  thresholdRange: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#64748B',
-  },
-  thresholdDesc: {
-    fontSize: 12,
-    color: '#334155',
-    lineHeight: 16,
-  },
-  listItem: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: '#334155',
-    marginBottom: 8,
-  },
-  teamMember: {
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  memberName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  supervisorText: {
-    fontSize: 13,
-    color: '#334155',
-    marginBottom: 4,
-    lineHeight: 18,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E2E8F0',
-    marginVertical: 10,
-  },
-  institutionText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0F4C81',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  versionText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    textAlign: 'center',
-    marginTop: 8,
-  },
+  safeArea:    { flex: 1, backgroundColor: '#F8FAFC' },
+  container:   { padding: 16, paddingBottom: 40 },
+  header:      { backgroundColor: '#0F4C81', padding: 20, paddingTop: 32, borderRadius: 16, marginBottom: 16 },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  headerSub:   { color: '#90CAF9', fontSize: 12, marginTop: 4 },
+  menuCard:    { backgroundColor: '#FFF', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2, marginBottom: 16 },
+  menuRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderColor: '#F1F5F9' },
+  menuRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  menuEmoji:   { fontSize: 20 },
+  menuTitle:   { fontSize: 14, fontWeight: '700', color: '#0F172A' },
+  menuSub:     { fontSize: 11, color: '#64748B', marginTop: 2 },
+  chevron:     { fontSize: 22, color: '#94A3B8', fontWeight: 'bold' },
+  card:        { backgroundColor: '#FFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 16 },
+  cardHeader:  { fontSize: 13, fontWeight: '800', color: '#0F172A', marginBottom: 6 },
+  cardDesc:    { fontSize: 12, color: '#64748B', lineHeight: 18 },
+  versionText: { textAlign: 'center', color: '#94A3B8', fontSize: 12, fontWeight: '600', marginTop: 4 },
 });

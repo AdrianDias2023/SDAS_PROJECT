@@ -164,79 +164,64 @@ export default function GateControlScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* ── 1. SYSTEM OPERATING MODE SWITCHER ── */}
+        {/* ── 1. CURRENT GATE STATUS CARD ── */}
         <View style={styles.card}>
-          <View style={styles.modeStatusHeader}>
-            <Text style={styles.cardTitle}>SYSTEM OPERATING MODE</Text>
-            <View style={[styles.modePill, { backgroundColor: getModeColor(mode) }]}>
-              <Text style={styles.modePillText}>
-                {mode === 'AUTO_CLOUD' || mode === 'AUTO' ? '🟢 AUTO CLOUD'
-                  : mode === 'AUTO_OFFLINE' ? '🟠 AUTO OFFLINE'
-                  : mode === 'FAIL_SAFE' ? '🔴 FAIL-SAFE'
-                  : '🔵 MANUAL CONTROL'}
-              </Text>
+          <Text style={styles.cardSectionTitle}>Current Gate Status</Text>
+          <View style={styles.gateHeroRow}>
+            <Text style={[styles.gateHeroVal, { color: percentage >= 50 ? '#EF4444' : percentage >= 20 ? '#F59E0B' : '#10B981' }]}>
+              {percentage === 0 ? '0% CLOSED' : `${percentage}% OPEN`}
+            </Text>
+            <Text style={styles.servoAngleText}>({Math.round(percentage * 1.8)}°)</Text>
+          </View>
+
+          {/* Dam Spillway Physical Visualizer */}
+          <View style={styles.spillwayVisualizer}>
+            <View style={styles.damConcreteWall}>
+              <View style={styles.waterReservoirSide}>
+                <Text style={styles.reservoirSideText}>🌊 RESERVOIR</Text>
+              </View>
+              {/* Movable Gate Sluice */}
+              <View style={[styles.gateSluiceLeaf, { height: `${Math.max(15, 100 - percentage)}%` }]}>
+                <Text style={styles.gateLeafLabel}>GATE</Text>
+              </View>
+              {/* Discharging Water Stream */}
+              {percentage > 0 && (
+                <View style={[styles.dischargeStream, { height: `${percentage}%` }]}>
+                  <Text style={styles.dischargeText}>⬇️ FLOW</Text>
+                </View>
+              )}
             </View>
           </View>
 
-          <View style={styles.modeButtonsGrid}>
-            <TouchableOpacity
-              style={[styles.modeBtn, (mode === 'AUTO_CLOUD' || mode === 'AUTO') && styles.modeBtnActive]}
-              onPress={() => requestGateConfirmation(percentage, 'AUTO_CLOUD', 'SWITCH_TO_AUTO_CLOUD')}
-            >
-              <Text style={[styles.modeBtnText, (mode === 'AUTO_CLOUD' || mode === 'AUTO') && styles.modeBtnTextActive]}>
-                🤖 AUTO CLOUD
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.modeBtn, mode === 'MANUAL' && styles.modeBtnActive]}
-              onPress={() => setMode('MANUAL')}
-            >
-              <Text style={[styles.modeBtnText, mode === 'MANUAL' && styles.modeBtnTextActive]}>
-                ⚙️ MANUAL
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.modeBtn, mode === 'FAIL_SAFE' && styles.modeBtnActiveFail]}
-              onPress={() => requestGateConfirmation(percentage, 'FAIL_SAFE', 'TRIGGER_FAIL_SAFE')}
-            >
-              <Text style={[styles.modeBtnText, mode === 'FAIL_SAFE' && styles.modeBtnTextActive]}>
-                🚨 FAIL-SAFE
-              </Text>
-            </TouchableOpacity>
+          {/* 4-Step Slider (0%, 20%, 50%, 100%) */}
+          <View style={styles.stepSliderContainer}>
+            <View style={styles.sliderTrackLine} />
+            <View style={styles.sliderPillsRow}>
+              {[
+                { pct: 0, label: '0%\n(Closed)' },
+                { pct: 20, label: '20%\n(Buffer)' },
+                { pct: 50, label: '50%\n(Emergency)' },
+                { pct: 100, label: '100%\n(Max)' },
+              ].map((step) => (
+                <TouchableOpacity
+                  key={step.pct}
+                  style={[styles.stepPillBtn, percentage === step.pct && styles.stepPillBtnActive]}
+                  onPress={() => requestGateConfirmation(step.pct, 'MANUAL', `SET_GATE_${step.pct}`)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.stepPillText, percentage === step.pct && styles.stepPillTextActive]}>
+                    {step.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
 
-        {/* ── 2. GATE STATUS & LIVE POSITION ── */}
+        {/* ── 2. OPERATING MODE & ACTION CONTROLS ── */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>GATE STATUS</Text>
-          <View style={styles.currentPositionRow}>
+          <View style={styles.operatingModeRow}>
             <View>
-              <Text style={styles.percentageText}>{percentage}% Open</Text>
-              <Text style={styles.waterNote}>Current Dam Level: {latestWaterLevel.toFixed(1)}%</Text>
-            </View>
-            <View style={styles.statusIndicator}>
-              <View style={[styles.statusDot, { backgroundColor: percentage > 0 ? '#EF4444' : '#10B981' }]} />
-              <Text style={styles.indicatorText}>
-                {percentage === 0 ? 'GATE CLOSED' : percentage === 100 ? 'FULL RELEASE' : 'PARTIAL OPEN'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Quick Presets */}
-          <Text style={styles.subTitle}>Quick Adjust Presets</Text>
-          <View style={styles.presetsGrid}>
-            {PRESETS.map((p) => (
-              <TouchableOpacity
-                key={p.pct}
-                style={[styles.presetBtn, { borderColor: p.color }, percentage === p.pct && { backgroundColor: p.color }]}
-                onPress={() => setPercentage(p.pct)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.presetEmoji}>{p.emoji}</Text>
-                <Text style={[styles.presetLabel, percentage === p.pct && { color: '#FFF' }]}>{p.label}</Text>
-              </TouchableOpacity>
             ))}
           </View>
 
@@ -317,44 +302,42 @@ export default function GateControlScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:        { flex: 1, backgroundColor: '#0F172A' },
-  header:           { backgroundColor: '#1E293B', padding: 20, paddingTop: 48, borderBottomWidth: 1, borderColor: '#334155' },
+  container:        { flex: 1, backgroundColor: '#F8FAFC' },
+  header:           { backgroundColor: '#0F4C81', padding: 20, paddingTop: 48 },
   headerTop:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerTitle:      { fontSize: 18, fontWeight: '800', color: '#FFF' },
-  headerSub:        { color: '#94A3B8', fontSize: 11, marginTop: 4 },
+  headerSub:        { color: '#90CAF9', fontSize: 11, marginTop: 4 },
   scroll:           { padding: 16, paddingBottom: 40 },
-  card:             { backgroundColor: '#1E293B', borderRadius: 16, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: '#334155', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 3 },
-  cardTitle:        { fontSize: 13, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 12 },
-  subTitle:         { fontSize: 12, fontWeight: '600', color: '#94A3B8', marginBottom: 8 },
-  modeStatusHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  modePill:         { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  modePillText:     { color: '#FFF', fontSize: 11, fontWeight: '800' },
-  modeButtonsGrid:  { flexDirection: 'row', gap: 8 },
-  modeBtn:          { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: '#0F172A', alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
-  modeBtnActive:    { backgroundColor: '#0284C7', borderColor: '#38BDF8' },
-  modeBtnActiveFail:{ backgroundColor: '#EF4444', borderColor: '#F87171' },
-  modeBtnText:      { fontSize: 10, color: '#94A3B8', fontWeight: '800' },
-  modeBtnTextActive:{ color: '#FFF' },
-  currentPositionRow:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  percentageText:   { fontSize: 32, fontWeight: '800', color: '#38BDF8' },
-  waterNote:        { fontSize: 11, color: '#64748B', marginTop: 2 },
-  statusIndicator:  { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#0F172A', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
-  statusDot:        { width: 8, height: 8, borderRadius: 4 },
-  indicatorText:    { fontSize: 11, fontWeight: '700', color: '#CBD5E1' },
-  presetsGrid:      { flexDirection: 'row', gap: 8 },
-  presetBtn:        { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, backgroundColor: '#0F172A' },
-  presetEmoji:      { fontSize: 16, marginBottom: 2 },
-  presetLabel:      { fontSize: 10, fontWeight: '800', color: '#E2E8F0' },
-  applyBtn:         { backgroundColor: '#0284C7', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 16 },
-  applyBtnDisabled: { backgroundColor: '#475569' },
-  applyBtnText:     { color: '#FFF', fontWeight: '800', fontSize: 13 },
-  tacticalGrid:     { flexDirection: 'row', gap: 10 },
-  tacticalBtn:      { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
-  tacticalBtnText:  { color: '#FFF', fontWeight: '800', fontSize: 13 },
-  emergencyDesc:    { fontSize: 11, color: '#94A3B8', lineHeight: 16, marginBottom: 12 },
-  emergencyBtn:     { backgroundColor: '#EF4444', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  emergencyBtnText: { color: '#FFF', fontWeight: '800', fontSize: 13 },
-  lastCmdCard:      { backgroundColor: '#1E293B', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#334155' },
-  lastCmdTitle:     { fontSize: 12, fontWeight: '700', color: '#94A3B8', marginBottom: 4 },
-  lastCmdDetail:    { fontSize: 11, color: '#CBD5E1', lineHeight: 18 },
+  card:             { backgroundColor: '#FFF', borderRadius: 16, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  cardSectionTitle: { fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
+  gateHeroRow:      { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 14 },
+  gateHeroVal:      { fontSize: 32, fontWeight: '900' },
+  servoAngleText:   { fontSize: 15, color: '#64748B', fontWeight: '700' },
+  spillwayVisualizer:{ height: 110, backgroundColor: '#F1F5F9', borderRadius: 12, overflow: 'hidden', marginBottom: 14, borderWidth: 1, borderColor: '#CBD5E1' },
+  damConcreteWall:  { flex: 1, flexDirection: 'row', position: 'relative' },
+  waterReservoirSide:{ flex: 1, backgroundColor: '#BAE6FD', justifyContent: 'center', alignItems: 'center' },
+  reservoirSideText:{ fontSize: 10, color: '#0369A1', fontWeight: '800' },
+  gateSluiceLeaf:   { width: 40, backgroundColor: '#475569', position: 'absolute', right: 70, top: 0, borderBottomLeftRadius: 4, borderBottomRightRadius: 4, justifyContent: 'center', alignItems: 'center' },
+  gateLeafLabel:    { fontSize: 9, color: '#FFF', fontWeight: '900' },
+  dischargeStream:  { width: 70, backgroundColor: '#38BDF8', position: 'absolute', right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' },
+  dischargeText:    { fontSize: 10, color: '#0C4A6E', fontWeight: '800' },
+  stepSliderContainer:{ marginVertical: 8 },
+  sliderTrackLine:  { height: 4, backgroundColor: '#E2E8F0', borderRadius: 2, marginBottom: 10 },
+  sliderPillsRow:   { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
+  stepPillBtn:      { flex: 1, paddingVertical: 8, borderRadius: 10, backgroundColor: '#F1F5F9', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+  stepPillBtnActive:{ backgroundColor: '#0284C7', borderColor: '#0284C7' },
+  stepPillText:     { fontSize: 10, fontWeight: '700', color: '#475569', textAlign: 'center' },
+  stepPillTextActive:{ color: '#FFF', fontWeight: '800' },
+  operatingModeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  operatingModeLabel:{ fontSize: 11, color: '#64748B', fontWeight: '600' },
+  operatingModeValue:{ fontSize: 16, fontWeight: '900', color: '#0F172A', marginTop: 2 },
+  modeCloudBadge:   { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  cloudBadgeIcon:   { fontSize: 18 },
+  manualActionBtn:  { backgroundColor: '#1E293B', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 10 },
+  manualActionBtnText:{ color: '#FFF', fontWeight: '800', fontSize: 14 },
+  emergencyActionBtn:{ backgroundColor: '#EF4444', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  emergencyActionBtnText:{ color: '#FFF', fontWeight: '800', fontSize: 14 },
+  lastCmdCard:      { backgroundColor: '#F8FAFC', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E2E8F0', marginTop: 8 },
+  lastCmdTitle:     { fontSize: 11, fontWeight: '700', color: '#64748B', marginBottom: 4 },
+  lastCmdDetail:    { fontSize: 11, color: '#334155', lineHeight: 16 },
 });

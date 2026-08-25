@@ -43,36 +43,41 @@ function PublicTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown:       false,
-        tabBarStyle:       { backgroundColor: '#0F4C81', borderTopWidth: 0, height: 62 },
-        tabBarLabelStyle:  { color: '#FFFFFF', fontSize: 10, marginBottom: 6, fontWeight: '600' },
-        tabBarActiveTintColor:   '#4FC3F7',
-        tabBarInactiveTintColor: '#90CAF9',
+        tabBarStyle:       { backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#E2E8F0', height: 62 },
+        tabBarLabelStyle:  { fontSize: 10, marginBottom: 6, fontWeight: '700' },
+        tabBarActiveTintColor:   '#0284C7',
+        tabBarInactiveTintColor: '#94A3B8',
       }}
     >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="💧" focused={focused} />, tabBarLabel: t.tabHome }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />, tabBarLabel: 'Home' }}
       />
       <Tab.Screen
-        name="Alerts"
-        component={AlertsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚨" focused={focused} />, tabBarLabel: t.tabAlerts }}
+        name="Analytics"
+        component={AnalyticsScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />, tabBarLabel: 'Analytics' }}
       />
       <Tab.Screen
-        name="Prediction"
+        name="Predict"
         component={PredictionScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📈" focused={focused} />, tabBarLabel: t.tabPredict }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🤖" focused={focused} />, tabBarLabel: 'AI Risk' }}
       />
       <Tab.Screen
         name="Map"
         component={EvacuationMapScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🗺️" focused={focused} />, tabBarLabel: t.tabMap ?? 'Safe Zones' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🗺️" focused={focused} />, tabBarLabel: 'Map' }}
       />
       <Tab.Screen
-        name="About"
+        name="Alerts"
+        component={AlertsScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚨" focused={focused} />, tabBarLabel: 'Alerts' }}
+      />
+      <Tab.Screen
+        name="Menu"
         component={AboutScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🛡️" focused={focused} />, tabBarLabel: t.tabAbout }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />, tabBarLabel: 'Menu' }}
       />
     </Tab.Navigator>
   );
@@ -84,10 +89,10 @@ function OperatorTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown:       false,
-        tabBarStyle:       { backgroundColor: '#1B2A3B', borderTopWidth: 0, height: 62 },
-        tabBarLabelStyle:  { color: '#FFFFFF', fontSize: 8.5, marginBottom: 6 },
-        tabBarActiveTintColor:   '#4FC3F7',
-        tabBarInactiveTintColor: '#90CAF9',
+        tabBarStyle:       { backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#E2E8F0', height: 62 },
+        tabBarLabelStyle:  { fontSize: 9, marginBottom: 6, fontWeight: '700' },
+        tabBarActiveTintColor:   '#0284C7',
+        tabBarInactiveTintColor: '#94A3B8',
       }}
     >
       <Tab.Screen
@@ -116,14 +121,9 @@ function OperatorTabs() {
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🎛️" focused={focused} />, tabBarLabel: 'Twin' }}
       />
       <Tab.Screen
-        name="Audit"
-        component={AuditLogsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📜" focused={focused} />, tabBarLabel: 'Audit' }}
-      />
-      <Tab.Screen
-        name="Contacts"
-        component={ContactsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📱" focused={focused} />, tabBarLabel: 'Contacts' }}
+        name="Menu"
+        component={AboutScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />, tabBarLabel: 'Menu' }}
       />
     </Tab.Navigator>
   );
@@ -140,6 +140,8 @@ export default function AppNavigator({ session }) {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="OperatorTabs" component={OperatorTabs} />
       <Stack.Screen name="OperatorStack" component={session ? OperatorTabs : LoginScreen} />
+      <Stack.Screen name="Contacts" component={ContactsScreen} />
+      <Stack.Screen name="Audit" component={AuditLogsScreen} />
     </Stack.Navigator>
   );
 }

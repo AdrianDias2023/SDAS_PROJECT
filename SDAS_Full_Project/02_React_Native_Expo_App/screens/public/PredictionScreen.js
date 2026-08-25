@@ -185,44 +185,6 @@ export default function PredictionScreen() {
             </Text>
           </View>
 
-          {/* Stage 1: Continuous LSTM Forecast Card */}
-          <View style={styles.card}>
-            <View style={styles.cardHeaderRow}>
-              <Text style={styles.badgeNum}>Stage 1</Text>
-              <Text style={styles.cardTitle}>{t.forecast1h}</Text>
-            </View>
-
-            <View style={styles.predRow}>
-              <View style={styles.predItem}>
-                <Text style={styles.predLabel}>{t.currentLevel}</Text>
-                <Text style={styles.predValue}>{prediction?.current_level?.toFixed(1) ?? '68.5'}%</Text>
-              </View>
-              <Text style={styles.predArrow}>➔</Text>
-              <View style={styles.predItem}>
-                <Text style={styles.predLabel}>{t.predictedLevel} (1h)</Text>
-                <Text style={[styles.predValue, { color: riskColor }]}>
-                  {predictedVal.toFixed(1)}%
-                </Text>
-              </View>
-            </View>
-
-            <Text style={styles.cardDesc}>{t.forecastDesc}</Text>
-          </View>
-
-          {/* Stage 2: Random Forest Flood Risk & Probability Card */}
-          <View style={styles.card}>
-            <View style={styles.cardHeaderRow}>
-              <Text style={[styles.badgeNum, { backgroundColor: '#0284C7' }]}>Stage 2</Text>
-              <Text style={styles.cardTitle}>{t.floodProbTitle}</Text>
-            </View>
-
-            <View style={styles.probMeterWrapper}>
-              <View style={styles.probMeterRow}>
-                <Text style={styles.probLabel}>{t.floodProbability}</Text>
-                <Text style={[styles.probValue, { color: riskColor }]}>{floodProb.toFixed(1)}%</Text>
-              </View>
-
-              <View style={styles.probBarBg}>
                 <View style={[styles.probBarFill, { width: `${floodProb}%`, backgroundColor: riskColor }]} />
               </View>
             </View>
@@ -349,14 +311,34 @@ const styles = StyleSheet.create({
   xaiFactorRow: { marginBottom: 10 },
   xaiBarBg:     { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
   xaiBarFill:   { height: '100%', borderRadius: 4 },
-  confidenceTopRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  confidenceScoreValue:  { fontSize: 34, fontWeight: '900', color: '#10B981' },
-  confidenceTagline:     { fontSize: 12, fontWeight: '700', color: '#047857', marginTop: 2 },
-  confidenceBadgePill:   { backgroundColor: '#D1FAE5', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1, borderColor: '#10B981' },
-  confidenceBadgeText:   { color: '#065F46', fontWeight: '800', fontSize: 11 },
-  confidenceSubHeading:  { fontSize: 12, fontWeight: '700', color: '#334155', marginBottom: 8 },
-  confidenceFactorGrid:  { backgroundColor: '#F1F5F9', borderRadius: 10, padding: 12, gap: 6, marginBottom: 10 },
-  confFactorCol:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  confFactorLabel:       { fontSize: 11, color: '#475569', fontWeight: '600' },
-  confFactorVal:         { fontSize: 12, fontWeight: '800', color: '#0F172A' },
+  forecastHeroRow:   { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginVertical: 6 },
+  forecastHeroVal:   { fontSize: 36, fontWeight: '900', color: '#0F172A' },
+  forecastHeroMeters:{ fontSize: 14, color: '#64748B', fontWeight: '700' },
+  infoBadge:         { fontSize: 16 },
+  lookaheadChart:    { flexDirection: 'row', height: 120, marginTop: 12, marginBottom: 6 },
+  chartYAxis:        { justifyContent: 'space-between', paddingRight: 8, paddingBottom: 16 },
+  chartYLabel:       { fontSize: 9, color: '#94A3B8', fontWeight: '600' },
+  chartPlotArea:     { flex: 1, position: 'relative', borderLeftWidth: 1, borderBottomWidth: 1, borderColor: '#CBD5E1', paddingBottom: 16 },
+  gridLine:          { position: 'absolute', left: 0, right: 0, borderTopWidth: 1, borderColor: '#F1F5F9' },
+  pointsRow:         { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  pointCol:          { flex: 1, alignItems: 'center', height: '100%', position: 'relative' },
+  dotWrapper:        { position: 'absolute', alignItems: 'center', zIndex: 5 },
+  pointDot:          { width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: '#FFF' },
+  pointXLabel:       { position: 'absolute', bottom: -18, fontSize: 10, color: '#64748B', fontWeight: '700' },
+  riskStatusRow:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 8 },
+  riskStatusText:    { fontSize: 18, fontWeight: '900' },
+  riskProbText:      { fontSize: 13, color: '#475569', fontWeight: '700' },
+  gradientBarContainer: { position: 'relative', marginVertical: 8 },
+  gradientBarTrack:  { flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden' },
+  gradSegment:       { height: '100%' },
+  gradientMarker:    { position: 'absolute', top: -3, zIndex: 10 },
+  markerPin:         { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: '#FFF', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 3 },
+  riskAxisLabels:    { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
+  riskAxisLabel:     { fontSize: 10, color: '#94A3B8', fontWeight: '700' },
+  anomalyRow:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  anomalyTextCol:    { flex: 1, paddingRight: 10 },
+  anomalyStatusTitle:{ fontSize: 16, fontWeight: '800', marginBottom: 2 },
+  anomalyStatusSub:  { fontSize: 12, color: '#64748B', lineHeight: 16 },
+  anomalyShield:     { width: 48, height: 48, borderRadius: 24, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  shieldIcon:        { fontSize: 24 },
 });
