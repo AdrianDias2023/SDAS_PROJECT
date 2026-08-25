@@ -139,9 +139,21 @@ enum AlertLevel : uint8_t {
   LEVEL_DANGER     = 3
 };
 
-AlertLevel currentLevel    = LEVEL_NORMAL;
-bool       smsSentThisLevel = false;
-bool       wifiOK           = false;
+// ─── 3 SYSTEM OPERATING MODES ──────────────────────────────────────────────────
+enum SystemMode : uint8_t {
+  MODE_CLOUD_AUTO        = 0,  // Internet active: Cloud sync & AI prediction
+  MODE_OFFLINE_EMERGENCY = 1,  // Internet lost >30s: Autonomous Edge safety engine + GSM SMS
+  MODE_MANUAL_OVERRIDE   = 2   // Physical buttons or authorized operator override
+};
+
+AlertLevel currentLevel        = LEVEL_NORMAL;
+SystemMode currentSystemMode   = MODE_CLOUD_AUTO;
+bool       smsSentThisLevel    = false;
+bool       wifiOK              = false;
+
+// Internet Health Watchdog
+unsigned long lastWifiConnectedMs = 0;
+#define WIFI_DISCONNECT_TIMEOUT_MS 30000UL // 30 seconds
 
 // Physical Emergency Manual Override State
 bool physicalManualOverride = false;
@@ -338,14 +350,22 @@ void checkEmergencyButtons() {
   if (digitalRead(BTN_OPEN_PIN) == LOW) {
     lastBtnPressMs = now;
     physicalManualOverride = true;
+    currentSystemMode      = MODE_MANUAL_OVERRIDE;
     Serial.println(F("\n[MANUAL OVERRIDE] Physical OPEN Pressed → Actuating Gate to 100% (180°)"));
     setGate(GATE_FULL_OPEN);
     triggerBuzzer(2, 100, 50);
   }
-  // 2. Emergency CLOSE Button Pressed
+  // 2. Emergency CLOSE Button Pressed (with Safety Interlock Guard)
   else if (digitalRead(BTN_CLOSE_PIN) == LOW) {
     lastBtnPressMs = now;
+    if (waterLevelPct >= THRESH_DANGER) {
+      // Safety Interlock: Blind manual closure during critical flood is REJECTED
+      Serial.println(F("\n[SAFETY INTERLOCK REJECTED] Cannot close gate! Water level >= 85% (Critical Danger). Spillway MUST remain OPEN for dam structural integrity."));
+      triggerBuzzer(4, 60, 40); // 4 short warning chirps
+      return;
+    }
     physicalManualOverride = true;
+    currentSystemMode      = MODE_MANUAL_OVERRIDE;
     Serial.println(F("\n[MANUAL OVERRIDE] Physical CLOSE Pressed → Closing Gate 0%"));
     setGate(GATE_CLOSED);
     triggerBuzzer(1, 100, 0);
@@ -358,6 +378,7 @@ void checkEmergencyButtons() {
     while (digitalRead(BTN_STOP_PIN) == LOW) {
       if (millis() - pressStart > 2500) {
         physicalManualOverride = false;
+        currentSystemMode      = (WiFi.status() == WL_CONNECTED) ? MODE_CLOUD_AUTO : MODE_OFFLINE_EMERGENCY;
         Serial.println(F("\n[MANUAL OVERRIDE] RESET → Returned to AUTOMATIC AI/Threshold Control"));
         triggerBuzzer(3, 100, 100);
         applyGate(currentLevel);
@@ -367,6 +388,7 @@ void checkEmergencyButtons() {
     }
     // Short press = Instant HOLD current position
     physicalManualOverride = true;
+    currentSystemMode      = MODE_MANUAL_OVERRIDE;
     Serial.printf("\n[MANUAL OVERRIDE] Physical STOP/HOLD Pressed → Locked at %d°\n", currentGateAngle);
     triggerBuzzer(1, 200, 0);
   }
@@ -455,6 +477,47 @@ const char* levelStr(AlertLevel level) {
   return "UNKNOWN";
 }
 
+const char* modeStr(SystemMode mode) {
+  switch (mode) {
+    case MODE_CLOUD_AUTO:        return "CLOUD_AUTO";
+    case MODE_OFFLINE_EMERGENCY: return "OFFLINE_EMERGENCY";
+    case MODE_MANUAL_OVERRIDE:   return "MANUAL_OVERRIDE";
+  }
+  return "CLOUD_AUTO";
+}
+
+// ─── OFFLINE AUTOMATIC EMERGENCY CONTROL ENGINE ────────────────────────────────
+void offlineControl(float waterLevel, float riseRate) {
+  AlertLevel localLevel = evaluateLevel(waterLevel, riseRate, currentLevel);
+  
+  if (localLevel != currentLevel) {
+    Serial.printf("\n[OFFLINE EDGE ENGINE] Water: %.1f%% | Safety Transition: %s → %s\n",
+                  waterLevel, levelStr(currentLevel), levelStr(localLevel));
+    currentLevel     = localLevel;
+    smsSentThisLevel = false;
+
+    applyGate(currentLevel);
+    applyStatusLED(currentLevel);
+
+    // Direct local actuators
+    if (currentLevel == LEVEL_DANGER) {
+      triggerBuzzer(6, 400, 150);
+      Serial.println(F("[OFFLINE EMERGENCY] Full Spillway Release (100%) + 85dB Siren ACTIVE!"));
+    } else if (currentLevel == LEVEL_CLEAR_AREA) {
+      triggerBuzzer(3, 300, 200);
+    } else if (currentLevel == LEVEL_PRE_WARN) {
+      triggerBuzzer(1, 300, 0);
+    }
+  }
+
+  // Autonomous GSM SMS dispatch without internet
+  if (!smsSentThisLevel && currentLevel != LEVEL_NORMAL) {
+    Serial.println(F("[OFFLINE GSM] Dispatching emergency SMS via SIM800L cellular tower..."));
+    broadcastSMS(buildSMSMessage(currentLevel, waterLevel));
+    smsSentThisLevel = true;
+  }
+}
+
 void uploadToSupabase() {
   if (!wifiOK) {
     Serial.println("[WiFi] Offline — skipping upload");
@@ -468,7 +531,7 @@ void uploadToSupabase() {
   float batteryPct   = constrain(((batteryVolts - 10.5f) / (12.6f - 10.5f)) * 100.0f, 0.0f, 100.0f);
   const char* powerSource = (batteryVolts >= 11.8f) ? "MAINS_12V" : "BATTERY_BACKUP";
 
-  // ── POST sensor reading ───────────────────────────────────────────────────
+  // ── 1. POST sensor reading ────────────────────────────────────────────────
   {
     HTTPClient http;
     http.begin(String(SUPABASE_URL) + "/rest/v1/sensor_readings");
@@ -494,7 +557,31 @@ void uploadToSupabase() {
     http.end();
   }
 
-  // ── POST alert if not NORMAL ──────────────────────────────────────────────
+  // ── 2. POST system_status (Online/Offline Mode Sync) ──────────────────────
+  {
+    HTTPClient http;
+    http.begin(String(SUPABASE_URL) + "/rest/v1/system_status");
+    http.addHeader("apikey",        SUPABASE_ANON_KEY);
+    http.addHeader("Authorization", String("Bearer ") + SUPABASE_ANON_KEY);
+    http.addHeader("Content-Type",  "application/json");
+    http.addHeader("Prefer",        "return=minimal");
+
+    StaticJsonDocument<300> doc;
+    doc["device_id"]       = DEVICE_ID;
+    doc["internet_status"] = (WiFi.status() == WL_CONNECTED) ? "ONLINE" : "OFFLINE";
+    doc["operation_mode"]  = modeStr(currentSystemMode);
+    doc["battery_level"]   = batteryPct;
+    doc["power_source"]    = powerSource;
+
+    String body;
+    serializeJson(doc, body);
+
+    int code = http.POST(body);
+    Serial.printf("[Supabase] system_status POST (Mode: %s) → HTTP %d\n", modeStr(currentSystemMode), code);
+    http.end();
+  }
+
+  // ── 3. POST alert if not NORMAL ───────────────────────────────────────────
   if (currentLevel != LEVEL_NORMAL) {
     HTTPClient http;
     http.begin(String(SUPABASE_URL) + "/rest/v1/alerts");
@@ -614,6 +701,23 @@ void loop() {
   // ════ 0. CHECK PHYSICAL EMERGENCY BUTTONS (Instant Real-Time Response) ════
   checkEmergencyButtons();
 
+  // ════ INTERNET HEALTH WATCHDOG (30s Fallback to Offline Emergency) ═════════
+  if (WiFi.status() == WL_CONNECTED) {
+    wifiOK = true;
+    lastWifiConnectedMs = now;
+    if (!physicalManualOverride) {
+      currentSystemMode = MODE_CLOUD_AUTO;
+    }
+  } else {
+    wifiOK = false;
+    if (now - lastWifiConnectedMs > WIFI_DISCONNECT_TIMEOUT_MS && !physicalManualOverride) {
+      if (currentSystemMode != MODE_OFFLINE_EMERGENCY) {
+        Serial.println(F("\n[INTERNET WATCHDOG] Internet unavailable > 30s! Escalated to MODE_OFFLINE_EMERGENCY (Autonomous Edge Safety Engine)"));
+        currentSystemMode = MODE_OFFLINE_EMERGENCY;
+      }
+    }
+  }
+
   // ════ READ SENSORS (every 2 s) ════════════════════════════════════════════
   if (now - lastSensorMs >= SENSOR_INTERVAL_MS) {
     lastSensorMs = now;
@@ -634,40 +738,45 @@ void loop() {
     // 3. Rate of rise (% per 2-second reading)
     float riseRate = waterLevelPct - prevLevelPct;
 
-    // 4. Evaluate alert level with hysteresis
-    AlertLevel newAlertLevel = evaluateLevel(waterLevelPct, riseRate, currentLevel);
+    // ── 4. MODE-AWARE DECISION & ACTUATION ─────────────────────────────────
+    if (currentSystemMode == MODE_OFFLINE_EMERGENCY) {
+      // Step 4 & 5: Autonomous local edge control + direct GSM SMS
+      offlineControl(waterLevelPct, riseRate);
+    }
+    else if (currentSystemMode == MODE_CLOUD_AUTO) {
+      // Cloud Auto: evaluate safety levels & sync
+      AlertLevel newAlertLevel = evaluateLevel(waterLevelPct, riseRate, currentLevel);
 
-    // ── Level transition: apply actuators ─────────────────────────────────
-    if (newAlertLevel != currentLevel) {
-      Serial.printf("\n[ALERT] %s → %s  (Level: %.1f%%, Rise: %+.2f%%/2s)\n",
-                    levelStr(currentLevel), levelStr(newAlertLevel),
-                    waterLevelPct, riseRate);
+      if (newAlertLevel != currentLevel) {
+        Serial.printf("\n[ALERT] %s → %s  (Level: %.1f%%, Rise: %+.2f%%/2s)\n",
+                      levelStr(currentLevel), levelStr(newAlertLevel),
+                      waterLevelPct, riseRate);
 
-      currentLevel     = newAlertLevel;
-      smsSentThisLevel = false;   // Reset so SMS fires for new level
+        currentLevel     = newAlertLevel;
+        smsSentThisLevel = false;
 
-      applyGate(currentLevel);
-      applyStatusLED(currentLevel);
+        applyGate(currentLevel);
+        applyStatusLED(currentLevel);
 
-      // Buzzer pattern per level
-      switch (currentLevel) {
-        case LEVEL_PRE_WARN:   triggerBuzzer(1, 300, 0);   break;
-        case LEVEL_CLEAR_AREA: triggerBuzzer(3, 300, 200); break;
-        case LEVEL_DANGER:     triggerBuzzer(6, 400, 150); break;
-        case LEVEL_NORMAL:     triggerBuzzer(1, 100, 0);   break; // All-clear
+        // Buzzer pattern per level
+        switch (currentLevel) {
+          case LEVEL_PRE_WARN:   triggerBuzzer(1, 300, 0);   break;
+          case LEVEL_CLEAR_AREA: triggerBuzzer(3, 300, 200); break;
+          case LEVEL_DANGER:     triggerBuzzer(6, 400, 150); break;
+          case LEVEL_NORMAL:     triggerBuzzer(1, 100, 0);   break;
+        }
+      }
+
+      if (!smsSentThisLevel && currentLevel != LEVEL_NORMAL) {
+        broadcastSMS(buildSMSMessage(currentLevel, waterLevelPct));
+        smsSentThisLevel = true;
       }
     }
 
-    // ── Send SMS once per alert level (not on NORMAL) ──────────────────────
-    if (!smsSentThisLevel && currentLevel != LEVEL_NORMAL) {
-      broadcastSMS(buildSMSMessage(currentLevel, waterLevelPct));
-      smsSentThisLevel = true;
-    }
-
     // ── Serial debug output ────────────────────────────────────────────────
-    Serial.printf("[DATA] Level=%.1f%%  Rise=%+.2f%%  Temp=%.1f°C  Hum=%.0f%%  "
+    Serial.printf("[DATA] Mode=%-18s Level=%.1f%%  Rise=%+.2f%%  Temp=%.1f°C  Hum=%.0f%%  "
                   "Status=%-12s  Sensor=%s\n",
-                  waterLevelPct, riseRate, temperature, humidity,
+                  modeStr(currentSystemMode), waterLevelPct, riseRate, temperature, humidity,
                   levelStr(currentLevel), sensorHealth.c_str());
   }
 

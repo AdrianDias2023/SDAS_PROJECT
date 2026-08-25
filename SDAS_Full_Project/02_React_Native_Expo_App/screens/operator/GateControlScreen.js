@@ -53,17 +53,31 @@ const sliderStyles = StyleSheet.create({
 
 export default function GateControlScreen() {
   const { t } = useLanguage();
-  const [percentage, setPercentage] = useState(0);
-  const [sending,    setSending]    = useState(false);
-  const [lastCmd,    setLastCmd]    = useState(null);
-  const [mode,       setMode]       = useState('MANUAL');
+  const [percentage,       setPercentage]       = useState(0);
+  const [sending,          setSending]          = useState(false);
+  const [lastCmd,          setLastCmd]          = useState(null);
+  const [mode,             setMode]             = useState('MANUAL');
+  const [latestWaterLevel, setLatestWaterLevel] = useState(0);
 
   useEffect(() => {
+    // 1. Subscribe to gate commands
     const channel = subscribeGateControl((cmd) => {
       setLastCmd(cmd);
       setPercentage(cmd.gate_percentage);
       setMode(cmd.mode);
     });
+
+    // 2. Fetch latest water level for safety interlock
+    supabase
+      .from('sensor_readings')
+      .select('water_level')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.water_level) setLatestWaterLevel(data.water_level);
+      });
+
     return () => channel.unsubscribe();
   }, []);
 
@@ -95,8 +109,17 @@ export default function GateControlScreen() {
     }
   };
 
-  // Double-Confirmation Safety Modal
+  // Step 8: Double-Confirmation Safety Modal with Safety Interlock Guard
   const requestGateConfirmation = (pct, cmdMode = 'MANUAL') => {
+    // Safety Interlock: Reject manual close when water level >= 85%
+    if (latestWaterLevel >= 85.0 && pct < 70 && cmdMode === 'MANUAL') {
+      Alert.alert(
+        '⛔ Command Rejected by Safety Interlock',
+        `Critical flood condition is active (${latestWaterLevel.toFixed(1)}% >= 85%).\n\nManual gate closure is strictly prohibited to prevent structural dam breach. Only full emergency release (100%) or partial release (>=70%) is allowed.`
+      );
+      return;
+    }
+
     Alert.alert(
       '⚠️ Confirm Spillway Gate Actuation',
       `Are you sure you want to actuate the dam gate to ${pct}% in ${cmdMode} mode?\n\nThis will physically move the spillway servo and affect downstream flow.`,

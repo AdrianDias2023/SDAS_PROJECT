@@ -99,22 +99,25 @@ export default function OperatorDashboard() {
   const [reading,       setReading]      = useState(null);
   const [activeAlerts,  setActiveAlerts] = useState([]);
   const [history,       setHistory]      = useState([]);
+  const [sysStatus,     setSysStatus]    = useState(null);
   const [timeRange,     setTimeRange]    = useState('24h');
   const [user,          setUser]         = useState(null);
   const [refreshing,    setRefreshing]   = useState(false);
 
   const loadData = useCallback(async (hours = 24) => {
     try {
-      const [r, alerts, hist, { data: { user } }] = await Promise.all([
+      const [r, alerts, hist, { data: { user } }, { data: st }] = await Promise.all([
         fetchLatestReading(),
         fetchActiveAlerts(),
         fetchReadingsLastHours(hours),
         supabase.auth.getUser(),
+        supabase.from('system_status').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle(),
       ]);
       setReading(r);
       setActiveAlerts(alerts);
       setHistory(hist ?? []);
       setUser(user);
+      setSysStatus(st);
     } catch (e) {
       console.error('OperatorDashboard error:', e);
     } finally {
@@ -143,6 +146,9 @@ export default function OperatorDashboard() {
   const levelCfg = LEVELS[level] || LEVELS.NORMAL;
   const pct      = reading?.water_level ?? 0;
 
+  const isOnline = (sysStatus?.internet_status ?? 'ONLINE') === 'ONLINE';
+  const mode = sysStatus?.operation_mode ?? 'CLOUD_AUTO';
+
   return (
     <View style={[styles.container, { backgroundColor: levelCfg.bg }]}>
       {/* Header */}
@@ -168,6 +174,39 @@ export default function OperatorDashboard() {
       >
         {/* Alert banner if active */}
         {level !== 'NORMAL' && <AlertBanner level={level} config={levelCfg} />}
+
+        {/* Step 7: SYSTEM OPERATING MODE & INTERNET HEALTH CARD */}
+        <View style={styles.modeCard}>
+          <View style={styles.modeCardHeader}>
+            <Text style={styles.modeCardTitle}>🎛️ SYSTEM OPERATING MODE</Text>
+            <View style={[styles.modeBadge, { backgroundColor: isOnline ? '#10B981' : '#EF4444' }]}>
+              <Text style={styles.modeBadgeText}>
+                {isOnline ? '🟢 INTERNET CONNECTED' : '🔴 OFFLINE'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.modeGrid}>
+            <View style={styles.modeGridCol}>
+              <Text style={styles.modeGridLabel}>Active Mode</Text>
+              <Text style={[styles.modeGridVal, { color: mode === 'OFFLINE_EMERGENCY' ? '#EF4444' : '#0284C7' }]}>
+                {mode === 'OFFLINE_EMERGENCY' ? '🚨 OFFLINE EMERGENCY' : mode === 'MANUAL_OVERRIDE' ? '⚙️ MANUAL OVERRIDE' : '🤖 CLOUD AUTO'}
+              </Text>
+            </View>
+            <View style={styles.modeGridCol}>
+              <Text style={styles.modeGridLabel}>Primary Controller</Text>
+              <Text style={styles.modeGridVal}>
+                {isOnline ? 'Supabase + Hybrid AI' : 'ESP32 Local Edge Engine'}
+              </Text>
+            </View>
+          </View>
+
+          <Text style={styles.modeCardNote}>
+            {isOnline
+              ? '⚡ Cloud sync active. LSTM & Random Forest models predicting flood risk.'
+              : '⚠️ Internet lost > 30s. ESP32 autonomous safety rules active with direct SIM800L GSM SMS broadcast.'}
+          </Text>
+        </View>
 
         {/* Gauge */}
         <View style={styles.gaugeCard}>
@@ -263,6 +302,16 @@ const styles = StyleSheet.create({
   logoutText:   { color: '#EF9A9A', fontSize: 12, fontWeight: '700' },
   langBar:      { marginTop: 10 },
   scroll:       { padding: 16, paddingBottom: 40 },
+  modeCard:     { backgroundColor: '#1E293B', borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1.5, borderColor: '#334155', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
+  modeCardHeader:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  modeCardTitle:{ fontSize: 13, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase' },
+  modeBadge:    { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  modeBadgeText:{ color: '#FFF', fontSize: 10, fontWeight: '800' },
+  modeGrid:     { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#0F172A', padding: 12, borderRadius: 10, marginBottom: 10 },
+  modeGridCol:  { flex: 1 },
+  modeGridLabel:{ fontSize: 10, color: '#64748B', fontWeight: '600' },
+  modeGridVal:  { fontSize: 13, fontWeight: '800', color: '#F8FAFC', marginTop: 2 },
+  modeCardNote: { fontSize: 11, color: '#CBD5E1', lineHeight: 16 },
   gaugeCard:    { backgroundColor: '#FFF', borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, elevation: 4 },
   statusLabel:  { fontSize: 18, fontWeight: 'bold', marginTop: 10 },
   detailCard:   { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3, borderWidth: 1, borderColor: '#E2E8F0' },

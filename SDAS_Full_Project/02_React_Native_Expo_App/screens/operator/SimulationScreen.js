@@ -48,12 +48,25 @@ const SCENARIOS = [
     desc: 'Water exceeds 85%. Gate opens to 100% (180°), LED Red, Continuous SOS siren, SMS broadcast.',
   },
   {
+    id: 'offline_emergency',
+    title: '📵 Complete Internet Outage (Offline Emergency)',
+    waterLevel: 88.0,
+    riseRate: 1.1,
+    rainfall: 60.0,
+    sensorHealth: 'NORMAL',
+    simInternet: 'OFFLINE',
+    simMode: 'OFFLINE_EMERGENCY',
+    desc: 'Internet unreachable >30s. ESP32 autonomous safety rules execute locally: Gate 100%, Siren ON, SIM800L SMS dispatched.',
+  },
+  {
     id: 'sensor_fault',
     title: '🔴 Sensor Mismatch / Drift Anomaly',
     waterLevel: 85.0,
     riseRate: 0.0,
     rainfall: 0.0,
     sensorHealth: 'SENSOR_MISMATCH',
+    simInternet: 'ONLINE',
+    simMode: 'CLOUD_AUTO',
     desc: 'Sensor 1 reads 85% vs Sensor 2 reads 20%. Autoencoder flags reconstruction anomaly MSE > 0.0016.',
   },
 ];
@@ -78,10 +91,15 @@ export default function SimulationScreen() {
 
   const currentExpected = getExpectedState(sliderLevel);
 
+  const [simInternet,  setSimInternet]  = useState('ONLINE');
+  const [simMode,      setSimMode]      = useState('CLOUD_AUTO');
+
   const applyScenario = (sc) => {
     setSliderLevel(sc.waterLevel);
     setSimRainfall(sc.rainfall);
     setSensorHealth(sc.sensorHealth);
+    if (sc.simInternet) setSimInternet(sc.simInternet);
+    if (sc.simMode)     setSimMode(sc.simMode);
   };
 
   const injectToDatabase = async () => {
@@ -99,28 +117,37 @@ export default function SimulationScreen() {
       });
       if (rErr) throw rErr;
 
-      // 2. Insert alert if in warning/danger
+      // 2. Insert system_status
+      await supabase.from('system_status').insert({
+        device_id: 'ESP32_PUTTALAM_01_SIM',
+        internet_status: simInternet,
+        operation_mode: simMode,
+        battery_level: 95.0,
+        power_source: 'MAINS_12V',
+      });
+
+      // 3. Insert alert if in warning/danger
       if (sliderLevel >= 70) {
         const alertType = sliderLevel >= 85 ? 'DANGER' : 'PRE_WARNING';
         await supabase.from('alerts').insert({
           alert_type: alertType,
           severity: alertType,
-          message: `[SIMULATION] Water level reached ${sliderLevel.toFixed(1)}% | Health: ${sensorHealth}`,
+          message: `[SIMULATION] Water level reached ${sliderLevel.toFixed(1)}% | Health: ${sensorHealth} | Mode: ${simMode}`,
           acknowledged: false,
         });
       }
 
-      // 3. Log audit event
+      // 4. Log audit event
       await supabase.from('audit_logs').insert({
         operator_email: 'evaluator@sdas.lk',
         action: 'INJECT_DIGITAL_TWIN_SIMULATION',
-        details: { simulated_level: sliderLevel, rainfall: simRainfall, sensor_health: sensorHealth },
+        details: { simulated_level: sliderLevel, rainfall: simRainfall, sensor_health: sensorHealth, mode: simMode },
       });
 
       setLastInjected({ level: sliderLevel, time: new Date().toLocaleTimeString() });
       Alert.alert(
         '✅ Digital Twin Injected',
-        `Simulated ${sliderLevel.toFixed(1)}% reading broadcasted to Supabase. Mobile App and Dashboard have updated in real time!`
+        `Simulated ${sliderLevel.toFixed(1)}% (${simMode}) reading broadcasted to Supabase. Mobile App and Dashboard have updated in real time!`
       );
     } catch (err) {
       Alert.alert('Simulation Error', err.message);
