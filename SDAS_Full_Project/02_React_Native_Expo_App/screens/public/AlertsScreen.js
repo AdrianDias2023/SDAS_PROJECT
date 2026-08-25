@@ -61,9 +61,8 @@ export default function AlertsScreen() {
 
   const filteredAlerts = alerts.filter((a) => {
     if (filter === 'ALL') return true;
-    if (filter === 'SYSTEM') return a.alert_type?.includes('SYSTEM') || a.alert_type?.includes('SENSOR');
-    if (filter === 'WATER') return a.alert_type?.includes('WATER') || a.alert_type?.includes('SURGE') || a.alert_type?.includes('DANGER');
-    if (filter === 'WEATHER') return a.alert_type?.includes('RAIN') || a.alert_type?.includes('WEATHER');
+    if (filter === 'WARNINGS') return a.severity === 'WARNING' || a.severity === 'CRITICAL' || a.severity === 'EMERGENCY' || a.alert_type?.includes('DANGER') || a.alert_type?.includes('SURGE');
+    if (filter === 'INFO') return a.severity === 'INFO' || a.alert_type?.includes('NORMAL') || a.alert_type?.includes('SYSTEM');
     return true;
   });
 
@@ -71,27 +70,22 @@ export default function AlertsScreen() {
     const color = SEVERITY_COLORS[item.severity] ?? '#7F8C8D';
     const emoji = SEVERITY_EMOJI[item.severity]  ?? '📢';
     const time  = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const isDanger = item.severity === 'EMERGENCY' || item.alert_type?.includes('DANGER');
+    const isWarn = item.severity === 'WARNING' || item.severity === 'CRITICAL';
+
     return (
-      <View style={[styles.card, { borderLeftColor: color, opacity: item.acknowledged ? 0.7 : 1 }]}>
+      <View style={[styles.card, { borderLeftColor: color, backgroundColor: isDanger ? '#FEF2F2' : isWarn ? '#FFFBEB' : '#FFF' }]}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardEmoji}>{emoji}</Text>
           <View style={styles.cardInfo}>
             <Text style={[styles.cardType, { color }]}>{item.alert_type.replace(/_/g, ' ')}</Text>
             <Text style={styles.cardTime}>{time}</Text>
           </View>
-          {item.water_level != null && (
-            <View style={[styles.waterLevelBadge, { backgroundColor: `${color}15` }]}>
-              <Text style={[styles.cardLevel, { color }]}>{item.water_level.toFixed(1)}%</Text>
-            </View>
-          )}
+          <Text style={styles.cardBell}>{isDanger || isWarn ? '🔔' : 'ℹ️'}</Text>
         </View>
         <Text style={styles.cardMsg}>{item.message}</Text>
-        {!item.acknowledged ? (
-          <TouchableOpacity style={styles.ackBtn} onPress={() => handleAck(item.id)} activeOpacity={0.8}>
-            <Text style={styles.ackText}>✓ {t.acknowledged}</Text>
-          </TouchableOpacity>
-        ) : (
-          <Text style={styles.ackBadge}>✓ {t.acknowledged}</Text>
+        {item.water_level != null && (
+          <Text style={styles.waterLevelText}>Water Level: {item.water_level.toFixed(1)}%</Text>
         )}
       </View>
     );
@@ -101,19 +95,18 @@ export default function AlertsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>🚨 {t.alertsTitle}</Text>
+          <Text style={styles.headerTitle}>🚨 Alerts & Warnings</Text>
           <LanguageSelector compact={true} />
         </View>
-        <Text style={styles.headerSub}>Real-Time Event & Threshold Log</Text>
+        <Text style={styles.headerSub}>Real-Time Public Safety Broadcasts</Text>
       </View>
 
-      {/* 4 Filter Chips from Prototype Design */}
+      {/* 3 Filter Chips from Screen 3 */}
       <View style={styles.filterChipsRow}>
         {[
-          { id: 'ALL',     label: 'All' },
-          { id: 'SYSTEM',  label: 'System' },
-          { id: 'WATER',   label: 'Water Level' },
-          { id: 'WEATHER', label: 'Weather' },
+          { id: 'ALL',      label: 'All' },
+          { id: 'WARNINGS', label: 'Warnings' },
+          { id: 'INFO',     label: 'Info' },
         ].map((f) => (
           <TouchableOpacity
             key={f.id}
@@ -165,12 +158,9 @@ const styles = StyleSheet.create({
   cardInfo:     { flex: 1 },
   cardType:     { fontSize: 13, fontWeight: '800', textTransform: 'uppercase' },
   cardTime:     { fontSize: 11, color: '#94A3B8', marginTop: 1 },
-  waterLevelBadge:{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  cardLevel:    { fontSize: 14, fontWeight: '800' },
-  cardMsg:      { fontSize: 13, color: '#334155', lineHeight: 18, marginBottom: 10 },
-  ackBtn:       { alignSelf: 'flex-start', backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#CBD5E1' },
-  ackText:      { fontSize: 11, color: '#475569', fontWeight: '700' },
-  ackBadge:     { fontSize: 11, color: '#10B981', fontWeight: '700' },
+  cardBell:     { fontSize: 16 },
+  cardMsg:      { fontSize: 13, color: '#334155', lineHeight: 18, marginBottom: 6 },
+  waterLevelText:{ fontSize: 11, fontWeight: '700', color: '#0F4C81' },
   empty:        { alignItems: 'center', marginTop: 60 },
   emptyEmoji:   { fontSize: 40, marginBottom: 10 },
   emptyText:    { color: '#94A3B8', fontSize: 14, fontWeight: '600' },

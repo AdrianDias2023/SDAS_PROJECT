@@ -79,10 +79,10 @@ export default function HomeScreen() {
   const pct         = reading?.water_level ?? 0;
 
   return (
-    <View style={[styles.container, { backgroundColor: levelCfg.bg }]}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0F4C81" />
 
-      {/* Brand Header with Logo and Language Selector */}
+      {/* Brand Header */}
       <View style={styles.header}>
         <View style={styles.topRow}>
           <View style={styles.brandRow}>
@@ -92,72 +92,84 @@ export default function HomeScreen() {
               resizeMode="contain"
             />
             <View>
-              <Text style={styles.headerTitle}>{t.appName}</Text>
-              <Text style={styles.headerSub}>{t.damName}</Text>
+              <Text style={styles.headerTitle}>SDAS</Text>
+              <Text style={styles.headerSub}>Smart Dam Alert System</Text>
             </View>
           </View>
 
-          <TouchableOpacity
-            style={styles.operatorBtn}
-            onPress={() => navigation.navigate('OperatorStack')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.operatorBtnText}>🔐 {t.tabOperator}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Compact Language Bar & Multi-Dam Selector */}
-        <View style={styles.langBar}>
           <LanguageSelector compact={true} />
         </View>
-        <DamSelector selectedDamId={selectedDamId} onSelectDam={setSelectedDamId} />
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* Alert Banner */}
+        {/* Dam Profile & Status Hero Card (Screen 1) */}
+        <View style={styles.damHeroCard}>
+          <View style={styles.damHeroTop}>
+            <Text style={styles.damPinIcon}>📍</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.damHeroTitle}>Tabbowa Prototype Dam</Text>
+              <Text style={styles.damHeroSub}>Puttalam District (Simulation)</Text>
+            </View>
+          </View>
+
+          <View style={styles.statusPillRow}>
+            <Text style={styles.statusPillLabel}>Current Status</Text>
+            <View style={[styles.statusBadgePill, { backgroundColor: levelCfg.color }]}>
+              <Text style={styles.statusBadgePillText}>{levelCfg.emoji} {levelCfg.label}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* 4 Quick-Action 2x2 Navigation Tiles (Screen 1) */}
+        <View style={styles.quickTilesGrid}>
+          <TouchableOpacity
+            style={styles.quickTile}
+            onPress={() => navigation.navigate('GateStatus')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.quickTileIcon}>🚪</Text>
+            <Text style={styles.quickTileLabel}>Gate Status</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickTile}
+            onPress={() => navigation.navigate('Alerts')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.quickTileIcon}>🚨</Text>
+            <Text style={styles.quickTileLabel}>Alerts</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickTile}
+            onPress={() => navigation.navigate('Weather')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.quickTileIcon}>🌧️</Text>
+            <Text style={styles.quickTileLabel}>Weather</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickTile}
+            onPress={() => navigation.navigate('Safety')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.quickTileIcon}>🛡️</Text>
+            <Text style={styles.quickTileLabel}>Safety Info</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Alert Banner if active */}
         {level !== 'NORMAL' && (
           <AlertBanner level={level} config={levelCfg} />
         )}
 
-        {/* Live Satellite Weather & Rain Forecast Card */}
-        {weather && (
-          <View style={[styles.weatherCard, isHeavyRain && styles.weatherCardAlert]}>
-            <View style={styles.weatherHeaderRow}>
-              <View style={styles.weatherCondition}>
-                <Text style={styles.weatherIcon}>{weather.conditionIcon}</Text>
-                <View>
-                  <Text style={styles.weatherTitle}>{t.liveWeatherTitle}</Text>
-                  <Text style={styles.weatherSub}>{weather.conditionLabel} • {weather.currentTemp.toFixed(1)}°C</Text>
-                </View>
-              </View>
-              <Text style={styles.weatherSync}>🔄 {weather.syncedAt}</Text>
-            </View>
-
-            <View style={styles.weatherMetricsRow}>
-              <View style={styles.weatherCol}>
-                <Text style={styles.weatherMetricLabel}>{t.forecast6h}</Text>
-                <Text style={[styles.weatherMetricVal, isHeavyRain && { color: '#DC2626' }]}>
-                  {weather.forecast6hRainMm} mm
-                </Text>
-              </View>
-              <View style={styles.weatherCol}>
-                <Text style={styles.weatherMetricLabel}>{t.precipProb}</Text>
-                <Text style={styles.weatherMetricVal}>{weather.maxPrecipProb}%</Text>
-              </View>
-            </View>
-
-            <Text style={[styles.weatherAdvice, isHeavyRain && styles.weatherAdviceAlert]}>
-              {isHeavyRain ? t.rainAlertIncoming : t.rainNormal}
-            </Text>
-          </View>
-        )}
-
-        {/* Water Level Gauge Card */}
+        {/* ── SCREEN 2: LIVE DAM STATUS ── */}
         <View style={styles.gaugeCard}>
-          <Text style={styles.sectionHeaderTitle}>Current Water Level</Text>
+          <Text style={styles.sectionHeaderTitle}>Live Dam Status</Text>
           <WaterLevelGauge
             percentage={pct}
             color={levelCfg.color}
@@ -166,7 +178,7 @@ export default function HomeScreen() {
             maxMeters={355.0}
           />
 
-          {/* Safe Storage Capacity Available Card */}
+          {/* Safe Storage Capacity Available */}
           <View style={styles.storageBox}>
             <View style={styles.storageHeaderRow}>
               <Text style={styles.storageTitle}>Safe Storage Capacity Available</Text>
@@ -188,11 +200,11 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* 4-Metric Grid from Prototype Design */}
+        {/* 4-Metric Realtime Telemetry Grid */}
         <View style={styles.metricsGrid}>
           <View style={styles.metricCard}>
             <Text style={styles.metricIcon}>🌧️</Text>
-            <Text style={styles.metricLabel}>Rainfall (6H)</Text>
+            <Text style={styles.metricLabel}>Rainfall (24H)</Text>
             <Text style={styles.metricValue}>{weather?.forecast6hRainMm ?? '18.6'} mm</Text>
           </View>
           <View style={styles.metricCard}>
@@ -207,30 +219,16 @@ export default function HomeScreen() {
           </View>
           <View style={styles.metricCard}>
             <Text style={styles.metricIcon}>⏱️</Text>
-            <Text style={styles.metricLabel}>Last Update</Text>
+            <Text style={styles.metricLabel}>Last Updated</Text>
             <Text style={styles.metricValue}>{lastUpdate ? lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '2 sec ago'}</Text>
           </View>
         </View>
-            {t.lastUpdated}: {lastUpdate.toLocaleTimeString()}
-          </Text>
-        )}
 
-        {/* 4-Tier Operational Logic Scale */}
-        <View style={styles.scaleCard}>
-          <Text style={styles.scaleTitle}>🏛️ 4-Tier Operational & Hydrological Logic</Text>
-          {Object.entries(LEVELS).map(([key, cfg]) => (
-            <View key={key} style={styles.scaleRow}>
-              <View style={[styles.scaleDot, { backgroundColor: cfg.color }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.scaleText}>
-                  {cfg.emoji} {cfg.label}
-                </Text>
-                <Text style={styles.scaleRange}>
-                  {cfg.range}
-                </Text>
-              </View>
-            </View>
-          ))}
+        {/* Prototype Notice Box */}
+        <View style={styles.noticeCard}>
+          <Text style={styles.noticeCardText}>
+            ℹ️ This is a prototype simulation. Data is updated every 2 seconds.
+          </Text>
         </View>
       </ScrollView>
     </View>
@@ -238,51 +236,40 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container:     { flex: 1 },
-  header:        { backgroundColor: '#0F4C81', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 14 },
-  topRow:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  brandRow:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoMini:      { width: 44, height: 44 },
-  headerTitle:   { fontSize: 22, fontWeight: '800', color: '#FFF' },
-  headerSub:     { color: '#90CAF9', fontSize: 12, fontWeight: '500' },
-  operatorBtn:   { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 18, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
-  operatorBtnText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
-  langBar:       { marginTop: 12, alignItems: 'flex-start' },
-  scroll:        { padding: 16, paddingBottom: 40 },
-  weatherCard:   { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  weatherCardAlert:{ borderColor: '#FCA5A5', backgroundColor: '#FEF2F2' },
-  weatherHeaderRow:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  weatherCondition:{ flexDirection: 'row', alignItems: 'center', gap: 8 },
-  weatherIcon:   { fontSize: 28 },
-  weatherTitle:  { fontSize: 13, fontWeight: '800', color: '#0F172A' },
-  weatherSub:    { fontSize: 11, color: '#64748B', fontWeight: '500' },
-  weatherSync:   { fontSize: 10, color: '#94A3B8' },
-  weatherMetricsRow:{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 6, backgroundColor: '#F8FAFC', borderRadius: 10, marginBottom: 8 },
-  weatherCol:    { alignItems: 'center' },
-  weatherMetricLabel:{ fontSize: 11, color: '#64748B', fontWeight: '600' },
-  weatherMetricVal:  { fontSize: 16, fontWeight: '800', color: '#0F4C81', marginTop: 2 },
-  weatherAdvice: { fontSize: 11, color: '#475569', lineHeight: 16, textAlign: 'center' },
-  weatherAdviceAlert:{ color: '#B91C1C', fontWeight: '600' },
-  gaugeCard:     { backgroundColor: '#FFF', borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, elevation: 4 },
-  statusLabel:   { fontSize: 18, fontWeight: '800', marginTop: 12, textAlign: 'center' },
-  storageBox:    { width: '100%', marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderColor: '#F1F5F9' },
-  storageHeaderRow:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  storageTitle:  { fontSize: 12, fontWeight: '700', color: '#334155' },
-  storageVal:    { fontSize: 14, fontWeight: '800', color: '#0F4C81' },
-  storageTrack:  { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
-  storageFill:   { height: '100%', backgroundColor: '#10B981', borderRadius: 4 },
-  infoRow:       { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  sectionHeaderTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 12, textAlign: 'center' },
-  metricsGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
-  metricCard:    { width: '48%', backgroundColor: '#FFF', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  metricIcon:    { fontSize: 20, marginBottom: 4 },
-  metricLabel:   { fontSize: 11, color: '#64748B', fontWeight: '600' },
-  metricValue:   { fontSize: 17, fontWeight: '800', color: '#0F172A', marginTop: 2 },
-  updateText:    { textAlign: 'center', color: '#95A5A6', fontSize: 12, marginBottom: 16 },
-  scaleCard:     { backgroundColor: '#FFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
-  scaleTitle:    { fontWeight: 'bold', fontSize: 14, color: '#1B2A3B', marginBottom: 12 },
-  scaleRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  scaleDot:      { width: 12, height: 12, borderRadius: 6, marginRight: 10 },
-  scaleText:     { fontSize: 13, color: '#2C3E50', fontWeight: '700' },
-  scaleRange:    { fontSize: 11, color: '#64748B', marginTop: 2 },
+  container:        { flex: 1, backgroundColor: '#F8FAFC' },
+  header:           { backgroundColor: '#0F4C81', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 14 },
+  topRow:           { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  brandRow:         { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logoMini:         { width: 44, height: 44 },
+  headerTitle:      { fontSize: 22, fontWeight: '800', color: '#FFF' },
+  headerSub:        { color: '#90CAF9', fontSize: 12, fontWeight: '500' },
+  scroll:           { padding: 16, paddingBottom: 40 },
+  damHeroCard:      { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  damHeroTop:       { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  damPinIcon:       { fontSize: 24 },
+  damHeroTitle:     { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  damHeroSub:       { fontSize: 12, color: '#64748B', fontWeight: '500', marginTop: 1 },
+  statusPillRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTopWidth: 1, borderColor: '#F1F5F9' },
+  statusPillLabel:  { fontSize: 13, fontWeight: '700', color: '#334155' },
+  statusBadgePill:  { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  statusBadgePillText:{ color: '#FFF', fontSize: 11, fontWeight: '800' },
+  quickTilesGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
+  quickTile:        { width: '48%', backgroundColor: '#FFF', borderRadius: 16, padding: 18, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+  quickTileIcon:    { fontSize: 32, marginBottom: 6 },
+  quickTileLabel:   { fontSize: 13, fontWeight: '800', color: '#0F172A' },
+  gaugeCard:        { backgroundColor: '#FFF', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  sectionHeaderTitle:{ fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 10 },
+  storageBox:       { width: '100%', marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderColor: '#F1F5F9' },
+  storageHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  storageTitle:     { fontSize: 12, fontWeight: '700', color: '#334155' },
+  storageVal:       { fontSize: 13, fontWeight: '800', color: '#0F4C81' },
+  storageTrack:     { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
+  storageFill:      { height: '100%', borderRadius: 4 },
+  metricsGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
+  metricCard:       { width: '48%', backgroundColor: '#FFF', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+  metricIcon:       { fontSize: 20, marginBottom: 4 },
+  metricLabel:      { fontSize: 11, color: '#64748B', fontWeight: '600' },
+  metricValue:      { fontSize: 16, fontWeight: '900', color: '#0F172A', marginTop: 2 },
+  noticeCard:       { backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#BFDBFE', marginTop: 4 },
+  noticeCardText:   { fontSize: 11, color: '#1D4ED8', textAlign: 'center', fontWeight: '600' },
 });

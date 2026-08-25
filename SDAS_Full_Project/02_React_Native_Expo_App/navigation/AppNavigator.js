@@ -6,12 +6,15 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text } from 'react-native';
 
 // Public Screens
-import HomeScreen       from '../screens/public/HomeScreen';
-import AlertsScreen     from '../screens/public/AlertsScreen';
-import PredictionScreen from '../screens/public/PredictionScreen';
-import EvacuationMapScreen from '../screens/public/EvacuationMapScreen';
-import AboutScreen         from '../screens/public/AboutScreen';
-import { useLanguage }     from '../services/i18n';
+import HomeScreen             from '../screens/public/HomeScreen';
+import AlertsScreen           from '../screens/public/AlertsScreen';
+import PredictionScreen       from '../screens/public/PredictionScreen';
+import EvacuationMapScreen    from '../screens/public/EvacuationMapScreen';
+import AboutScreen            from '../screens/public/AboutScreen';
+import SafetyInfoScreen       from '../screens/public/SafetyInfoScreen';
+import PublicGateStatusScreen from '../screens/public/PublicGateStatusScreen';
+import WeatherForecastScreen  from '../screens/public/WeatherForecastScreen';
+import { useLanguage }        from '../services/i18n';
 
 // Operator Screens
 import LoginScreen         from '../screens/operator/LoginScreen';
@@ -37,8 +40,6 @@ function TabIcon({ emoji, focused }) {
 
 // ─── Public tab navigator (no login required) ─────────────────
 function PublicTabs() {
-  const { t } = useLanguage();
-
   return (
     <Tab.Navigator
       screenOptions={{
@@ -55,16 +56,6 @@ function PublicTabs() {
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />, tabBarLabel: 'Home' }}
       />
       <Tab.Screen
-        name="Analytics"
-        component={AnalyticsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />, tabBarLabel: 'Analytics' }}
-      />
-      <Tab.Screen
-        name="Predict"
-        component={PredictionScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🤖" focused={focused} />, tabBarLabel: 'AI Risk' }}
-      />
-      <Tab.Screen
         name="Map"
         component={EvacuationMapScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🗺️" focused={focused} />, tabBarLabel: 'Map' }}
@@ -75,9 +66,14 @@ function PublicTabs() {
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚨" focused={focused} />, tabBarLabel: 'Alerts' }}
       />
       <Tab.Screen
-        name="Menu"
+        name="Safety"
+        component={SafetyInfoScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🛡️" focused={focused} />, tabBarLabel: 'Safety' }}
+      />
+      <Tab.Screen
+        name="More"
         component={AboutScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />, tabBarLabel: 'Menu' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📱" focused={focused} />, tabBarLabel: 'More' }}
       />
     </Tab.Navigator>
   );
@@ -121,9 +117,9 @@ function OperatorTabs() {
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🎛️" focused={focused} />, tabBarLabel: 'Twin' }}
       />
       <Tab.Screen
-        name="Menu"
+        name="More"
         component={AboutScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />, tabBarLabel: 'Menu' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />, tabBarLabel: 'Settings' }}
       />
     </Tab.Navigator>
   );
@@ -135,6 +131,13 @@ export default function AppNavigator({ session }) {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {/* Default: Public App */}
       <Stack.Screen name="PublicTabs" component={PublicTabs} />
+      
+      {/* Public Sub-Screens */}
+      <Stack.Screen name="GateStatus" component={PublicGateStatusScreen} />
+      <Stack.Screen name="Weather" component={WeatherForecastScreen} />
+      <Stack.Screen name="Safety" component={SafetyInfoScreen} />
+      <Stack.Screen name="Predict" component={PredictionScreen} />
+      <Stack.Screen name="AnalyticsScreen" component={AnalyticsScreen} />
       
       {/* Operator Screens */}
       <Stack.Screen name="Login" component={LoginScreen} />

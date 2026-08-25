@@ -8,51 +8,43 @@ import {
 } from 'react-native';
 import { useLanguage } from '../../services/i18n';
 import LanguageSelector from '../../components/LanguageSelector';
-import DamSelector from '../../components/DamSelector';
-
-const DAM_REGIONS = {
+import DamSelector from '../../components/DamSelector';const DAM_REGIONS = {
   ESP32_PUTTALAM_01: {
     dam: {
-      name: 'Tabbowa Reservoir Dam (Puttalam)',
-      nameSi: 'තබ්බෝව ජලාශ වේල්ල (පුත්තලම)',
-      nameTa: 'தப்போவ நீர்த்தේக்க அணை (புத்தளம்)',
+      name: 'Tabbowa Prototype Dam',
       lat: 8.0362,
       lng: 79.8283,
       elevation: '12m MSL',
-      hazardLevel: 'HIGH FLOOD RISK AREA',
       district: 'Puttalam District',
     },
     safeZones: [
       {
         id: 'sz-p1',
-        name: 'Puttalam Base Hospital Relief Center',
-        nameSi: 'පුත්තලම මූලික රෝහල් සහන මධ්‍යස්ථානය',
-        nameTa: 'புத்தளம் ஆதார வைத்தியசாலை நிவாரண மையம்',
-        distance: '7.8 km',
-        elevation: '+38m (Safe High Ground)',
-        capacity: '1,200 Persons',
-        route: 'Route A: Via Kurunegala-Puttalam Hwy (A10)',
+        name: 'Puttalam Town High Ground',
+        distance: '4.2 km',
+        elevation: 'Elevation: 46 m',
         lat: 8.0380,
         lng: 79.8320,
-        contact: '+94322265261',
       },
       {
         id: 'sz-p2',
-        name: 'Anamaduwa Central High-Ground Shelter',
-        nameSi: 'ආනමඩුව මධ්‍ය මහා විද්‍යාල සහන කඳවුර',
-        nameTa: 'ஆனமடுவ மத்திய கல்லூரி நிவாரண முகாம்',
-        distance: '14.2 km',
-        elevation: '+52m (Highest Safe Plateau)',
-        capacity: '2,500 Persons',
-        route: 'Route B: Via Anamaduwa Main Road (B379)',
+        name: 'Nattandiya School Ground',
+        distance: '6.7 km',
+        elevation: 'Elevation: 41 m',
         lat: 7.9120,
         lng: 80.0150,
-        contact: '+94322263222',
       },
       {
         id: 'sz-p3',
-        name: 'St. Andrew\'s College Evacuation Camp',
-        nameSi: 'ශාන්ත ඇන්ඩෲස් විද්‍යාල ආරක්ෂිත කඳවුර',
+        name: 'St. Anne\'s Church Area',
+        distance: '7.9 km',
+        elevation: 'Elevation: 52 m',
+        lat: 8.0290,
+        lng: 79.8250,
+      },
+    ],
+  },
+};ාන්ත ඇන්ඩෲස් විද්‍යාල ආරක්ෂිත කඳවුර',
         nameTa: 'புனித அன்ட்ரூஸ் கல்லூரி தற்காலிக முகாம்',
         distance: '6.4 km',
         elevation: '+30m (Safe Elevated Zone)',
@@ -127,6 +119,22 @@ export default function EvacuationMapScreen() {
               <Text style={styles.pinText}>Zone 3</Text>
             </View>
           </View>
+
+          {/* Map Legend (Screen 7) */}
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <Text style={styles.legendIcon}>💧</Text>
+              <Text style={styles.legendText}>Dam Location</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <Text style={styles.legendIcon}>🟢</Text>
+              <Text style={styles.legendText}>Safe Locations</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <Text style={styles.legendIcon}>🔴</Text>
+              <Text style={styles.legendText}>High Risk Areas</Text>
+            </View>
+          </View>
         </View>
 
         {/* Nearest Safe Locations List */}
@@ -192,6 +200,10 @@ const styles = StyleSheet.create({
   pinDamText:     { fontSize: 10, fontWeight: '800', color: '#0284C7' },
   shelterPin:     { position: 'absolute', alignItems: 'center' },
   pinText:        { fontSize: 9, fontWeight: '700', color: '#166534' },
+  legendRow:      { flexDirection: 'row', justifyContent: 'space-around', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderColor: '#F1F5F9' },
+  legendItem:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendIcon:     { fontSize: 12 },
+  legendText:     { fontSize: 10, fontWeight: '700', color: '#475569' },
   sectionHeading: { fontSize: 14, fontWeight: '800', color: '#0F172A', marginBottom: 10 },
   zoneCard:       { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
   zoneNumCircle:  { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
