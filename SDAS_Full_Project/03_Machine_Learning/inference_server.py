@@ -59,7 +59,11 @@ def load_all_models():
     try:
         lstm_path = os.path.join(BASE_DIR, 'models', 'lstm_model.h5')
         print(f"[SDAS ML] Loading LSTM from {lstm_path}...")
-        lstm_model = tf.keras.models.load_model(lstm_path, compile=False)
+        try:
+            import keras
+            lstm_model = keras.models.load_model(lstm_path, compile=False)
+        except Exception:
+            lstm_model = tf.keras.models.load_model(lstm_path, compile=False)
         print("[SDAS ML] [OK] LSTM loaded.")
     except Exception as e:
         print(f"[SDAS ML] [ERROR] LSTM load failed: {e}")
@@ -69,7 +73,11 @@ def load_all_models():
     try:
         ae_path = os.path.join(BASE_DIR, 'models', 'autoencoder_model.h5')
         print(f"[SDAS ML] Loading Autoencoder from {ae_path}...")
-        autoencoder_model = tf.keras.models.load_model(ae_path, compile=False)
+        try:
+            import keras
+            autoencoder_model = keras.models.load_model(ae_path, compile=False)
+        except Exception:
+            autoencoder_model = tf.keras.models.load_model(ae_path, compile=False)
         print("[SDAS ML] [OK] Autoencoder loaded.")
     except Exception as e:
         print(f"[SDAS ML] [ERROR] Autoencoder load failed: {e}")
