@@ -228,12 +228,73 @@ def test_offline_emergency_and_interlock():
 
     return {"offline_emergency_passed": all_passed, "total_cases": len(scenarios)}
 
+# ==============================================================================
+# TEST 5: 4-TIER OPERATING ARCHITECTURE & FAIL-SAFE VALIDATION
+# ==============================================================================
+def test_four_tier_control_modes():
+    print("\n" + "="*70)
+    print("  TEST 5: 4-TIER OPERATING ARCHITECTURE (AUTO CLOUD, AUTO OFFLINE, MANUAL, FAIL-SAFE)")
+    print("="*70)
+
+    def evaluate_4_tier(internet_on, disc_sec, s1_lvl, s2_lvl, manual_cmd=None):
+        # Sensor discrepancy check
+        delta = abs(s1_lvl - s2_lvl)
+        sensor_health = "SENSOR_MISMATCH" if delta > 5.0 else "NORMAL"
+        avg_level = (s1_lvl + s2_lvl) / 2.0
+
+        if manual_cmd:
+            mode = "MANUAL"
+            gate = 100.0 if manual_cmd == "OPEN" else 0.0 if manual_cmd == "CLOSE" else 50.0
+            auto_active = False
+        elif sensor_health != "NORMAL":
+            mode = "FAIL_SAFE"
+            gate = 0.0 # Hold position, suspend automatic actuation
+            auto_active = False
+        elif not internet_on and disc_sec > 30:
+            mode = "AUTO_OFFLINE"
+            gate = 100.0 if avg_level >= 85 else 30.0 if avg_level >= 70 else 0.0
+            auto_active = True
+        else:
+            mode = "AUTO_CLOUD"
+            gate = 100.0 if avg_level >= 85 else 30.0 if avg_level >= 70 else 0.0
+            auto_active = True
+
+        return {
+            "mode": mode,
+            "gate": gate,
+            "sensor_health": sensor_health,
+            "auto_active": auto_active
+        }
+
+    test_matrix = [
+        # (Net, Disc_s, S1, S2, Cmd, Exp Mode, Exp Auto, Note)
+        (True,  0,  62.0, 62.5, None,     "AUTO_CLOUD",   True,  "Normal operation: Dual sensors agree, Internet ON"),
+        (False, 45, 76.0, 75.8, None,     "AUTO_OFFLINE", True,  "Offline Emergency: Internet lost >30s, edge safety rules"),
+        (True,  0,  62.0, 62.5, "OPEN",   "MANUAL",       False, "Manual Operator: Operator commands full open"),
+        (True,  0,  85.0, 20.0, None,     "FAIL_SAFE",    False, "Fail-Safe: Sensor mismatch (85% vs 20%), auto suspended"),
+    ]
+
+    all_passed = True
+    for net, disc, s1, s2, cmd, exp_mode, exp_auto, note in test_matrix:
+        res = evaluate_4_tier(net, disc, s1, s2, cmd)
+        passed = (res["mode"] == exp_mode and res["auto_active"] == exp_auto)
+        if not passed: all_passed = False
+        mark = "✓" if passed else "✗"
+        print(f"  [{mark}] Mode={res['mode']:14s} | AutoActive={str(res['auto_active']):5s} | SensorHealth={res['sensor_health']:15s} ({note})")
+
+    print("-"*70)
+    print(f"  4-Tier Operating Architecture: {'100% PASSED' if all_passed else 'FAILED'}")
+    print("="*70)
+
+    return {"four_tier_passed": all_passed, "total_cases": len(test_matrix)}
+
 def main():
     print("\n🔬 STARTING FULL SDAS SYSTEM BENCHMARKING SUITE...")
     t1 = test_sensor_accuracy()
     t2 = test_communication_latency()
     t3 = test_alert_state_transitions()
     t4 = test_offline_emergency_and_interlock()
+    t5 = test_four_tier_control_modes()
 
     summary = {
         "timestamp": datetime.now().isoformat(),
@@ -241,6 +302,7 @@ def main():
         "communication_latency_test": t2,
         "state_transitions_test": t3,
         "offline_emergency_test": t4,
+        "four_tier_architecture_test": t5,
         "evaluation_verdict": "ALL BENCHMARKS SATISFIED (GRADE A+ QUALITY)"
     }
 

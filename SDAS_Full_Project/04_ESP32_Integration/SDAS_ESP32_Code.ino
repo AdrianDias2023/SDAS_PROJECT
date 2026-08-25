@@ -139,15 +139,16 @@ enum AlertLevel : uint8_t {
   LEVEL_DANGER     = 3
 };
 
-// ─── 3 SYSTEM OPERATING MODES ──────────────────────────────────────────────────
+// ─── 4 SYSTEM OPERATING MODES ──────────────────────────────────────────────────
 enum SystemMode : uint8_t {
-  MODE_CLOUD_AUTO        = 0,  // Internet active: Cloud sync & AI prediction
-  MODE_OFFLINE_EMERGENCY = 1,  // Internet lost >30s: Autonomous Edge safety engine + GSM SMS
-  MODE_MANUAL_OVERRIDE   = 2   // Physical buttons or authorized operator override
+  MODE_AUTO_CLOUD   = 0,  // 1. AUTO CLOUD: Normal operation with Supabase & Hybrid AI
+  MODE_AUTO_OFFLINE = 1,  // 2. AUTO OFFLINE EMERGENCY: Internet lost >30s (Edge rules + GSM SMS)
+  MODE_MANUAL       = 2,  // 3. MANUAL OPERATOR: Mobile App or physical buttons override
+  MODE_FAIL_SAFE    = 3   // 4. FAIL-SAFE: Sensor mismatch/fault (Auto disabled, operator notified)
 };
 
 AlertLevel currentLevel        = LEVEL_NORMAL;
-SystemMode currentSystemMode   = MODE_CLOUD_AUTO;
+SystemMode currentSystemMode   = MODE_AUTO_CLOUD;
 bool       smsSentThisLevel    = false;
 bool       wifiOK              = false;
 
@@ -350,7 +351,7 @@ void checkEmergencyButtons() {
   if (digitalRead(BTN_OPEN_PIN) == LOW) {
     lastBtnPressMs = now;
     physicalManualOverride = true;
-    currentSystemMode      = MODE_MANUAL_OVERRIDE;
+    currentSystemMode      = MODE_MANUAL;
     Serial.println(F("\n[MANUAL OVERRIDE] Physical OPEN Pressed → Actuating Gate to 100% (180°)"));
     setGate(GATE_FULL_OPEN);
     triggerBuzzer(2, 100, 50);
@@ -365,7 +366,7 @@ void checkEmergencyButtons() {
       return;
     }
     physicalManualOverride = true;
-    currentSystemMode      = MODE_MANUAL_OVERRIDE;
+    currentSystemMode      = MODE_MANUAL;
     Serial.println(F("\n[MANUAL OVERRIDE] Physical CLOSE Pressed → Closing Gate 0%"));
     setGate(GATE_CLOSED);
     triggerBuzzer(1, 100, 0);
@@ -378,7 +379,7 @@ void checkEmergencyButtons() {
     while (digitalRead(BTN_STOP_PIN) == LOW) {
       if (millis() - pressStart > 2500) {
         physicalManualOverride = false;
-        currentSystemMode      = (WiFi.status() == WL_CONNECTED) ? MODE_CLOUD_AUTO : MODE_OFFLINE_EMERGENCY;
+        currentSystemMode      = (WiFi.status() == WL_CONNECTED) ? MODE_AUTO_CLOUD : MODE_AUTO_OFFLINE;
         Serial.println(F("\n[MANUAL OVERRIDE] RESET → Returned to AUTOMATIC AI/Threshold Control"));
         triggerBuzzer(3, 100, 100);
         applyGate(currentLevel);
@@ -388,7 +389,7 @@ void checkEmergencyButtons() {
     }
     // Short press = Instant HOLD current position
     physicalManualOverride = true;
-    currentSystemMode      = MODE_MANUAL_OVERRIDE;
+    currentSystemMode      = MODE_MANUAL;
     Serial.printf("\n[MANUAL OVERRIDE] Physical STOP/HOLD Pressed → Locked at %d°\n", currentGateAngle);
     triggerBuzzer(1, 200, 0);
   }
@@ -479,11 +480,12 @@ const char* levelStr(AlertLevel level) {
 
 const char* modeStr(SystemMode mode) {
   switch (mode) {
-    case MODE_CLOUD_AUTO:        return "CLOUD_AUTO";
-    case MODE_OFFLINE_EMERGENCY: return "OFFLINE_EMERGENCY";
-    case MODE_MANUAL_OVERRIDE:   return "MANUAL_OVERRIDE";
+    case MODE_AUTO_CLOUD:   return "AUTO_CLOUD";
+    case MODE_AUTO_OFFLINE: return "AUTO_OFFLINE";
+    case MODE_MANUAL:       return "MANUAL";
+    case MODE_FAIL_SAFE:    return "FAIL_SAFE";
   }
-  return "CLOUD_AUTO";
+  return "AUTO_CLOUD";
 }
 
 // ─── OFFLINE AUTOMATIC EMERGENCY CONTROL ENGINE ────────────────────────────────
@@ -705,15 +707,15 @@ void loop() {
   if (WiFi.status() == WL_CONNECTED) {
     wifiOK = true;
     lastWifiConnectedMs = now;
-    if (!physicalManualOverride) {
-      currentSystemMode = MODE_CLOUD_AUTO;
+    if (!physicalManualOverride && currentSystemMode != MODE_FAIL_SAFE) {
+      currentSystemMode = MODE_AUTO_CLOUD;
     }
   } else {
     wifiOK = false;
-    if (now - lastWifiConnectedMs > WIFI_DISCONNECT_TIMEOUT_MS && !physicalManualOverride) {
-      if (currentSystemMode != MODE_OFFLINE_EMERGENCY) {
-        Serial.println(F("\n[INTERNET WATCHDOG] Internet unavailable > 30s! Escalated to MODE_OFFLINE_EMERGENCY (Autonomous Edge Safety Engine)"));
-        currentSystemMode = MODE_OFFLINE_EMERGENCY;
+    if (now - lastWifiConnectedMs > WIFI_DISCONNECT_TIMEOUT_MS && !physicalManualOverride && currentSystemMode != MODE_FAIL_SAFE) {
+      if (currentSystemMode != MODE_AUTO_OFFLINE) {
+        Serial.println(F("\n[INTERNET WATCHDOG] Internet unavailable > 30s! Escalated to MODE_AUTO_OFFLINE (Autonomous Edge Safety Engine)"));
+        currentSystemMode = MODE_AUTO_OFFLINE;
       }
     }
   }
@@ -738,13 +740,30 @@ void loop() {
     // 3. Rate of rise (% per 2-second reading)
     float riseRate = waterLevelPct - prevLevelPct;
 
-    // ── 4. MODE-AWARE DECISION & ACTUATION ─────────────────────────────────
-    if (currentSystemMode == MODE_OFFLINE_EMERGENCY) {
-      // Step 4 & 5: Autonomous local edge control + direct GSM SMS
+    // ── 4. SENSOR INTEGRITY & FAIL-SAFE MODE ──────────────────────────────
+    if (sensorHealth != "NORMAL" && currentSystemMode != MODE_MANUAL) {
+      if (currentSystemMode != MODE_FAIL_SAFE) {
+        Serial.printf("\n[FAIL-SAFE ACTIVATED] Sensor discrepancy '%s' detected! Suspending automatic gate movement. Holding safe position, awaiting operator override.\n", sensorHealth.c_str());
+        currentSystemMode = MODE_FAIL_SAFE;
+        setLED(1, 1, 0); // Amber LED
+        triggerBuzzer(2, 200, 100);
+      }
+    } else if (currentSystemMode == MODE_FAIL_SAFE && sensorHealth == "NORMAL") {
+      currentSystemMode = (WiFi.status() == WL_CONNECTED) ? MODE_AUTO_CLOUD : MODE_AUTO_OFFLINE;
+      Serial.println(F("[FAIL-SAFE CLEARED] Sensor health returned to NORMAL. Auto mode restored."));
+    }
+
+    // ── 5. MODE-AWARE DECISION & ACTUATION ─────────────────────────────────
+    if (currentSystemMode == MODE_FAIL_SAFE) {
+      // Fail-Safe: Hold safe position, flash Amber warning
+      setLED(1, 1, 0);
+    }
+    else if (currentSystemMode == MODE_AUTO_OFFLINE) {
+      // Auto Offline: Autonomous local edge control + direct GSM SMS
       offlineControl(waterLevelPct, riseRate);
     }
-    else if (currentSystemMode == MODE_CLOUD_AUTO) {
-      // Cloud Auto: evaluate safety levels & sync
+    else if (currentSystemMode == MODE_AUTO_CLOUD) {
+      // Auto Cloud: evaluate safety levels & sync
       AlertLevel newAlertLevel = evaluateLevel(waterLevelPct, riseRate, currentLevel);
 
       if (newAlertLevel != currentLevel) {
