@@ -69,9 +69,9 @@ This guide outlines the **5-Stage Live Demonstration Protocol** to perform in fr
 * **Objective:** Demonstrate manual human control while proving the **Safety Interlock Guard** prevents human catastrophe.
 * **Examiner Action (Part A - Valid Manual Actuation):**
   1. Open [Gate Control Screen](file:///c:/Users/adria/Downloads/SDAS_Final_Project/SDAS_Full_Project/02_React_Native_Expo_App/screens/operator/GateControlScreen.js).
-  2. Switch Mode to `⚙️ MANUAL`.
-  3. Press `[ 🔓 OPEN GATE (100%) ]` or `[ 🛑 STOP / HOLD MOTOR ]`.
-  4. Confirm command. Observe servo moves to 100% and locks.
+  2. Switch Mode to `⚙️ MANUAL` or open [Manual Override Screen](file:///c:/Users/adria/Downloads/SDAS_Final_Project/SDAS_Full_Project/02_React_Native_Expo_App/screens/operator/ManualOverrideScreen.js).
+  3. Press `[ 🔓 OPEN GATE (50%) ]` or `[ 🛑 STOP / HOLD MOTOR ]`.
+  4. Confirm command. Observe servo moves to calibrated 50% ($90^\circ$) emergency release and locks.
 * **Examiner Action (Part B - Safety Interlock Rejection):**
   1. While water level is at **$92\%$ (Critical Danger)**, attempt to press `[ 🔒 CLOSE GATE (0%) ]`.
   2. **System Response:** The system **REJECTS** the closure with warning feedback:

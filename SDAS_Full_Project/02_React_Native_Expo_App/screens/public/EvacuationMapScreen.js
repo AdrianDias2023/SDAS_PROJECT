@@ -1,5 +1,5 @@
 // SDAS — Public Evacuation Map & Safe Zones Screen
-// Displays interactive map showing Dam Location, High-Ground Safe Zones, and Emergency Routes for Multi-Dam Catchments
+// Displays interactive map showing Dam Location, High-Ground Safe Zones, and Emergency Routes (Prototype Simulation)
 
 import React, { useState } from 'react';
 import {
@@ -41,18 +41,6 @@ import DamSelector from '../../components/DamSelector';const DAM_REGIONS = {
         elevation: 'Elevation: 52 m',
         lat: 8.0290,
         lng: 79.8250,
-      },
-    ],
-  },
-};ාන්ත ඇන්ඩෲස් විද්‍යාල ආරක්ෂිත කඳවුර',
-        nameTa: 'புனித அன்ட்ரூஸ் கல்லூரி தற்காலிக முகாம்',
-        distance: '6.4 km',
-        elevation: '+30m (Safe Elevated Zone)',
-        capacity: '800 Persons',
-        route: 'Route C: Via Service Bypass Road',
-        lat: 8.0290,
-        lng: 79.8250,
-        contact: '+94322265432',
       },
     ],
   },

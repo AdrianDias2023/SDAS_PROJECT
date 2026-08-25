@@ -1,4 +1,4 @@
-// SDAS Alerts Service — fetch and manage alerts (Multi-Dam Supported)
+// SDAS Alerts Service — fetch and manage alerts (Realtime Telemetry)
 
 import { supabase } from './supabase';
 

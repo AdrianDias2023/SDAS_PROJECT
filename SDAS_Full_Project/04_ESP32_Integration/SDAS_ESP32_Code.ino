@@ -1,7 +1,7 @@
 /*
   ============================================================
    SDAS — Smart Dam Alert System
-   ESP32 Production Firmware v1.0
+   ESP32 Prototype Edge Firmware v1.0
 
    Hardware:
      - ESP32 DevKit V1
