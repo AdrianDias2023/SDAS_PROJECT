@@ -11,7 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0F4C81"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.sdas.dammonitor"
@@ -49,7 +51,8 @@
             "minSdkVersion": 24
           }
         }
-      ]
+      ],
+      "expo-status-bar"
     ],
     "runtimeVersion": {
       "policy": "appVersion"
