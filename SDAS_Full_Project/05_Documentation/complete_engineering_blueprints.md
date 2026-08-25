@@ -254,12 +254,12 @@ flowchart TD
 
 ## 5. Safe Operational Control & Calibration Matrix
 
-| Alert Tier | Water Level (%) | Available Storage | Gate Aperture | Servo Angle | Operational Action & Notification |
+| Alert | Water Level | Storage | Gate | LED | Action |
 |---|---|---|---|---|---|
-| **🟢 NORMAL** | `< 70.0%` | `> 30.0%` | **0% CLOSED** | $0^\circ$ | Store water safely, continuous 60s cloud telemetry logging. |
-| **🟡 PRE-WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | **0% CLOSED** | $0^\circ$ | Water preserved; monitor rainfall forecast data & AI lookahead. |
-| **🟠 WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | **20% OPEN** | $36^\circ$ | Controlled buffer release during rapid inflow surge. SMS alert dispatched. |
-| **🔴 DANGER** | `> 85.0%` | `< 15.0%` | **50% OPEN** | $90^\circ$ | Controlled emergency release; 85dB siren active; direct GSM SMS alert communication to configured emergency contacts. |
+| 🟢 NORMAL | <70% | >30% | Closed 0° | Green | Store water, normal logging |
+| 🟡 PRE-WARNING | 70–85% | 15–30% | Closed 0° | Yellow | Preserve storage, operator monitoring |
+| 🟠 WARNING | 70–85% + rapid surge | 15–30% | 20% Open (36°) | Orange | Controlled buffer release + warning alert |
+| 🔴 DANGER | >85% or predicted overflow risk | <15% | 50% Open (90°) | Red | Emergency controlled release + SMS + siren |
 
 ### Physical Tank Ruler Distance Calibration (Centimeters)
 ```cpp

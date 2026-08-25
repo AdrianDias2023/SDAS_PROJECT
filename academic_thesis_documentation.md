@@ -119,18 +119,18 @@ $$\text{Drift Anomaly Flag} = \begin{cases} 1, & \mathcal{L}_{\text{MSE}} > \tau
   • DHT22 Met Sensor               ──► Data: GPIO 4
 
   [ PHYSICAL EMERGENCY BUTTONS ]
-  • Physical OPEN Button (100%)    ──► GPIO 32 (INPUT_PULLUP)
-  • Physical CLOSE Button (0%)     ──► GPIO 33 (INPUT_PULLUP)
-  • Physical STOP/HOLD Button      ──► GPIO 23 (INPUT_PULLUP, 3s Hold = Auto Reset)
+  • Physical OPEN Button (50% Emergency) ──► GPIO 32 (INPUT_PULLUP)
+  • Physical CLOSE Button (0%)          ──► GPIO 33 (INPUT_PULLUP)
+  • Physical STOP/HOLD Button           ──► GPIO 23 (INPUT_PULLUP, 3s Hold = Auto Reset)
 
   [ ACTUATORS & ALARMS ]
-  • MG996R Servo Gate Actuator     ──► PWM: GPIO 13 (50Hz, 500-2400µs)
-  • Active 85dB Siren Buzzer       ──► GPIO 14
-  • Tri-Color Status RGB LED       ──► Red: GPIO 25 | Green: GPIO 26 | Blue: GPIO 27
+  • MG996R Servo Gate Actuator          ──► PWM: GPIO 13 (50Hz, 500-2400µs)
+  • Active 85dB Siren Buzzer            ──► GPIO 14
+  • Tri-Color Status RGB LED            ──► Red: GPIO 25 | Green: GPIO 26 | Blue: GPIO 27
 
   [ TELECOMMUNICATIONS & POWER ]
-  • SIM800L GSM Module             ──► UART2 (TX: GPIO 17, RX: GPIO 16)
-  • Backup Battery ADC Monitor     ──► ADC1 CH6: GPIO 34 (4.7:1 Divider)
+  • SIM800L GSM Module                  ──► UART2 (TX: GPIO 17, RX: GPIO 16)
+  • Backup Battery ADC Monitor          ──► ADC1 CH6: GPIO 34 (4.7:1 Divider)
 ===================================================================================================
 ```
 
@@ -164,8 +164,16 @@ $$\text{Drift Anomaly Flag} = \begin{cases} 1, & \mathcal{L}_{\text{MSE}} > \tau
 * **Minimum Latency:** **$561.1\text{ ms}$**
 * **Packet Delivery Success Rate:** **$100.0\%$** *(Target: $> 95\%$)*
 
-### 5.3 4-Tier State Transition & Hysteresis Determinism
-*100% test case pass rate confirming that gate transitions step up instantly on danger, but enforce a 3% hysteresis drop-down buffer to prevent mechanical gate chatter.*
+### 5.3 4-Tier State Transition & Safe Operational Matrix
+
+| Alert | Water Level | Storage | Gate | LED | Action |
+|---|---|---|---|---|---|
+| 🟢 NORMAL | <70% | >30% | Closed 0° | Green | Store water, normal logging |
+| 🟡 PRE-WARNING | 70–85% | 15–30% | Closed 0° | Yellow | Preserve storage, operator monitoring |
+| 🟠 WARNING | 70–85% + rapid surge | 15–30% | 20% Open (36°) | Orange | Controlled buffer release + warning alert |
+| 🔴 DANGER | >85% or predicted overflow risk | <15% | 50% Open (90°) | Red | Emergency controlled release + SMS + siren |
+
+*Hysteresis of 3.0% is applied to avoid rapid oscillatory gate switching at boundary thresholds.*
 
 ---
 

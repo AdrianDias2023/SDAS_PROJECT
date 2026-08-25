@@ -180,12 +180,12 @@ graph TD
 
 ## 🚨 4-Tier Early Warning & Safe Water Management Matrix
 
-| Alert Level | Water Level (%) | Available Storage | Inflow Dynamics | Dam Gate Position | RGB LED | Local Buzzer | Emergency SMS Broadcast |
-|---|---|---|---|---|---|---|---|
-| **🟢 NORMAL** | `< 70.0%` | `> 30.0%` (Optimal) | Any | **0% CLOSED (0°)** | 🟢 Green | OFF | Regular 60s cloud logging |
-| **🟡 PRE-WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | Controlled / Stable | **0% CLOSED (0°)** | 🟡 Yellow | OFF | Operator monitoring alert (Water Preserved) |
-| **🟠 WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | Rapid Surge (`≥ 0.3%/2s`) | **20% OPEN (36°)** | 🟠 Orange | Beep | *"Water level increasing. Move to safe area if required."* |
-| **🔴 DANGER** | `> 85.0%` | `< 15.0%` (Critical) | Critical / Predicted Overflow | **50% OPEN (90°)** | 🔴 Red | Continuous 85dB | *"DANGER: Critical water level. Gate opened 50%. Evacuate immediately!"* |
+| Alert | Water Level | Storage | Gate | LED | Action |
+|---|---|---|---|---|---|
+| 🟢 NORMAL | <70% | >30% | Closed 0° | Green | Store water, normal logging |
+| 🟡 PRE-WARNING | 70–85% | 15–30% | Closed 0° | Yellow | Preserve storage, operator monitoring |
+| 🟠 WARNING | 70–85% + rapid surge | 15–30% | 20% Open (36°) | Orange | Controlled buffer release + warning alert |
+| 🔴 DANGER | >85% or predicted overflow risk | <15% | 50% Open (90°) | Red | Emergency controlled release + SMS + siren |
 
 *Hysteresis of 3.0% is applied to avoid rapid oscillatory gate switching at boundary thresholds.*
 

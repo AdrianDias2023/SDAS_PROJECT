@@ -12,6 +12,14 @@ This guide outlines the **5-Stage Live Demonstration Protocol** to perform in fr
 2. **Mobile App:** Expo React Native App running on Android phone (or EAS APK build).
 3. **Cloud Database:** Supabase Realtime dashboard open.
 
+### 4-Tier Operational Control Matrix
+| Alert | Water Level | Storage | Gate | LED | Action |
+|---|---|---|---|---|---|
+| 🟢 NORMAL | <70% | >30% | Closed 0° | Green | Store water, normal logging |
+| 🟡 PRE-WARNING | 70–85% | 15–30% | Closed 0° | Yellow | Preserve storage, operator monitoring |
+| 🟠 WARNING | 70–85% + rapid surge | 15–30% | 20% Open (36°) | Orange | Controlled buffer release + warning alert |
+| 🔴 DANGER | >85% or predicted overflow risk | <15% | 50% Open (90°) | Red | Emergency controlled release + SMS + siren |
+
 ---
 
 ## 🎬 Stage 1 — Normal Reservoir Condition
