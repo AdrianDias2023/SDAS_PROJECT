@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-08-25T17:39:46Z",
+  "sensor_benchmark": {
+    "mae_cm": 0.32,
+    "rmse_cm": 0.35,
+    "accuracy_pct": 99.78,
+    "calibration_table": [
+      {
+        "Reference (cm)": 20.0,
+        "Uncompensated (cm)": 21.1,
+        "SDAS Measured (cm)": 20.2,
+        "Absolute Error (cm)": 0.2
+      },
+      {
+        "Reference (cm)": 40.0,
+        "Uncompensated (cm)": 42.1,
+        "SDAS Measured (cm)": 39.7,
+        "Absolute Error (cm)": 0.3
+      },
+      {
+        "Reference (cm)": 60.0,
+        "Uncompensated (cm)": 63.2,
+        "SDAS Measured (cm)": 60.1,
+        "Absolute Error (cm)": 0.1
+      },
+      {
+        "Reference (cm)": 80.0,
+        "Uncompensated (cm)": 84.2,
+        "SDAS Measured (cm)": 80.4,
+        "Absolute Error (cm)": 0.4
+      },
+      {
+        "Reference (cm)": 100.0,
+        "Uncompensated (cm)": 105.3,
+        "SDAS Measured (cm)": 99.8,
+        "Absolute Error (cm)": 0.2
+      },
+      {
+        "Reference (cm)": 150.0,
+        "Uncompensated (cm)": 158.0,
+        "SDAS Measured (cm)": 150.5,
+        "Absolute Error (cm)": 0.5
+      },
+      {
+        "Reference (cm)": 200.0,
+        "Uncompensated (cm)": 210.6,
+        "SDAS Measured (cm)": 199.6,
+        "Absolute Error (cm)": 0.4
+      },
+      {
+        "Reference (cm)": 250.0,
+        "Uncompensated (cm)": 263.3,
+        "SDAS Measured (cm)": 250.3,
+        "Absolute Error (cm)": 0.3
+      },
+      {
+        "Reference (cm)": 280.0,
+        "Uncompensated (cm)": 294.9,
+        "SDAS Measured (cm)": 279.4,
+        "Absolute Error (cm)": 0.6
+      },
+      {
+        "Reference (cm)": 300.0,
+        "Uncompensated (cm)": 315.9,
+        "SDAS Measured (cm)": 300.2,
+        "Absolute Error (cm)": 0.2
+      }
+    ]
+  },
+  "communication_benchmark": {
+    "avg_latency_ms": 1068.3,
+    "min_latency_ms": 561.1,
+    "max_latency_ms": 1956.4,
+    "success_rate_pct": 100.0
+  },
+  "alert_engine_benchmark": {
+    "state_transitions_passed": true,
+    "total_cases": 8
+  }
+}

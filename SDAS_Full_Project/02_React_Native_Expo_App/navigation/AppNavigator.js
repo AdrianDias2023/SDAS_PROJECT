@@ -17,6 +17,8 @@ import { useLanguage }     from '../services/i18n';
 import LoginScreen         from '../screens/operator/LoginScreen';
 import OperatorDashboard   from '../screens/operator/OperatorDashboard';
 import GateControlScreen   from '../screens/operator/GateControlScreen';
+import SimulationScreen    from '../screens/operator/SimulationScreen';
+import AuditLogsScreen     from '../screens/operator/AuditLogsScreen';
 import ContactsScreen      from '../screens/operator/ContactsScreen';
 
 const Tab   = createBottomTabNavigator();
@@ -81,7 +83,7 @@ function OperatorTabs() {
       screenOptions={{
         headerShown:       false,
         tabBarStyle:       { backgroundColor: '#1B2A3B', borderTopWidth: 0, height: 62 },
-        tabBarLabelStyle:  { color: '#FFFFFF', fontSize: 11, marginBottom: 6 },
+        tabBarLabelStyle:  { color: '#FFFFFF', fontSize: 10, marginBottom: 6 },
         tabBarActiveTintColor:   '#4FC3F7',
         tabBarInactiveTintColor: '#90CAF9',
       }}
@@ -94,7 +96,17 @@ function OperatorTabs() {
       <Tab.Screen
         name="Gate"
         component={GateControlScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚪" focused={focused} />, tabBarLabel: 'Gate Control' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚪" focused={focused} />, tabBarLabel: 'Gate' }}
+      />
+      <Tab.Screen
+        name="Simulation"
+        component={SimulationScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🎛️" focused={focused} />, tabBarLabel: 'Digital Twin' }}
+      />
+      <Tab.Screen
+        name="Audit"
+        component={AuditLogsScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📜" focused={focused} />, tabBarLabel: 'Audit' }}
       />
       <Tab.Screen
         name="Contacts"
