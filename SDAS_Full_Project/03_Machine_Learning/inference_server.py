@@ -22,6 +22,7 @@ import sys
 # Silence TensorFlow C++ warnings and disable GPU lookups on CPU cloud servers (Render)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 import joblib
 import numpy as np
