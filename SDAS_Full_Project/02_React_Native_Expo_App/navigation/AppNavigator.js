@@ -138,9 +138,12 @@ function OperatorTabs() {
 }
 
 // ─── Root Navigator ───────────────────────────────────────────
-export default function AppNavigator({ session }) {
+export default function AppNavigator({ session, initialRole = 'public' }) {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="PublicTabs">
+    <Stack.Navigator
+      screenOptions={{ headerShown: false }}
+      initialRouteName={initialRole === 'operator' ? 'Login' : 'PublicTabs'}
+    >
       {/* Default: Public App */}
       <Stack.Screen name="PublicTabs" component={PublicTabs} />
       
