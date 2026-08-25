@@ -26,7 +26,8 @@
       "package": "com.sdas.dammonitor",
       "permissions": [
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "VIBRATE"
       ]
     },
     "web": {
@@ -38,27 +39,6 @@
       "eas": {
         "projectId": "f034139c-a992-4850-b74b-bee3366710dd"
       }
-    },
-    "plugins": [
-      "expo-updates",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
-            "buildToolsVersion": "34.0.0",
-            "minSdkVersion": 24
-          }
-        }
-      ],
-      "expo-status-bar"
-    ],
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/f034139c-a992-4850-b74b-bee3366710dd"
     },
     "owner": "adrian_2002"
   }
