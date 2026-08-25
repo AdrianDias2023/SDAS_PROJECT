@@ -123,11 +123,21 @@ async def lifespan(app: FastAPI):
     load_all_models()
     yield
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="SDAS Hybrid ML Inference Server",
     description="LSTM forecasting + Random Forest risk probability + Autoencoder anomaly detection for Puttalam Dam",
     version="2.0.0",
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ── Request / Response schemas ─────────────────────────────────
@@ -185,7 +195,7 @@ def inverse_water_level(scaled_val: float) -> float:
 
 # ── Endpoints ──────────────────────────────────────────────────
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {
         "message": "SDAS Hybrid ML Inference Server is Live",
@@ -195,7 +205,7 @@ def root():
     }
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {
         "status":              "ok" if models_loaded else "degraded",
