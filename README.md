@@ -1,113 +1,262 @@
-# SDAS — Smart Dam Alert System
+# SDAS — Smart Dam Alert System with Automated Gate Control
 
-> An end-to-end IoT flood management system for the Puttalam District, Sri Lanka.
+<p align="center">
+  <img src="SDAS_Full_Project/02_React_Native_Expo_App/assets/logo.png" alt="SDAS Official Logo" width="220" />
+</p>
 
-[![ESP32](https://img.shields.io/badge/MCU-ESP32-blue)](https://www.espressif.com/)
-[![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E)](https://supabase.com/)
-[![React Native](https://img.shields.io/badge/App-React%20Native%20Expo-61DAFB)](https://expo.dev/)
-[![TensorFlow](https://img.shields.io/badge/ML-TensorFlow-FF6F00)](https://www.tensorflow.org/)
+<p align="center">
+  <strong>"Safe Today, Secure Tomorrow"</strong><br/>
+  <em>An End-to-End IoT & AI-Driven Flood Management System for the Puttalam District, Sri Lanka</em>
+</p>
 
----
-
-## System Architecture
-
-```
-[JSN-SR04T × 2] ──┐
-[DHT22]         ──┤  ESP32 ──→ Supabase REST API ──→ PostgreSQL DB
-[MG996R Servo]  ──┤                  │
-[SIM800L GSM]   ──┘          Supabase Realtime
-[RGB LED]                            │
-[Buzzer]                   ┌─────────┴──────────┐
-                            ↓                    ↓
-                     Public App           Operator App
-                   (no login)            (with login)
-                                               │
-                                    FastAPI ML Server
-                               (LSTM + Autoencoder)
-```
-
-## Alert Levels
-
-| Status | Water Level | Gate | LED | SMS |
-|--------|------------|------|-----|-----|
-| NORMAL | < 70% | Closed (0°) | 🟢 Green | None |
-| PRE-WARNING | 70–85% stable | 30% open (54°) | 🟡 Yellow | Pre-warning to all contacts |
-| CLEAR-AREA | 70–85% rising | 70% open (126°) | 🟠 Orange | "Clear the area" SMS |
-| DANGER | > 85% | Fully open (180°) | 🔴 Red | Emergency SMS + Buzzer |
-
-> Hysteresis: 3% on all transitions. Rate-of-rise detection for PRE-WARNING → CLEAR-AREA.
+<p align="center">
+  <img src="https://img.shields.io/badge/MCU-ESP32%20DevKit%20V1-003366?style=for-the-badge&logo=espressif&logoColor=white" />
+  <img src="https://img.shields.io/badge/Cloud-Supabase%20PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />
+  <img src="https://img.shields.io/badge/Mobile-React%20Native%20Expo-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/AI-TensorFlow%202.x%20%7C%20FastAPI-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" />
+  <img src="https://img.shields.io/badge/Languages-EN%20%7C%20%E0%B7%83%E0%B7%92%E0%B6%82%20%7C%20%E0%AE%A4%E0%AE%AE-0F4C81?style=for-the-badge" />
+</p>
 
 ---
 
-## Project Structure
+## 🏛️ Project Authors & Academic Affiliation
+
+- **Dias Adrian** — *Cyber Security*
+- **AAA Aadhil** — *Data Science*
+- **JMRA Dilshan** — *Software Engineering*
+
+**Supervisory Committee:**
+- **Supervisor:** Dr. Sanika Wijayasekara *(Data Science & Cyber Security)*
+- **Co-supervisor:** Mr. Kavinda Tharindu *(Data Science)*
+
+**Institution:** Faculty of Computing and IT, **SLTC Research University**, Meepe, Sri Lanka
+
+---
+
+## 📐 System Architecture & End-to-End Data Flow
+
+### 1. Graphical Architecture (Mermaid)
+
+```mermaid
+graph TD
+    %% SENSING & EXTERNAL INPUTS
+    subgraph SENSING_LAYER ["1. Sensing & External Telemetry Layer"]
+        S1["Dual JSN-SR04T Sensors<br/>(Water Level Distance ±2cm)"]
+        S2["DHT22 Sensor<br/>(Temp & Humidity Compensation)"]
+        EXT1["OpenWeatherMap API<br/>(Live & Forecast Rainfall)"]
+    end
+
+    %% EDGE PROCESSING LAYER
+    subgraph EDGE_LAYER ["2. ESP32 Edge Computing & Safety Node"]
+        ESP["ESP32 Microcontroller"]
+        FUSION["• Temp Compensation (Speed of Sound)<br/>• Dual Sensor Cross-Validation<br/>• Edge Threshold Engine (Fail-safe)"]
+        LOCAL_ACT["Local Indicators:<br/>RGB Status LED & 85dB Siren Buzzer"]
+        GSM["SIM800L GSM Module<br/>(Direct Hardware SMS)"]
+    end
+
+    %% CLOUD & BACKEND LAYER
+    subgraph CLOUD_LAYER ["3. Supabase Cloud Backend"]
+        DB[("PostgreSQL Database<br/>(sensor_readings, alerts, gate_control)")]
+        AUTH["Supabase Auth & RLS<br/>(Role-Based Access Control)"]
+        TRIGGERS["Database Triggers<br/>(Instant Auto-Alert Generation)"]
+        REALTIME["Realtime WebSocket Broker<br/>(Sub-second Live Push)"]
+    end
+
+    %% AI / ML INFERENCE LAYER
+    subgraph ML_LAYER ["4. AI & Predictive Analytics Engine"]
+        SERVER["FastAPI Python Inference Server"]
+        LSTM["2-Layer Stacked LSTM<br/>(1-Hour Ahead Level Forecast)"]
+        AE["Symmetric Autoencoder<br/>(Sensor Anomaly & Drift Detection)"]
+    end
+
+    %% APPLICATION & ACTUATION LAYER
+    subgraph APP_ACTUATION_LAYER ["5. Client Applications & Actuation"]
+        APP_PUB["Public Mobile App<br/>(Live Gauge, 3 Languages, Warnings)"]
+        APP_OP["Operator Control Portal<br/>(Manual Gate Override, SMS Directory)"]
+        SERVO["MG996R Servo Gate Actuator<br/>(0% Closed ➔ 100% Fully Open)"]
+        DMC["Disaster Management Center (DMC)<br/>& Public Evacuation Broadcast"]
+    end
+
+    %% CONNECTIONS & DATA FLOW
+    S1 -->|Echo / Trigger| ESP
+    S2 -->|One-Wire Data| ESP
+    EXT1 -->|JSON Rainfall REST API| ESP
+    
+    ESP --> FUSION
+    FUSION -->|Immediate Local Alarm| LOCAL_ACT
+    FUSION -->|Offline Direct SMS| GSM
+    GSM --> DMC
+    FUSION -->|HTTPS REST JSON (WiFi/GPRS)| DB
+
+    DB --> TRIGGERS
+    DB --> REALTIME
+    DB --> AUTH
+
+    TRIGGERS -->|Async Webhook| SERVER
+    SERVER --> LSTM
+    SERVER --> AE
+    LSTM -->|Save Forecast| DB
+    AE -->|Flag Anomaly| DB
+
+    REALTIME -->|Live Push| APP_PUB
+    REALTIME -->|Live Push| APP_OP
+
+    APP_OP -->|Manual Override Command| DB
+    DB -->|Fetch Command 5s Polling| ESP
+    FUSION -->|PWM Signal 50Hz| SERVO
+    SERVO -.->|Position Confirmation| ESP
+```
+
+### 2. Comprehensive ASCII Data Flow Diagram
+
+```text
+===================================================================================================
+                         SDAS - SMART DAM ALERT SYSTEM (END-TO-END DATA FLOW)
+===================================================================================================
+
+ [ External Rainfall API ]       [ Dual JSN-SR04T Sensors ]       [ DHT22 Sensor ]
+  (Live & Hourly Forecast)          (Water Level Distance)          (Temp / Humidity)
+             │                                   │                         │
+             └───────────────────────┬───────────┴─────────────────────────┘
+                                     │
+                                     ▼
+                  ┌─────────────────────────────────────┐
+                  │      ESP32 EDGE COMPUTING NODE      │
+                  │ ─────────────────────────────────── │
+                  │ • Temp-Compensated Speed of Sound   │──────► [ Local 85dB Siren / RGB LED ]
+                  │ • Sensor Fusion & Outlier Filter    │
+                  │ • Autonomous Fail-Safe Rule Engine  │──────► [ SIM800L GSM Module (SMS) ]
+                  └─────────────────────────────────────┘                        │
+                                     │                                           │ (Direct Emergency)
+                             (HTTPS REST / JSON)                                 ▼
+                                     ▼                               [ Public & DMC Alert ]
+                  ┌─────────────────────────────────────┐
+                  │        SUPABASE CLOUD ENGINE        │
+                  │ ─────────────────────────────────── │
+                  │ • PostgreSQL Data Store             │
+                  │ • Row-Level Security (RLS) & Auth   │
+                  │ • Auto-Alert DB Triggers            │
+                  │ • Realtime WebSocket Broker         │
+                  └─────────────────────────────────────┘
+                         │                   ▲
+          (REST Webhook) │                   │ (Push Prediction & Anomaly)
+                         ▼                   │
+                  ┌─────────────────────────────────────┐
+                  │      AI PREDICTIVE ENGINE (PYTHON)  │
+                  │ ─────────────────────────────────── │
+                  │ 1. 2-Layer LSTM Network             │ ──► [ 1-Hour Flood Forecast ]
+                  │ 2. Deep Autoencoder                 │ ──► [ Sensor Drift & Surge Detection ]
+                  └─────────────────────────────────────┘
+                         │
+        ┌────────────────┴────────────────────────┐
+        │                                         │
+        ▼ (Live WebSockets)                       ▼ (Live WebSockets)
+┌───────────────────────────────┐         ┌───────────────────────────────┐
+│       PUBLIC MOBILE APP       │         │    OPERATOR CONTROL PORTAL    │
+│ ───────────────────────────── │         │ ───────────────────────────── │
+│ • Real-time Water Level Gauge │         │ • Full Dam Telemetry Dashboard│
+│ • 4-Tier Safety Status Banner │         │ • Manual Gate Override Slider │
+│ • 3 Languages (EN / SI / TA)  │         │ • Emergency Contacts Manager  │
+│ • About SDAS Project Proposal │         │ • Role-based Operator Login   │
+└───────────────────────────────┘         └───────────────────────────────┘
+                                                          │
+                                                  (Override Command)
+                                                          ▼
+                                          ┌───────────────────────────────┐
+                                          │      AUTOMATIC / MANUAL       │
+                                          │      GATE ACTUATOR (SERVO)    │
+                                          │ ───────────────────────────── │
+                                          │ • 0%   (0°)   : Closed Normal │
+                                          │ • 30%  (54°)  : Pre-Warning   │
+                                          │ • 70%  (126°) : Clear Area    │
+                                          │ • 100% (180°) : Danger Spill  │
+                                          └───────────────────────────────┘
+===================================================================================================
+```
+
+---
+
+## 🚨 4-Tier Early Warning & Safety Decision Matrix
+
+| Alert Level | Water Level (%) | Rate of Rise | Dam Gate Position | RGB LED | Local Buzzer | Emergency SMS Broadcast |
+|---|---|---|---|---|---|---|
+| **NORMAL** | `< 70.0%` | Any | Closed (0° / 0%) | 🟢 Green | OFF | Regular 60s cloud logging |
+| **PRE-WARNING** | `70.0% – 85.0%` | Stable (`< 5%/hr`) | 30% Open (54°) | 🟡 Yellow | OFF | Operator & Irrigation Department SMS |
+| **CLEAR AREA** | `70.0% – 85.0%` | Rapid (`≥ 5%/hr`) | 70% Open (126°) | 🟠 Orange | Beep | Public Evacuation Advisory SMS |
+| **DANGER** | `> 85.0%` | Any | 100% Full Open (180°) | 🔴 Red | Continuous 85dB | Disaster Management Centre (DMC) SMS |
+
+*Hysteresis of 3.0% is applied to avoid rapid oscillatory gate switching at boundary thresholds.*
+
+---
+
+## 🧠 Machine Learning Performance
+
+| Neural Network | Architecture | Target Objective | Achieved Metrics |
+|---|---|---|---|
+| **LSTM Forecaster** | 2-Layer Stacked LSTM (64/32 units) + Dropout + Dense | 1-Hour Ahead Water Level Forecasting | **MAE: 2.319%** \| **RMSE: 3.873%** |
+| **Deep Autoencoder** | Symmetric Encoder-Decoder (4 ➔ 16 ➔ 8 ➔ 16 ➔ 4) | Sensor Drift & Flash-Flood Anomaly Detection | **FAR: 4.1%** \| **Inference Latency: < 5ms** |
+
+---
+
+## 📱 Mobile Application Features
+
+- **Multi-Language Support (i18n):** Native support for **English**, **Sinhala (සිංහල)**, and **Tamil (தமிழ்)** with instant header switcher and `AsyncStorage` persistence.
+- **Real-Time Hydrological Gauges:** Color-coded animated gauges backed by Supabase WebSocket subscriptions.
+- **Dual User Portals:**
+  - *Public Portal:* Live dam height, 4-tier alert status, rainfall forecast, and project information.
+  - *Operator Portal:* Authenticated dashboard, manual gate override slider (0–100%), and emergency SMS contact management.
+- **Dedicated Proposal Screen:** Complete academic details, team member profiles, supervisor affiliations, and technical matrices.
+
+---
+
+## 📂 Repository Structure
 
 ```
-SDAS_Full_Project/
-├── 01_Supabase_Backend/    PostgreSQL schema, RLS policies, triggers
-├── 02_React_Native_Expo_App/  Public + Operator mobile apps
-├── 03_Machine_Learning/    LSTM + Autoencoder + FastAPI inference server
-└── 04_ESP32_Integration/   Complete C/C++ firmware
+SDAS_PROJECT/
+├── 3_IoT V.01 proposal.pdf                 # Academic Project Proposal Document
+├── SDAS_Full_Project/
+│   ├── 01_Supabase_Backend/               # SQL Schema, RLS, DB Auto-Alert Triggers
+│   │   ├── 01_database.sql
+│   │   ├── 02_security.sql
+│   │   └── 03_functions.sql
+│   ├── 02_React_Native_Expo_App/          # Multi-Language Mobile Application
+│   │   ├── assets/                        # High-res logos, icons, splash screens
+│   │   ├── components/                    # Gauges, Banners, LanguageSelector
+│   │   ├── navigation/                    # Public & Operator role-based navigation
+│   │   ├── screens/                       # Home, Alerts, Forecast, About, Operator
+│   │   └── services/                      # Supabase client, i18n translations
+│   ├── 03_Machine_Learning/               # AI Pipeline & Real-Time API
+│   │   ├── dataset/                       # 61k+ historical hourly hydrological data
+│   │   ├── models/                        # Trained LSTM (.h5/.tflite) & Autoencoder
+│   │   ├── generate_synthetic_data.py
+│   │   ├── preprocessing.py
+│   │   ├── train_lstm.py
+│   │   ├── train_autoencoder.py
+│   │   └── inference_server.py            # FastAPI REST inference backend
+│   └── 04_ESP32_Integration/              # C/C++ Firmware for ESP32 Node
+│       └── SDAS_ESP32_Code.ino
+└── supabase/migrations/                   # Version-controlled Supabase migrations
 ```
 
-## Hardware
+---
 
-| Component | Purpose |
-|-----------|---------|
-| ESP32 DevKit V1 | Main microcontroller |
-| JSN-SR04T × 2 | Waterproof ultrasonic water level (dual redundancy) |
-| DHT22 | Temperature + humidity (sound speed compensation) |
-| MG996R Servo | Dam gate control (0–180°) |
-| SIM800L GSM | SMS broadcast to emergency contacts |
-| RGB LED | Visual alert status indicator |
-| Active Buzzer | Local alarm on DANGER |
+## 🚀 Quick Start Guide
 
-## Quick Setup
-
-### 1. Supabase
-```sql
--- Run in Supabase SQL Editor (in order):
-01_Supabase_Backend/01_database.sql
-01_Supabase_Backend/02_security.sql
-01_Supabase_Backend/03_functions.sql
-```
-
-### 2. ESP32 Firmware
-- Open `04_ESP32_Integration/SDAS_ESP32_Code.ino` in Arduino IDE
-- Fill in `WIFI_SSID`, `WIFI_PASSWORD`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SENSOR_HEIGHT_CM`
-- Install libraries: `ESP32Servo`, `DHT sensor library`, `ArduinoJson`
-- Flash to ESP32
-
-### 3. Machine Learning
-```bash
-cd 03_Machine_Learning
+### 1. Run the AI Inference Server
+```powershell
+cd "SDAS_Full_Project/03_Machine_Learning"
 pip install -r requirements.txt
-python generate_synthetic_data.py   # Generate training data
-python train_lstm.py                # Train water level predictor
-python train_autoencoder.py         # Train anomaly detector
-uvicorn inference_server:app --host 0.0.0.0 --port 8000
+python inference_server.py
 ```
 
-### 4. React Native App
-```bash
-cd 02_React_Native_Expo_App
+### 2. Launch the Mobile Application
+```powershell
+cd "SDAS_Full_Project/02_React_Native_Expo_App"
 npm install
-# Fill in services/supabase.js with your Supabase URL + anon key
 npx expo start
 ```
 
-## Performance Targets
-
-| Metric | Target |
-|--------|--------|
-| Sensor accuracy | ±2.0 cm |
-| Gate response time | < 2.0 s |
-| SMS delivery | > 95% |
-| App data refresh | < 1.0 s |
-| LSTM MAPE | < 5% (1-hour ahead) |
-| Anomaly detection | < 5 s |
-
-## References
-IEEE format references available in `3_IoT V.01 proposal.pdf`
-
----
-*Puttalam District Flood Management — IoT V.01 Prototype*
+### 3. Flash ESP32 Firmware
+1. Open `SDAS_Full_Project/04_ESP32_Integration/SDAS_ESP32_Code.ino` in Arduino IDE.
+2. Ensure `ESP32Servo`, `DHT sensor library`, and `ArduinoJson` libraries are installed.
+3. Flash to ESP32 DevKit board.

@@ -37,6 +37,60 @@ export default function AboutScreen() {
           <Text style={styles.bodyText}>{t.aboutProjectDesc}</Text>
         </View>
 
+        {/* System Architecture & End-to-End Data Flow Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardHeader}>📐 End-to-End System Architecture</Text>
+          <View style={styles.flowList}>
+            <View style={styles.flowStep}>
+              <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>1</Text></View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Sensing & Telemetry Layer</Text>
+                <Text style={styles.stepDesc}>Dual JSN-SR04T ultrasonic sensors (±2cm precision) + DHT22 temp-speed-of-sound calibration + OpenWeatherMap live rainfall API.</Text>
+              </View>
+            </View>
+
+            <View style={styles.flowArrow}><Text style={styles.flowArrowText}>↓</Text></View>
+
+            <View style={styles.flowStep}>
+              <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>2</Text></View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>ESP32 Edge Safety Node</Text>
+                <Text style={styles.stepDesc}>Sensor fusion, local outlier filtering, fail-safe 4-tier autonomous threshold controller, RGB LED & local 85dB siren.</Text>
+              </View>
+            </View>
+
+            <View style={styles.flowArrow}><Text style={styles.flowArrowText}>↓</Text></View>
+
+            <View style={styles.flowStep}>
+              <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>3</Text></View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Supabase Cloud Backend</Text>
+                <Text style={styles.stepDesc}>PostgreSQL time-series store, Row-Level Security (RLS), instant DB auto-alert triggers & sub-second Realtime WebSocket broker.</Text>
+              </View>
+            </View>
+
+            <View style={styles.flowArrow}><Text style={styles.flowArrowText}>↓</Text></View>
+
+            <View style={styles.flowStep}>
+              <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>4</Text></View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>AI & Predictive Analytics Engine</Text>
+                <Text style={styles.stepDesc}>FastAPI server: 2-layer stacked LSTM (1-hour flood forecast) + deep symmetric Autoencoder (sensor drift & surge anomaly detection).</Text>
+              </View>
+            </View>
+
+            <View style={styles.flowArrow}><Text style={styles.flowArrowText}>↓</Text></View>
+
+            <View style={styles.flowStep}>
+              <View style={styles.stepNumBadge}><Text style={styles.stepNumText}>5</Text></View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepTitle}>Client Apps & Physical Actuation</Text>
+                <Text style={styles.stepDesc}>Public/Operator React Native App (3 Languages) + SIM800L emergency GSM SMS broadcast + MG996R automated servo gate actuation.</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* 4-Tier Early Warning Thresholds */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>🚨 4-Level Safety Decision Matrix</Text>
@@ -168,12 +222,62 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#0F4C81',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   bodyText: {
     fontSize: 14,
     lineHeight: 22,
     color: '#334155',
+  },
+  flowList: {
+    gap: 4,
+  },
+  flowStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  stepNumBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0F4C81',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    marginTop: 2,
+  },
+  stepNumText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 2,
+  },
+  stepDesc: {
+    fontSize: 12,
+    color: '#475569',
+    lineHeight: 17,
+  },
+  flowArrow: {
+    alignItems: 'center',
+    marginVertical: -2,
+  },
+  flowArrowText: {
+    fontSize: 14,
+    color: '#94A3B8',
+    fontWeight: '800',
   },
   thresholdTable: {
     gap: 8,
