@@ -97,7 +97,16 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <LanguageSelector compact={true} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <LanguageSelector compact={true} />
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Login')}
+              style={styles.operatorHeaderBtn}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.operatorBtnText}>🔐</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -272,4 +281,6 @@ const styles = StyleSheet.create({
   metricValue:      { fontSize: 16, fontWeight: '900', color: '#0F172A', marginTop: 2 },
   noticeCard:       { backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#BFDBFE', marginTop: 4 },
   noticeCardText:   { fontSize: 11, color: '#1D4ED8', textAlign: 'center', fontWeight: '600' },
+  operatorHeaderBtn:{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  operatorBtnText:  { fontSize: 16 },
 });

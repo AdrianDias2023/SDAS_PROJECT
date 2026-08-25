@@ -123,6 +123,22 @@ export default function OperatorSettingsScreen({ navigation }) {
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
+          {/* Switch to Public View */}
+          <TouchableOpacity
+            style={styles.menuRow}
+            onPress={() => navigation?.navigate && navigation.navigate('PublicTabs')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.menuRowLeft}>
+              <Text style={styles.menuEmoji}>🏠</Text>
+              <View>
+                <Text style={[styles.menuTitle, { color: '#0284C7', fontWeight: '800' }]}>Switch to Public Portal</Text>
+                <Text style={styles.menuSub}>View citizen warnings & disaster map</Text>
+              </View>
+            </View>
+            <Text style={[styles.chevron, { color: '#0284C7' }]}>›</Text>
+          </TouchableOpacity>
+
           {/* Log Out */}
           <TouchableOpacity
             style={[styles.menuRow, { borderBottomWidth: 0 }]}

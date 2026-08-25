@@ -102,6 +102,15 @@ export default function LoginScreen({ navigation }) {
             ? <ActivityIndicator color="#FFF" />
             : <Text style={styles.btnText}>{t.signIn}</Text>}
         </TouchableOpacity>
+
+        {/* Prototype Quick Access */}
+        <TouchableOpacity
+          style={styles.demoBtn}
+          onPress={() => navigation.navigate('OperatorTabs')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.demoBtnText}>⚡ Quick Operator Demo Login</Text>
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.note}>
@@ -125,6 +134,8 @@ const styles = StyleSheet.create({
   btn:         { backgroundColor: '#0F4C81', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
   btnDisabled: { opacity: 0.6 },
   btnText:     { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  demoBtn:     { backgroundColor: '#F1F5F9', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 10, borderWidth: 1, borderColor: '#CBD5E1' },
+  demoBtnText: { color: '#0F4C81', fontWeight: '700', fontSize: 13 },
   note:        { textAlign: 'center', color: '#94A3B8', fontSize: 11, marginTop: 24, lineHeight: 18 },
   backBtn:     { position: 'absolute', top: 48, left: 20, zIndex: 10, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#E2E8F0', borderRadius: 20 },
   backBtnText: { color: '#0F4C81', fontWeight: '700', fontSize: 13 },
