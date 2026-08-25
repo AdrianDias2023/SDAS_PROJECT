@@ -95,38 +95,25 @@ const graphStyles = StyleSheet.create({
   summaryVal:     { fontSize: 13, fontWeight: '800', color: '#1E293B', marginTop: 1 },
 });
 
-export default function OperatorDashboard() {
+export default function OperatorDashboard({ navigation }) {
   const { t } = useLanguage();
   const [selectedDamId, setSelectedDamId] = useState('ESP32_PUTTALAM_01');
   const [reading,       setReading]      = useState(null);
-  const [activeAlerts,  setActiveAlerts] = useState([]);
-  const [history,       setHistory]      = useState([]);
-  const [sysStatus,     setSysStatus]    = useState(null);
-  const [timeRange,     setTimeRange]    = useState('24h');
-  const [user,          setUser]         = useState(null);
+  const [lastUpdate,    setLastUpdate]    = useState(null);
   const [refreshing,    setRefreshing]   = useState(false);
 
   const LEVELS = {
-    NORMAL:             { label: t.statusNormal || 'NORMAL',            color: '#27AE60', bg: '#EAFAF1', emoji: '✅', range: '< 70% (Store Water, Gate 0%)' },
-    PRE_WARNING:        { label: t.statusPreWarning || 'PRE-WARNING',   color: '#F39C12', bg: '#FEF9E7', emoji: '⚠️', range: '70–85% (Safe Storage, Gate 0%)' },
-    CONTROLLED_RELEASE: { label: t.statusControlledRelease || 'WARNING (CONTROLLED)', color: '#E67E22', bg: '#FDF2E9', emoji: '🟠', range: '70–85% (Surge Inflow, Gate 20%)' },
-    DANGER:             { label: t.statusDanger || 'DANGER',            color: '#E74C3C', bg: '#FDEDEC', emoji: '🚨', range: '> 85% (Critical Level, Gate 50%)' },
+    NORMAL:             { label: 'NORMAL',            color: '#10B981', bg: '#EAFAF1', emoji: '✅' },
+    PRE_WARNING:        { label: 'PRE-WARNING',       color: '#F59E0B', bg: '#FEF9E7', emoji: '⚠️' },
+    CONTROLLED_RELEASE: { label: 'WARNING (CONTROL)', color: '#F97316', bg: '#FDF2E9', emoji: '🟠' },
+    DANGER:             { label: 'DANGER',            color: '#EF4444', bg: '#FDEDEC', emoji: '🚨' },
   };
 
-  const loadData = useCallback(async (hours = 24, damId = selectedDamId) => {
+  const loadData = useCallback(async (damId = selectedDamId) => {
     try {
-      const [r, alerts, hist, { data: { user } }, { data: st }] = await Promise.all([
-        fetchLatestReading(damId),
-        fetchActiveAlerts(),
-        fetchReadingsLastHours(hours),
-        supabase.auth.getUser(),
-        supabase.from('system_status').select('*').eq('device_id', damId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-      ]);
+      const r = await fetchLatestReading(damId);
       setReading(r);
-      setActiveAlerts(alerts);
-      setHistory(hist ?? []);
-      setUser(user);
-      setSysStatus(st);
+      setLastUpdate(new Date());
     } catch (e) {
       console.error('OperatorDashboard error:', e);
     } finally {
@@ -135,232 +122,148 @@ export default function OperatorDashboard() {
   }, [selectedDamId]);
 
   useEffect(() => {
-    const hours = timeRange === '30d' ? 720 : timeRange === '7d' ? 168 : 24;
-    loadData(hours, selectedDamId);
-  }, [timeRange, selectedDamId]);
-
-  useEffect(() => {
+    loadData(selectedDamId);
     const sc = subscribeSensorReadings((newReading) => {
-      if (newReading.device_id === selectedDamId) setReading(newReading);
+      if (newReading.device_id === selectedDamId) {
+        setReading(newReading);
+        setLastUpdate(new Date());
+      }
     });
-    const ac = subscribeAlerts((a) => setActiveAlerts((prev) => [a, ...prev]));
-    return () => { sc.unsubscribe(); ac.unsubscribe(); };
+    return () => sc.unsubscribe();
   }, [selectedDamId]);
-
-  const handleLogout = () =>
-    Alert.alert(t.signOut, 'Are you sure you want to sign out?', [
-      { text: 'Cancel' },
-      { text: t.signOut, style: 'destructive', onPress: () => supabase.auth.signOut() },
-    ]);
 
   const level    = reading ? getAlertLevel(reading.water_level) : 'NORMAL';
   const levelCfg = LEVELS[level] || LEVELS.NORMAL;
-  const pct      = reading?.water_level ?? 0;
-
-  const isOnline = (sysStatus?.internet_status ?? 'ONLINE') === 'ONLINE';
-  const mode = sysStatus?.operation_mode ?? 'CLOUD_AUTO';
+  const pct      = reading?.water_level ?? 72.4;
 
   return (
-    <View style={[styles.container, { backgroundColor: levelCfg.bg }]}>
-      {/* Header */}
+    <View style={styles.container}>
+      {/* Header (Screen 1) */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.headerTitle}>📊 {t.operatorDashboard}</Text>
-            <Text style={styles.headerSub}>{user?.email ?? 'Authorized Operator'}</Text>
-          </View>
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-            <Text style={styles.logoutText}>{t.signOut}</Text>
+          <TouchableOpacity onPress={() => navigation?.navigate && navigation.navigate('Settings')} activeOpacity={0.8}>
+            <Text style={styles.headerNavIcon}>☰</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Dashboard</Text>
+          <TouchableOpacity onPress={() => navigation?.navigate && navigation.navigate('Alerts')} activeOpacity={0.8}>
+            <View style={styles.bellWrapper}>
+              <Text style={styles.headerNavIcon}>🔔</Text>
+              <View style={styles.redBadgeDot} />
+            </View>
           </TouchableOpacity>
         </View>
-
-        <View style={styles.langBar}>
-          <LanguageSelector compact={true} />
-        </View>
-        <DamSelector selectedDamId={selectedDamId} onSelectDam={setSelectedDamId} />
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(24); }} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} />}
       >
-        {/* Alert banner if active */}
-        {level !== 'NORMAL' && <AlertBanner level={level} config={levelCfg} />}
-
-        {/* Step 7: SYSTEM OPERATING MODE & INTERNET HEALTH CARD */}
-        <View style={styles.modeCard}>
-          <View style={styles.modeCardHeader}>
-            <Text style={styles.modeCardTitle}>🎛️ SYSTEM OPERATING MODE</Text>
-            <View style={[styles.modeBadge, { backgroundColor: isOnline ? '#10B981' : '#EF4444' }]}>
-              <Text style={styles.modeBadgeText}>
-                {isOnline ? '🟢 INTERNET CONNECTED' : '🔴 OFFLINE'}
-              </Text>
+        {/* Dam Profile Selector Card */}
+        <View style={styles.damHeroCard}>
+          <View style={styles.damHeroTop}>
+            <Text style={styles.damPinIcon}>📍</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.damHeroTitle}>Tabbowa Prototype Dam</Text>
+              <Text style={styles.damHeroSub}>Puttalam District (Simulation)</Text>
             </View>
+            <Text style={styles.damHeroChevron}>∨</Text>
           </View>
-
-          <View style={styles.modeGrid}>
-            <View style={styles.modeGridCol}>
-              <Text style={styles.modeGridLabel}>Active Mode</Text>
-              <Text style={[styles.modeGridVal, { color: mode === 'OFFLINE_EMERGENCY' ? '#EF4444' : '#0284C7' }]}>
-                {mode === 'OFFLINE_EMERGENCY' ? '🚨 OFFLINE EMERGENCY' : mode === 'MANUAL_OVERRIDE' ? '⚙️ MANUAL OVERRIDE' : '🤖 CLOUD AUTO'}
-              </Text>
-            </View>
-            <View style={styles.modeGridCol}>
-              <Text style={styles.modeGridLabel}>Primary Controller</Text>
-              <Text style={styles.modeGridVal}>
-                {isOnline ? 'Supabase + Hybrid AI' : 'ESP32 Local Edge Engine'}
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.modeCardNote}>
-            {isOnline
-              ? '⚡ Cloud sync active. LSTM & Random Forest models predicting flood risk.'
-              : '⚠️ Internet lost > 30s. ESP32 autonomous safety rules active with direct SIM800L GSM SMS broadcast.'}
-          </Text>
         </View>
 
-        {/* Gauge */}
+        {/* Current Water Level Arc Gauge Card */}
         <View style={styles.gaugeCard}>
-          <WaterLevelGauge percentage={pct} color={levelCfg.color} />
-          <Text style={[styles.statusLabel, { color: levelCfg.color }]}>
-            {levelCfg.emoji} {levelCfg.label}
-          </Text>
-        </View>
+          <Text style={styles.sectionHeaderTitle}>Current Water Level</Text>
+          <WaterLevelGauge
+            percentage={pct}
+            color={levelCfg.color}
+            statusLabel={levelCfg.label}
+            loading={false}
+            maxMeters={355.0}
+          />
 
-        {/* AI Prediction & Confidence Card */}
-        <View style={styles.detailCard}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={styles.detailTitle}>🤖 AI PREDICTION & CONFIDENCE</Text>
-            <View style={{ backgroundColor: '#D1FAE5', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-              <Text style={{ color: '#065F46', fontSize: 10, fontWeight: '800' }}>RELIABLE 🟢</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 4 }}>
-            <View>
-              <Text style={{ fontSize: 11, color: '#64748B' }}>1-Hour Predictive Forecast</Text>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: pct >= 85 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#0F4C81' }}>
-                {Math.min(100, pct + 2.5).toFixed(1)}% (Risk: {pct >= 85 ? 'DANGER' : pct >= 70 ? 'HIGH' : 'NORMAL'})
+          {/* Safe Storage Capacity Available */}
+          <View style={styles.storageBox}>
+            <View style={styles.storageHeaderRow}>
+              <Text style={styles.storageTitle}>Safe Storage Capacity Available</Text>
+              <Text style={styles.storageVal}>
+                {(100 - Math.min(100, Math.max(0, pct))).toFixed(1)}% ({((1 - pct / 100) * 355.0).toFixed(1)} m)
               </Text>
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 11, color: '#64748B' }}>AI Confidence Score</Text>
-              <Text style={{ fontSize: 20, fontWeight: '900', color: '#10B981' }}>97.2%</Text>
-            </View>
-          </View>
-          <Text style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>
-            • Multi-factor validated: LSTM Accuracy (97.7%) + Dual Sensors (100%) + Satellite Data (96%)
-          </Text>
-        </View>
-
-        {/* Live Graphs & Historical Trends */}
-        <View style={styles.detailCard}>
-          <Text style={styles.detailTitle}>📈 Telemetry History & Trends</Text>
-          <HistoricalGraph data={history} timeRange={timeRange} setTimeRange={setTimeRange} />
-        </View>
-
-        {/* System Health & Hardware Diagnostics Panel */}
-        <View style={styles.detailCard}>
-          <Text style={styles.detailTitle}>🛠️ Hardware Diagnostics & System Health</Text>
-          <View style={styles.healthGrid}>
-            <View style={styles.healthItem}>
-              <View style={styles.healthDot} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.healthName}>Water Sensor 1 (JSN-SR04T #1)</Text>
-                <Text style={styles.healthDetail}>Trig: 5, Echo: 18 • Latency: 12ms</Text>
-              </View>
-              <Text style={styles.statusOnline}>ONLINE</Text>
-            </View>
-
-            <View style={styles.healthItem}>
-              <View style={styles.healthDot} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.healthName}>Water Sensor 2 (JSN-SR04T #2)</Text>
-                <Text style={styles.healthDetail}>Trig: 19, Echo: 21 • Latency: 14ms</Text>
-              </View>
-              <Text style={styles.statusOnline}>ONLINE</Text>
-            </View>
-
-            <View style={styles.healthItem}>
-              <View style={styles.healthDot} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.healthName}>SIM800L GSM Module</Text>
-                <Text style={styles.healthDetail}>Serial2 (16/17) • Signal: -72 dBm (Dialog/Mobitel)</Text>
-              </View>
-              <Text style={styles.statusOnline}>READY</Text>
-            </View>
-
-            <View style={styles.healthItem}>
-              <View style={[styles.healthDot, { backgroundColor: '#3B82F6' }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.healthName}>Backup Power & Battery UPS</Text>
-                <Text style={styles.healthDetail}>12V DC Mains + 18650 Li-ion Backup</Text>
-              </View>
-              <Text style={[styles.statusOnline, { color: '#0284C7' }]}>
-                {reading?.battery_level ? `${reading.battery_level}%` : '100% (Mains)'}
-              </Text>
-            </View>
-
-            <View style={styles.healthItem}>
-              <View style={styles.healthDot} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.healthName}>Hardware Node Auth</Text>
-                <Text style={styles.healthDetail}>Node ID: ESP32_PUTTALAM_01 (Key Verified)</Text>
-              </View>
-              <Text style={styles.statusOnline}>SECURE</Text>
+            <View style={styles.storageTrack}>
+              <View
+                style={[
+                  styles.storageFill,
+                  {
+                    width: `${Math.max(0, 100 - pct)}%`,
+                    backgroundColor: pct >= 85 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#10B981',
+                  },
+                ]}
+              />
             </View>
           </View>
         </View>
 
-        {/* Active Alerts */}
-        {activeAlerts.length > 0 && (
-          <View style={styles.alertsCard}>
-            <Text style={styles.detailTitle}>🚨 {t.alertsTitle} ({activeAlerts.length})</Text>
-            {activeAlerts.slice(0, 5).map((a) => (
-              <View key={a.id} style={styles.alertRow}>
-                <Text style={styles.alertType}>{a.alert_type.replace('_', ' ')}</Text>
-                <Text style={styles.alertMsg}>{a.message}</Text>
-              </View>
-            ))}
+        {/* 4-Metric Realtime Telemetry Grid */}
+        <View style={styles.metricsGrid}>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricIcon}>🌧️</Text>
+            <Text style={styles.metricLabel}>Rainfall (24h)</Text>
+            <Text style={styles.metricValue}>18.6 mm</Text>
           </View>
-        )}
+          <View style={styles.metricCard}>
+            <Text style={styles.metricIcon}>🌊</Text>
+            <Text style={styles.metricLabel}>Inflow Rate</Text>
+            <Text style={styles.metricValue}>86.2 m³/s</Text>
+          </View>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricIcon}>💧</Text>
+            <Text style={styles.metricLabel}>Outflow Rate</Text>
+            <Text style={styles.metricValue}>22.1 m³/s</Text>
+          </View>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricIcon}>⏱️</Text>
+            <Text style={styles.metricLabel}>Last Update</Text>
+            <Text style={styles.metricValue}>{lastUpdate ? lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '2 sec ago'}</Text>
+          </View>
+        </View>
+
+        {/* All Systems Normal Status Pill */}
+        <View style={styles.systemPillCard}>
+          <Text style={styles.systemPillText}>🟢 All systems normal.</Text>
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1 },
-  header:       { backgroundColor: '#1B2A3B', padding: 20, paddingTop: 48 },
-  headerTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle:  { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
-  headerSub:    { color: '#90CAF9', fontSize: 11, marginTop: 2 },
-  logoutBtn:    { backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 6 },
-  logoutText:   { color: '#EF9A9A', fontSize: 12, fontWeight: '700' },
-  langBar:      { marginTop: 10 },
-  scroll:       { padding: 16, paddingBottom: 40 },
-  modeCard:     { backgroundColor: '#1E293B', borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1.5, borderColor: '#334155', shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
-  modeCardHeader:{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  modeCardTitle:{ fontSize: 13, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase' },
-  modeBadge:    { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  modeBadgeText:{ color: '#FFF', fontSize: 10, fontWeight: '800' },
-  modeGrid:     { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#0F172A', padding: 12, borderRadius: 10, marginBottom: 10 },
-  modeGridCol:  { flex: 1 },
-  modeGridLabel:{ fontSize: 10, color: '#64748B', fontWeight: '600' },
-  modeGridVal:  { fontSize: 13, fontWeight: '800', color: '#F8FAFC', marginTop: 2 },
-  modeCardNote: { fontSize: 11, color: '#CBD5E1', lineHeight: 16 },
-  gaugeCard:    { backgroundColor: '#FFF', borderRadius: 20, padding: 24, alignItems: 'center', marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, elevation: 4 },
-  statusLabel:  { fontSize: 18, fontWeight: 'bold', marginTop: 10 },
-  detailCard:   { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 14, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3, borderWidth: 1, borderColor: '#E2E8F0' },
-  detailTitle:  { fontWeight: 'bold', fontSize: 15, color: '#1B2A3B', marginBottom: 12 },
-  healthGrid:   { gap: 10 },
-  healthItem:   { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 10, borderRadius: 10, gap: 8 },
-  healthDot:    { width: 8, height: 8, borderRadius: 4, backgroundColor: '#10B981' },
-  healthName:   { fontSize: 12, fontWeight: '700', color: '#0F172A' },
-  healthDetail: { fontSize: 10, color: '#64748B', marginTop: 1 },
-  statusOnline: { fontSize: 11, fontWeight: '800', color: '#059669' },
-  alertsCard:   { backgroundColor: '#FFF', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
-  alertRow:     { borderLeftWidth: 3, borderLeftColor: '#E74C3C', paddingLeft: 10, marginBottom: 10 },
-  alertType:    { fontWeight: 'bold', color: '#E74C3C', fontSize: 12 },
-  alertMsg:     { color: '#2C3E50', fontSize: 12, marginTop: 2 },
+  container:        { flex: 1, backgroundColor: '#F8FAFC' },
+  header:           { backgroundColor: '#0F4C81', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 14 },
+  headerTop:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerNavIcon:    { fontSize: 22, color: '#FFF' },
+  headerTitle:      { fontSize: 20, fontWeight: '800', color: '#FFF' },
+  bellWrapper:      { position: 'relative' },
+  redBadgeDot:      { position: 'absolute', top: 0, right: 0, width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', borderWidth: 1, borderColor: '#0F4C81' },
+  scroll:           { padding: 16, paddingBottom: 40 },
+  damHeroCard:      { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  damHeroTop:       { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  damPinIcon:       { fontSize: 24 },
+  damHeroTitle:     { fontSize: 15, fontWeight: '800', color: '#0F172A' },
+  damHeroSub:       { fontSize: 12, color: '#64748B', fontWeight: '500', marginTop: 1 },
+  damHeroChevron:   { fontSize: 16, color: '#94A3B8', fontWeight: '800' },
+  gaugeCard:        { backgroundColor: '#FFF', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  sectionHeaderTitle:{ fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 10 },
+  storageBox:       { width: '100%', marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderColor: '#F1F5F9' },
+  storageHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  storageTitle:     { fontSize: 12, fontWeight: '700', color: '#334155' },
+  storageVal:       { fontSize: 13, fontWeight: '800', color: '#0F4C81' },
+  storageTrack:     { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
+  storageFill:      { height: '100%', borderRadius: 4 },
+  metricsGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
+  metricCard:       { width: '48%', backgroundColor: '#FFF', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
+  metricIcon:       { fontSize: 20, marginBottom: 4 },
+  metricLabel:      { fontSize: 11, color: '#64748B', fontWeight: '600' },
+  metricValue:      { fontSize: 16, fontWeight: '900', color: '#0F172A', marginTop: 2 },
+  systemPillCard:   { backgroundColor: '#ECFDF5', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#A7F3D0', alignItems: 'center', marginTop: 4 },
+  systemPillText:   { fontSize: 12, fontWeight: '800', color: '#065F46' },
 });

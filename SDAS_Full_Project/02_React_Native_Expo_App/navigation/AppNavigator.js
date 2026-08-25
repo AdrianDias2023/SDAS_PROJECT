@@ -17,14 +17,16 @@ import WeatherForecastScreen  from '../screens/public/WeatherForecastScreen';
 import { useLanguage }        from '../services/i18n';
 
 // Operator Screens
-import LoginScreen         from '../screens/operator/LoginScreen';
-import OperatorDashboard   from '../screens/operator/OperatorDashboard';
-import GateControlScreen   from '../screens/operator/GateControlScreen';
-import SystemHealthScreen  from '../screens/operator/SystemHealthScreen';
-import AnalyticsScreen     from '../screens/operator/AnalyticsScreen';
-import SimulationScreen    from '../screens/operator/SimulationScreen';
-import AuditLogsScreen     from '../screens/operator/AuditLogsScreen';
-import ContactsScreen      from '../screens/operator/ContactsScreen';
+import LoginScreen             from '../screens/operator/LoginScreen';
+import OperatorDashboard       from '../screens/operator/OperatorDashboard';
+import GateControlScreen       from '../screens/operator/GateControlScreen';
+import SystemHealthScreen      from '../screens/operator/SystemHealthScreen';
+import AnalyticsScreen         from '../screens/operator/AnalyticsScreen';
+import SimulationScreen        from '../screens/operator/SimulationScreen';
+import AuditLogsScreen         from '../screens/operator/AuditLogsScreen';
+import ContactsScreen          from '../screens/operator/ContactsScreen';
+import ManualOverrideScreen    from '../screens/operator/ManualOverrideScreen';
+import OperatorSettingsScreen  from '../screens/operator/OperatorSettingsScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -87,7 +89,7 @@ function OperatorTabs() {
         headerShown:       false,
         tabBarStyle:       { backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#E2E8F0', height: 62 },
         tabBarLabelStyle:  { fontSize: 9, marginBottom: 6, fontWeight: '700' },
-        tabBarActiveTintColor:   '#0284C7',
+        tabBarActiveTintColor:   '#10B981',
         tabBarInactiveTintColor: '#94A3B8',
       }}
     >
@@ -97,29 +99,24 @@ function OperatorTabs() {
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />, tabBarLabel: 'Dashboard' }}
       />
       <Tab.Screen
-        name="Gate"
-        component={GateControlScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚪" focused={focused} />, tabBarLabel: 'Gate' }}
-      />
-      <Tab.Screen
-        name="Analytics"
+        name="Monitor"
         component={AnalyticsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📈" focused={focused} />, tabBarLabel: 'Analytics' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📈" focused={focused} />, tabBarLabel: 'Monitor' }}
       />
       <Tab.Screen
-        name="Health"
-        component={SystemHealthScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🛠️" focused={focused} />, tabBarLabel: 'Health' }}
+        name="AiRisk"
+        component={PredictionScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🤖" focused={focused} />, tabBarLabel: 'AI & Risk' }}
       />
       <Tab.Screen
-        name="Simulation"
-        component={SimulationScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🎛️" focused={focused} />, tabBarLabel: 'Twin' }}
+        name="Alerts"
+        component={AlertsScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚨" focused={focused} />, tabBarLabel: 'Alerts' }}
       />
       <Tab.Screen
-        name="More"
-        component={AboutScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />, tabBarLabel: 'Settings' }}
+        name="Control"
+        component={GateControlScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚪" focused={focused} />, tabBarLabel: 'Control' }}
       />
     </Tab.Navigator>
   );
@@ -137,12 +134,15 @@ export default function AppNavigator({ session }) {
       <Stack.Screen name="Weather" component={WeatherForecastScreen} />
       <Stack.Screen name="Safety" component={SafetyInfoScreen} />
       <Stack.Screen name="Predict" component={PredictionScreen} />
-      <Stack.Screen name="AnalyticsScreen" component={AnalyticsScreen} />
       
       {/* Operator Screens */}
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="OperatorTabs" component={OperatorTabs} />
       <Stack.Screen name="OperatorStack" component={session ? OperatorTabs : LoginScreen} />
+      <Stack.Screen name="ManualOverride" component={ManualOverrideScreen} />
+      <Stack.Screen name="Settings" component={OperatorSettingsScreen} />
+      <Stack.Screen name="Health" component={SystemHealthScreen} />
+      <Stack.Screen name="Simulation" component={SimulationScreen} />
       <Stack.Screen name="Contacts" component={ContactsScreen} />
       <Stack.Screen name="Audit" component={AuditLogsScreen} />
     </Stack.Navigator>
