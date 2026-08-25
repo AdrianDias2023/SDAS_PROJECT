@@ -1,35 +1,29 @@
-// SDAS — Multi-Dam Selector Component
-// Enables operators and public users to seamlessly toggle telemetry between Puttalam Dam & Unnichchai Dam
+// SDAS — Prototype Reservoir Model Info Component
+// Active Node: Tabbowa Prototype Dam (Puttalam District - Simulation)
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { DAMS } from '../services/weather';
 
-export default function DamSelector({ selectedDamId, onSelectDam, style }) {
+export default function DamSelector({ style }) {
+  const dam = DAMS[0];
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.bar}>
-        {DAMS.map((dam) => {
-          const isSelected = selectedDamId === dam.id;
-          return (
-            <TouchableOpacity
-              key={dam.id}
-              style={[styles.tab, isSelected && styles.tabActive]}
-              onPress={() => onSelectDam(dam.id)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.tabIcon]}>📍</Text>
-              <View>
-                <Text style={[styles.tabText, isSelected && styles.tabTextActive]}>
-                  {dam.shortName}
-                </Text>
-                <Text style={[styles.subText, isSelected && styles.subTextActive]}>
-                  {dam.district}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
+          <Text style={styles.pinIcon}>📍</Text>
+          <View style={styles.titleCol}>
+            <Text style={styles.damTitle}>{dam.name}</Text>
+            <Text style={styles.subText}>{dam.district}</Text>
+          </View>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>PROTOTYPE</Text>
+          </View>
+        </View>
+        <View style={styles.sourceRow}>
+          <Text style={styles.sourceLabel}>📡 Data Source:</Text>
+          <Text style={styles.sourceValue}>{dam.dataSource}</Text>
+        </View>
       </View>
     </View>
   );
@@ -37,51 +31,65 @@ export default function DamSelector({ selectedDamId, onSelectDam, style }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 8,
+    marginVertical: 6,
   },
-  bar: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-    borderRadius: 14,
-    padding: 4,
-    gap: 6,
+  card: {
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    borderRadius: 12,
+    padding: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.18)',
   },
-  tab: {
-    flex: 1,
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 10,
+    gap: 8,
   },
-  tabActive: {
-    backgroundColor: '#0284C7',
-    shadowColor: '#0284C7',
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
+  pinIcon: {
+    fontSize: 18,
   },
-  tabIcon: {
-    fontSize: 14,
+  titleCol: {
+    flex: 1,
   },
-  tabText: {
-    fontSize: 12,
+  damTitle: {
+    color: '#FFF',
+    fontSize: 13,
     fontWeight: '800',
-    color: '#94A3B8',
-  },
-  tabTextActive: {
-    color: '#FFFFFF',
   },
   subText: {
-    fontSize: 9,
-    color: '#64748B',
+    color: '#90CAF9',
+    fontSize: 11,
     fontWeight: '500',
   },
-  subTextActive: {
-    color: '#E0F2FE',
+  badge: {
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  sourceLabel: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  sourceValue: {
+    color: '#38BDF8',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

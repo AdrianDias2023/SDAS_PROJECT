@@ -1,30 +1,20 @@
 /**
  * SDAS Weather & Satellite Precipitation Service
- * Multi-Dam Support: Puttalam Dam (8.0362° N, 79.8283° E) and Unnichchai Dam (7.6975° N, 81.5647° E)
+ * Target Reservoir Model: Tabbowa Prototype Dam (8.0362° N, 79.8283° E, Puttalam District)
  */
 
 export const DAMS = [
   {
     id: 'ESP32_PUTTALAM_01',
-    name: 'Puttalam Dam (Tabbowa)',
-    shortName: 'Puttalam Dam',
-    district: 'Puttalam District',
+    name: 'Tabbowa Prototype Dam',
+    shortName: 'Tabbowa Prototype Dam',
+    district: 'Puttalam District (Simulation)',
+    dataSource: 'Prototype Sensors + Simulated Data',
     province: 'North Western Province',
     lat: 8.0362,
     lon: 79.8283,
     capacity: '14,200 acre-ft',
     gates: 3,
-  },
-  {
-    id: 'ESP32_UNNICHCHAI_02',
-    name: 'Unnichchai Dam',
-    shortName: 'Unnichchai Dam',
-    district: 'Batticaloa District',
-    province: 'Eastern Province',
-    lat: 7.6975,
-    lon: 81.5647,
-    capacity: '41,500 acre-ft',
-    gates: 6,
   },
 ];
 

@@ -39,7 +39,9 @@ export const translations = {
     // Home Screen
     liveWaterLevel: "Live Water Level",
     currentStatus: "System Status",
-    damName: "Puttalam District Dam",
+    damName: "Tabbowa Prototype Dam",
+    damLocation: "Puttalam District (Simulation)",
+    dataSource: "Prototype Sensors + Simulated Data",
     statusNormal: "NORMAL",
     statusPreWarning: "PRE-WARNING",
     statusClearArea: "CONTROLLED RELEASE",
@@ -178,7 +180,9 @@ export const translations = {
     // Home Screen
     liveWaterLevel: "සජීවී ජල මට්ටම",
     currentStatus: "පද්ධති තත්ත්වය",
-    damName: "පුත්තලම දිස්ත්‍රික් වේල්ල",
+    damName: "තබ්බෝව මූලාකෘති වේල්ල (Tabbowa Prototype Dam)",
+    damLocation: "පුත්තලම දිස්ත්‍රික්කය (Simulation)",
+    dataSource: "මූලාකෘති සංවේදක + අනුකරණ දත්ත",
     statusNormal: "සාමාන්‍ය (NORMAL)",
     statusPreWarning: "පෙර අනතුරු ඇඟවීම (PRE-WARNING)",
     statusClearArea: "පාලිත මුදාහැරීම (CONTROLLED RELEASE)",
@@ -317,7 +321,9 @@ export const translations = {
     // Home Screen
     liveWaterLevel: "நேரடி நீர் மட்டம்",
     currentStatus: "கணினி நிலை",
-    damName: "புத்தளம் மாவட்ட அணை",
+    damName: "தப்போவ மாதிரி அணை (Tabbowa Prototype Dam)",
+    damLocation: "புத்தளம் மாவட்டம் (Simulation)",
+    dataSource: "மாதிரி சென்சார்கள் + உருவகப்படுத்தப்பட்ட தரவு",
     statusNormal: "சாதாரண நிலை (NORMAL)",
     statusPreWarning: "முன் எச்சரிக்கை (PRE-WARNING)",
     statusClearArea: "கட்டுப்படுத்தப்பட்ட வெளியேற்றம் (CONTROLLED RELEASE)",
