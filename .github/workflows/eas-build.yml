@@ -1,0 +1,137 @@
+# ================================================================
+#  SDAS GitHub Actions — EAS Build & Deploy
+#
+#  Triggers:
+#    - Push to main → EAS Update (OTA, no store build needed)
+#    - Push tag v*.*.* → EAS Production Build (APK + AAB)
+#    - PR to main → Preview build (internal APK)
+#
+#  Required GitHub Secrets (Settings → Secrets → Actions):
+#    EXPO_TOKEN  — from expo.dev/accounts/[username]/settings/access-tokens
+# ================================================================
+
+name: EAS Build & Update
+
+on:
+  push:
+    branches: [main]
+    tags:     ['v*.*.*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── OTA Update (every push to main) ──────────────────────────
+  eas-update:
+    name: EAS Update (OTA)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    defaults:
+      run:
+        working-directory: SDAS_Full_Project/02_React_Native_Expo_App
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: SDAS_Full_Project/02_React_Native_Expo_App/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Publish OTA update
+        run: |
+          eas update \
+            --branch main \
+            --message "OTA: ${{ github.event.head_commit.message }}" \
+            --non-interactive
+
+  # ── Preview Build (on Pull Requests) ─────────────────────────
+  eas-preview:
+    name: EAS Preview Build (PR)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    defaults:
+      run:
+        working-directory: SDAS_Full_Project/02_React_Native_Expo_App
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: SDAS_Full_Project/02_React_Native_Expo_App/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build preview APK
+        uses: expo/expo-github-action/preview@v8
+        with:
+          command: eas build --profile preview --platform android --non-interactive
+          working-directory: SDAS_Full_Project/02_React_Native_Expo_App
+
+  # ── Production Build (on version tags) ───────────────────────
+  eas-production:
+    name: EAS Production Build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    defaults:
+      run:
+        working-directory: SDAS_Full_Project/02_React_Native_Expo_App
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: SDAS_Full_Project/02_React_Native_Expo_App/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build production Android (AAB)
+        run: |
+          eas build \
+            --profile production \
+            --platform android \
+            --non-interactive
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            ## SDAS Release ${{ github.ref_name }}
+            
+            **EAS Production Build triggered.**
+            Download the APK from [expo.dev](https://expo.dev/accounts/adrian_2002/projects/sdas-app/builds)

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SDAS - Smart Dam Alert",
-    "slug": "sdas-app",
+    "slug": "sdasproject",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -32,7 +32,17 @@
     },
     "extra": {
       "supabaseUrl": "https://nkjzrpwghmkdhixjybzm.supabase.co",
-      "supabaseAnonKey": "sb_publishable_GIYan9Gc0ZVR55pWEnx-ww_5iF4w4da"
-    }
+      "supabaseAnonKey": "sb_publishable_GIYan9Gc0ZVR55pWEnx-ww_5iF4w4da",
+      "eas": {
+        "projectId": "f034139c-a992-4850-b74b-bee3366710dd"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f034139c-a992-4850-b74b-bee3366710dd"
+    },
+    "owner": "adrian_2002"
   }
 }
