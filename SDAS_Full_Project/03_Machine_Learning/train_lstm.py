@@ -22,7 +22,7 @@ from tensorflow.keras import layers
 from sklearn.metrics import mean_absolute_percentage_error
 
 # ── Config ─────────────────────────────────────────────────────
-EPOCHS      = 50
+EPOCHS      = 20
 BATCH_SIZE  = 64
 PATIENCE    = 8      # Early stopping patience
 LOOKBACK    = 24
@@ -142,12 +142,19 @@ def main():
     print("Saved: models/lstm_model.h5")
 
     # ── Export to TFLite (for edge inference) ───────────────────
-    converter = tf.lite.TFLiteConverter.from_keras_model(model)
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    tflite_model = converter.convert()
-    with open('models/lstm_model.tflite', 'wb') as f:
-        f.write(tflite_model)
-    print("Saved: models/lstm_model.tflite")
+    try:
+        converter = tf.lite.TFLiteConverter.from_keras_model(model)
+        converter.target_spec.supported_ops = [
+            tf.lite.OpsSet.TFLITE_BUILTINS,
+            tf.lite.OpsSet.SELECT_TF_OPS
+        ]
+        converter._experimental_lower_tensor_list_ops = False
+        tflite_model = converter.convert()
+        with open('models/lstm_model.tflite', 'wb') as f:
+            f.write(tflite_model)
+        print("Saved: models/lstm_model.tflite")
+    except Exception as e:
+        print(f"Note on TFLite export: {e}")
 
     # ── Save metrics ────────────────────────────────────────────
     metrics = {

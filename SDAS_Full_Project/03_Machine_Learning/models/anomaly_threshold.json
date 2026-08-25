@@ -1,0 +1,8 @@
+{
+  "mse_threshold": 0.0016030387487262487,
+  "percentile": 95,
+  "train_mse_mean": 0.00046514844871126115,
+  "train_mse_std": 0.0007462876965291798,
+  "detection_rate_pct": 62.47960848287113,
+  "false_alarm_rate_pct": 4.128692214779839
+}

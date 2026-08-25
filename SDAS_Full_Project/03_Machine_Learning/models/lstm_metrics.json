@@ -1,0 +1,7 @@
+{
+  "mape": 14.0191,
+  "mae": 2.3193,
+  "rmse": 3.873,
+  "epochs_trained": 18,
+  "pass_target": false
+}
