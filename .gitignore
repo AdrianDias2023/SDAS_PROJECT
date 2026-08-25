@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+venv/
+env/
+.env
+.venv
+
+# ML models (large files — store separately or use Git LFS)
+*.h5
+*.pkl
+*.npy
+*.tflite
+dataset/*.csv
+
+# Node / React Native
+node_modules/
+.expo/
+.expo-shared/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+dist/
+
+# Supabase local
+supabase/.branches
+supabase/.temp
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Credentials — NEVER commit real keys
+*.env
+.env.local
+.env.production
+secrets.json

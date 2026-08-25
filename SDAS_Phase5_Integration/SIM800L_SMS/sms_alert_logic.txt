@@ -1,0 +1,25 @@
+SDAS SMS ALERT LOGIC
+
+Water Level <70%
+----------------
+Status: NORMAL
+
+70%-85%
+----------------
+Status: PRE WARNING
+Action:
+Send SMS warning
+
+
+85%+
+----------------
+Status: DANGER
+
+Actions:
+- Open gate automatically
+- Send emergency SMS
+- Activate buzzer
+- Red LED
+
+
+SIM800L sends alerts to registered contacts.
