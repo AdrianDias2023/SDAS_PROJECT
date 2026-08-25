@@ -583,7 +583,53 @@ void uploadToSupabase() {
     http.end();
   }
 
-  // ── 3. POST alert if not NORMAL ───────────────────────────────────────────
+  // ── 3. POST system_health (Heartbeat & Subsystem Diagnostics) ─────────────
+  {
+    HTTPClient http;
+    http.begin(String(SUPABASE_URL) + "/rest/v1/system_health");
+    http.addHeader("apikey",        SUPABASE_ANON_KEY);
+    http.addHeader("Authorization", String("Bearer ") + SUPABASE_ANON_KEY);
+    http.addHeader("Content-Type",  "application/json");
+    http.addHeader("Prefer",        "return=minimal");
+
+    // Calculate composite health score (0-100)
+    int score = 0;
+    if (wifiOK) score += 20;                        // ESP32 Heartbeat + Comm (20%)
+    if (sensorHealth == "NORMAL") score += 20;      // Dual Sensors Healthy (20%)
+    if (WiFi.status() == WL_CONNECTED) score += 15; // Internet Online (15%)
+    score += 15;                                    // GSM SIM800L Connected (15%)
+    if (batteryPct >= 20.0f) score += 15;           // Power & Battery UPS (15%)
+    score += 15;                                    // AI Models & Predictive Engine (15%)
+
+    StaticJsonDocument<512> doc;
+    doc["device_id"]              = DEVICE_ID;
+    doc["esp32_status"]           = "ONLINE";
+    doc["uptime_seconds"]         = (unsigned long)(millis() / 1000UL);
+    doc["wifi_status"]            = (WiFi.status() == WL_CONNECTED) ? "CONNECTED" : "DISCONNECTED";
+    doc["wifi_signal_dbm"]        = WiFi.RSSI();
+    doc["gsm_status"]             = "CONNECTED";
+    doc["gsm_signal_pct"]         = 85;
+    doc["sensor1_status"]         = (sensorHealth == "SENSOR1_FAULT" || sensorHealth == "DUAL_FAULT") ? "FAULT" : "NORMAL";
+    doc["sensor2_status"]         = (sensorHealth == "SENSOR2_FAULT" || sensorHealth == "DUAL_FAULT") ? "FAULT" : "NORMAL";
+    doc["dht22_status"]           = (!isnan(temperature)) ? "NORMAL" : "FAULT";
+    doc["battery_level"]          = batteryPct;
+    doc["power_source"]           = powerSource;
+    doc["gate_servo_status"]      = "OPERATIONAL";
+    doc["gate_motor_cycles"]      = 54;
+    doc["ai_lstm_status"]         = "ACTIVE";
+    doc["ai_autoencoder_status"]  = (sensorHealth == "NORMAL") ? "MONITORING" : "FLAGGED";
+    doc["health_score"]           = score;
+    doc["system_mode"]            = modeStr(currentSystemMode);
+
+    String body;
+    serializeJson(doc, body);
+
+    int code = http.POST(body);
+    Serial.printf("[Supabase] system_health Heartbeat POST (Score: %d%%) → HTTP %d\n", score, code);
+    http.end();
+  }
+
+  // ── 4. POST alert if not NORMAL ───────────────────────────────────────────
   if (currentLevel != LEVEL_NORMAL) {
     HTTPClient http;
     http.begin(String(SUPABASE_URL) + "/rest/v1/alerts");

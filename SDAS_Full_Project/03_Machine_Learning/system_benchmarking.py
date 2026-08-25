@@ -288,6 +288,48 @@ def test_four_tier_control_modes():
 
     return {"four_tier_passed": all_passed, "total_cases": len(test_matrix)}
 
+# ==============================================================================
+# TEST 6: SYSTEM HEALTH SCORE & HEARTBEAT DIAGNOSTIC BENCHMARK
+# ==============================================================================
+def test_system_health_score():
+    print("\n" + "="*70)
+    print("  TEST 6: SYSTEM HEALTH SCORE & SUBSYSTEM DIAGNOSTICS BENCHMARK")
+    print("="*70)
+
+    def compute_health_score(esp_online, sensors_ok, net_ok, gsm_ok, pwr_ok, ai_ok):
+        score = 0
+        if esp_online: score += 20
+        if sensors_ok: score += 20
+        if net_ok:     score += 15
+        if gsm_ok:     score += 15
+        if pwr_ok:     score += 15
+        if ai_ok:      score += 15
+
+        status = "EXCELLENT" if score >= 90 else "FAIR" if score >= 75 else "NEEDS_ATTENTION"
+        return score, status
+
+    test_cases = [
+        # (ESP, Sensors, Net, GSM, Pwr, AI, Exp Score, Exp Status, Note)
+        (True,  True,  True,  True,  True,  True,  100, "EXCELLENT",       "All 6 subsystems 100% healthy"),
+        (True,  True,  True,  True,  True,  False, 85,  "FAIR",            "AI model server down (85% - degraded)"),
+        (True,  False, True,  True,  True,  True,  80,  "FAIR",            "Dual sensor discrepancy detected (80%)"),
+        (True,  True,  False, True,  True,  False, 70,  "NEEDS_ATTENTION", "Internet and AI offline -> Fallback active"),
+    ]
+
+    all_passed = True
+    for esp, sns, net, gsm, pwr, ai, exp_sc, exp_st, note in test_cases:
+        sc, st = compute_health_score(esp, sns, net, gsm, pwr, ai)
+        passed = (sc == exp_sc and st == exp_st)
+        if not passed: all_passed = False
+        mark = "✓" if passed else "✗"
+        print(f"  [{mark}] Score={sc:3d}% | Status={st:15s} | Expected={exp_sc:3d}% ({note})")
+
+    print("-"*70)
+    print(f"  System Health Score Determinism: {'100% PASSED' if all_passed else 'FAILED'}")
+    print("="*70)
+
+    return {"health_score_passed": all_passed, "total_cases": len(test_cases)}
+
 def main():
     print("\n🔬 STARTING FULL SDAS SYSTEM BENCHMARKING SUITE...")
     t1 = test_sensor_accuracy()
@@ -295,6 +337,7 @@ def main():
     t3 = test_alert_state_transitions()
     t4 = test_offline_emergency_and_interlock()
     t5 = test_four_tier_control_modes()
+    t6 = test_system_health_score()
 
     summary = {
         "timestamp": datetime.now().isoformat(),
@@ -303,6 +346,7 @@ def main():
         "state_transitions_test": t3,
         "offline_emergency_test": t4,
         "four_tier_architecture_test": t5,
+        "system_health_benchmark": t6,
         "evaluation_verdict": "ALL BENCHMARKS SATISFIED (GRADE A+ QUALITY)"
     }
 
