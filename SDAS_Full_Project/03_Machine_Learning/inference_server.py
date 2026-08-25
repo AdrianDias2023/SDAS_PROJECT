@@ -48,40 +48,74 @@ rf_features       = None
 scaler            = None
 anomaly_threshold = None
 models_loaded     = False
+load_errors       = {}
 
 
 def load_all_models():
-    global lstm_model, autoencoder_model, rf_model, rf_features, scaler, anomaly_threshold, models_loaded
+    global lstm_model, autoencoder_model, rf_model, rf_features, scaler, anomaly_threshold, models_loaded, load_errors
+    load_errors = {}
+
+    # 1. LSTM
     try:
-        print("[SDAS ML] Loading LSTM model...")
         lstm_path = os.path.join(BASE_DIR, 'models', 'lstm_model.h5')
+        print(f"[SDAS ML] Loading LSTM from {lstm_path}...")
         lstm_model = tf.keras.models.load_model(lstm_path, compile=False)
+        print("[SDAS ML] [OK] LSTM loaded.")
+    except Exception as e:
+        print(f"[SDAS ML] [ERROR] LSTM load failed: {e}")
+        load_errors['lstm'] = str(e)
 
-        print("[SDAS ML] Loading Autoencoder model...")
+    # 2. Autoencoder
+    try:
         ae_path = os.path.join(BASE_DIR, 'models', 'autoencoder_model.h5')
+        print(f"[SDAS ML] Loading Autoencoder from {ae_path}...")
         autoencoder_model = tf.keras.models.load_model(ae_path, compile=False)
+        print("[SDAS ML] [OK] Autoencoder loaded.")
+    except Exception as e:
+        print(f"[SDAS ML] [ERROR] Autoencoder load failed: {e}")
+        load_errors['autoencoder'] = str(e)
 
-        print("[SDAS ML] Loading Random Forest risk model...")
+    # 3. Random Forest & Features
+    try:
         rf_path = os.path.join(BASE_DIR, 'models', 'random_forest_risk.pkl')
         rf_features_path = os.path.join(BASE_DIR, 'models', 'rf_features.pkl')
+        print(f"[SDAS ML] Loading RF from {rf_path}...")
         rf_model = joblib.load(rf_path)
         rf_features = joblib.load(rf_features_path)
+        print("[SDAS ML] [OK] Random Forest loaded.")
+    except Exception as e:
+        print(f"[SDAS ML] [ERROR] Random Forest load failed: {e}")
+        load_errors['random_forest'] = str(e)
 
-        print("[SDAS ML] Loading scaler...")
+    # 4. Scaler
+    try:
         scaler_path = os.path.join(BASE_DIR, 'dataset', 'scaler.pkl')
+        if not os.path.exists(scaler_path):
+            scaler_path = os.path.join(BASE_DIR, 'scaler.pkl')
+        print(f"[SDAS ML] Loading Scaler from {scaler_path}...")
         scaler = joblib.load(scaler_path)
+        print("[SDAS ML] [OK] Scaler loaded.")
+    except Exception as e:
+        print(f"[SDAS ML] [ERROR] Scaler load failed: {e}")
+        load_errors['scaler'] = str(e)
 
-        print("[SDAS ML] Loading anomaly threshold...")
+    # 5. Anomaly Threshold
+    try:
         thresh_path = os.path.join(BASE_DIR, 'models', 'anomaly_threshold.json')
         with open(thresh_path) as f:
             threshold_data = json.load(f)
-        anomaly_threshold = threshold_data['mse_threshold']
-
-        models_loaded = True
-        print(f"[SDAS ML] [OK] All 3 models loaded successfully. Anomaly threshold: {anomaly_threshold:.6f}")
+        anomaly_threshold = float(threshold_data['mse_threshold'])
+        print(f"[SDAS ML] [OK] Anomaly threshold: {anomaly_threshold:.6f}")
     except Exception as e:
-        print(f"[SDAS ML] [ERROR] Model loading failed: {e}")
-        models_loaded = False
+        anomaly_threshold = 0.001603
+        load_errors['anomaly_threshold'] = str(e)
+
+    models_loaded = (lstm_model is not None and rf_model is not None and autoencoder_model is not None and scaler is not None)
+    print(f"[SDAS ML] Overall status: {'ALL MODELS READY' if models_loaded else 'DEGRADED'} (Errors: {load_errors})")
+
+
+# Eagerly load on import
+load_all_models()
 
 
 @asynccontextmanager
@@ -170,6 +204,7 @@ def health():
         "random_forest_ready": rf_model is not None,
         "autoencoder_ready":   autoencoder_model is not None,
         "anomaly_threshold":   anomaly_threshold,
+        "errors":              load_errors if load_errors else None
     }
 
 
