@@ -34,9 +34,12 @@ const Stack = createNativeStackNavigator();
 // ─── Tab icon component ────────────────────────────────────────
 function TabIcon({ emoji, focused }) {
   return (
-    <Text style={{ fontSize: focused ? 22 : 18, opacity: focused ? 1 : 0.6 }}>
-      {emoji}
-    </Text>
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: focused ? 20 : 18, opacity: focused ? 1 : 0.6 }}>
+        {emoji}
+      </Text>
+      {focused && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#38BDF8', marginTop: 2 }} />}
+    </View>
   );
 }
 
@@ -46,10 +49,10 @@ function PublicTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown:       false,
-        tabBarStyle:       { backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#E2E8F0', height: 62 },
-        tabBarLabelStyle:  { fontSize: 10, marginBottom: 6, fontWeight: '700' },
-        tabBarActiveTintColor:   '#0284C7',
-        tabBarInactiveTintColor: '#94A3B8',
+        tabBarStyle:       { backgroundColor: '#0B132B', borderTopWidth: 1, borderColor: '#1E293B', height: 64, paddingBottom: 6 },
+        tabBarLabelStyle:  { fontSize: 10, marginBottom: 4, fontWeight: '700' },
+        tabBarActiveTintColor:   '#38BDF8',
+        tabBarInactiveTintColor: '#64748B',
       }}
     >
       <Tab.Screen
@@ -75,7 +78,7 @@ function PublicTabs() {
       <Tab.Screen
         name="More"
         component={AboutScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📱" focused={focused} />, tabBarLabel: 'More' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⋯" focused={focused} />, tabBarLabel: 'More' }}
       />
     </Tab.Navigator>
   );
@@ -87,36 +90,36 @@ function OperatorTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown:       false,
-        tabBarStyle:       { backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: '#E2E8F0', height: 62 },
-        tabBarLabelStyle:  { fontSize: 9, marginBottom: 6, fontWeight: '700' },
-        tabBarActiveTintColor:   '#10B981',
-        tabBarInactiveTintColor: '#94A3B8',
+        tabBarStyle:       { backgroundColor: '#0B132B', borderTopWidth: 1, borderColor: '#1E293B', height: 64, paddingBottom: 6 },
+        tabBarLabelStyle:  { fontSize: 10, marginBottom: 4, fontWeight: '700' },
+        tabBarActiveTintColor:   '#38BDF8',
+        tabBarInactiveTintColor: '#64748B',
       }}
     >
       <Tab.Screen
         name="Dashboard"
         component={OperatorDashboard}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />, tabBarLabel: 'Dashboard' }}
-      />
-      <Tab.Screen
-        name="Monitor"
-        component={AnalyticsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📈" focused={focused} />, tabBarLabel: 'Monitor' }}
-      />
-      <Tab.Screen
-        name="AiRisk"
-        component={PredictionScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🤖" focused={focused} />, tabBarLabel: 'AI & Risk' }}
-      />
-      <Tab.Screen
-        name="Alerts"
-        component={AlertsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚨" focused={focused} />, tabBarLabel: 'Alerts' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />, tabBarLabel: 'Home' }}
       />
       <Tab.Screen
         name="Control"
         component={GateControlScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚪" focused={focused} />, tabBarLabel: 'Control' }}
+      />
+      <Tab.Screen
+        name="Manual"
+        component={ManualOverrideScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🎮" focused={focused} />, tabBarLabel: 'Manual' }}
+      />
+      <Tab.Screen
+        name="SimulationTab"
+        component={SimulationScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⚡" focused={focused} />, tabBarLabel: 'Simulation' }}
+      />
+      <Tab.Screen
+        name="AuditTab"
+        component={AuditLogsScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📋" focused={focused} />, tabBarLabel: 'Logs' }}
       />
     </Tab.Navigator>
   );

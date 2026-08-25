@@ -1,46 +1,56 @@
-// SDAS — Gate Control Screen (Operator Only)
-// Matches Prototype Design Screen 4: Live Status, Spillway Visualizer, AUTO Mode & Tactical Controls
+// SDAS — Gate Control Screen (Operator)
+// Matches Design Screen 9: Current Gate Position with Sluice Visualizer, 3-Level Tier Cards (0%, 20%, 50%), and "Apply Command" button
 
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  Alert, ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  StatusBar,
+  Alert,
 } from 'react-native';
 import { sendGateCommand } from '../../services/alerts';
 import { subscribeGateControl } from '../../services/realtime';
-import { useLanguage } from '../../services/i18n';
+import Svg, { Path, Rect, G } from 'react-native-svg';
 
 export default function GateControlScreen({ navigation }) {
-  const { t } = useLanguage();
-  const [percentage, setPercentage] = useState(20);
-  const [sending,    setSending]    = useState(false);
-  const [mode,       setMode]       = useState('AUTO CLOUD');
+  const [currentPercentage, setCurrentPercentage] = useState(0);
+  const [selectedLevel, setSelectedLevel] = useState(0);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     const channel = subscribeGateControl((cmd) => {
-      setPercentage(cmd.gate_percentage);
-      setMode(cmd.mode ?? 'AUTO CLOUD');
+      if (cmd && cmd.gate_percentage != null) {
+        setCurrentPercentage(cmd.gate_percentage);
+      }
     });
     return () => channel.unsubscribe();
   }, []);
 
-  const handleEmergencyOpen = () => {
+  const handleApplyCommand = async () => {
+    const angle = Math.round(selectedLevel * 1.8);
     Alert.alert(
-      '🚨 Trigger Emergency Open (50%)',
-      'This will immediately command the MG996R servo to 90° (50% aperture) for surge release. Are you sure?',
+      'Confirm Gate Actuation',
+      `Dispatch command to set dam gate to ${selectedLevel}% (${angle}°)?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'ACTUATE (50%)',
-          style: 'destructive',
+          text: 'Apply Command',
           onPress: async () => {
             setSending(true);
             try {
-              await sendGateCommand({ percentage: 50, mode: 'EMERGENCY_OVERRIDE', command: 'EMERGENCY_50' });
-              setPercentage(50);
-              Alert.alert('Success', '50% Emergency Sluice Release Dispatched.');
-            } catch (e) {
-              Alert.alert('Error', e.message);
+              await sendGateCommand({
+                percentage: selectedLevel,
+                mode: selectedLevel === 50 ? 'EMERGENCY_50' : selectedLevel === 20 ? 'CONTROLLED_RELEASE' : 'NORMAL_CLOSED',
+                command: `GATE_${selectedLevel}`,
+              });
+              setCurrentPercentage(selectedLevel);
+              Alert.alert('Success', `Dam sluice gate command (${selectedLevel}%) dispatched.`);
+            } catch (err) {
+              Alert.alert('Error', err.message || 'Failed to dispatch gate command.');
             } finally {
               setSending(false);
             }
@@ -50,136 +60,259 @@ export default function GateControlScreen({ navigation }) {
     );
   };
 
+  const CONTROL_LEVELS = [
+    {
+      pct: 0,
+      title: '0%',
+      sub: 'CLOSED',
+      note: '(Normal)',
+      color: '#10B981',
+      borderColor: '#10B981',
+      icon: '🛡️',
+    },
+    {
+      pct: 20,
+      title: '20%',
+      sub: 'OPEN',
+      note: '(Controlled\nRelease)',
+      color: '#F59E0B',
+      borderColor: '#F59E0B',
+      icon: '🌊',
+    },
+    {
+      pct: 50,
+      title: '50%',
+      sub: 'OPEN',
+      note: '(Emergency\nRelease)',
+      color: '#EF4444',
+      borderColor: '#EF4444',
+      icon: '🚨',
+    },
+  ];
+
   return (
-    <View style={styles.container}>
-      {/* Header (Screen 4) */}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
+
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => navigation?.goBack && navigation.goBack()} activeOpacity={0.8}>
-            <Text style={styles.headerBackIcon}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Dam Gate Control</Text>
-          <TouchableOpacity onPress={() => navigation?.navigate && navigation.navigate('Settings')} activeOpacity={0.8}>
-            <Text style={styles.headerGearIcon}>⚙️</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          onPress={() => navigation?.goBack && navigation.goBack()}
+          activeOpacity={0.7}
+          style={styles.backBtn}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>GATE CONTROL</Text>
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Current Gate Status Card */}
+        {/* Card 1: CURRENT GATE POSITION */}
         <View style={styles.card}>
-          <Text style={styles.cardSectionTitle}>Current Gate Status</Text>
+          <Text style={styles.sectionHeader}>CURRENT GATE POSITION</Text>
           <View style={styles.gateHeroRow}>
-            <Text style={[styles.gateHeroVal, { color: percentage >= 50 ? '#EF4444' : percentage >= 20 ? '#F59E0B' : '#10B981' }]}>
-              {percentage === 0 ? '0% CLOSED' : `${percentage}% OPEN`}
+            <Text style={styles.gateVal}>{currentPercentage}%</Text>
+            <Text style={styles.gateStatusSub}>
+              {currentPercentage === 0 ? 'Closed' : currentPercentage === 20 ? '20% Controlled' : '50% Emergency Release'}
             </Text>
-            <Text style={styles.servoAngleText}>({Math.round(percentage * 1.8)}°)</Text>
           </View>
 
-          {/* Dam Sluice Physical Cross Section */}
-          <View style={styles.spillwayVisualizer}>
-            <View style={styles.damConcreteWall}>
-              <View style={styles.waterReservoirSide}>
-                <Text style={styles.reservoirSideText}>🌊 RESERVOIR</Text>
-              </View>
-              {/* Gate Leaf */}
-              <View style={[styles.gateSluiceLeaf, { height: `${Math.max(15, 100 - percentage)}%` }]}>
-                <Text style={styles.gateLeafLabel}>GATE</Text>
-              </View>
-              {/* Flow Stream */}
-              {percentage > 0 && (
-                <View style={[styles.dischargeStream, { height: `${percentage}%` }]}>
-                  <Text style={styles.dischargeText}>⬇️ FLOW</Text>
-                </View>
+          {/* Sluice Visualizer Graphic */}
+          <View style={styles.damVisualizer}>
+            <Svg width="100%" height={100} viewBox="0 0 280 100">
+              {/* Concrete Structure */}
+              <Rect x="0" y="0" width="80" height="100" fill="#334155" />
+              <Rect x="200" y="0" width="80" height="100" fill="#334155" />
+              <Rect x="80" y="0" width="120" height="20" fill="#475569" />
+
+              {/* Water Inflow Background */}
+              <Rect x="0" y="30" width="80" height="70" fill="#0284C7" />
+
+              {/* Gate Leaf (Moves up as percentage increases) */}
+              <Rect
+                x="90"
+                y={20 - (currentPercentage / 100) * 40}
+                width="100"
+                height="60"
+                fill="#1E293B"
+                stroke="#64748B"
+                strokeWidth="2"
+              />
+
+              {/* Water Outflow Stream */}
+              {currentPercentage > 0 && (
+                <Path
+                  d="M 80 80 Q 140 95 280 85 L 280 100 L 80 100 Z"
+                  fill="#38BDF8"
+                  fillOpacity="0.8"
+                />
               )}
-            </View>
-          </View>
-
-          {/* 4-Step Slider (Screen 4) */}
-          <View style={styles.guideStepsRow}>
-            {[
-              { pct: '0%', label: 'Closed', color: '#10B981' },
-              { pct: '20%', label: 'Warning\nRelease', color: '#F59E0B' },
-              { pct: '50%', label: 'Emergency\nRelease', color: '#EF4444' },
-              { pct: '100%', label: 'Full\nOpen', color: '#DC2626' },
-            ].map((step, idx) => (
-              <View key={idx} style={styles.stepCol}>
-                <View style={[styles.stepDot, { backgroundColor: step.color }]} />
-                <Text style={styles.stepPct}>{step.pct}</Text>
-                <Text style={styles.stepLabel}>{step.label}</Text>
-              </View>
-            ))}
+            </Svg>
           </View>
         </View>
 
-        {/* Operating Mode Card */}
+        {/* Section: CONTROL LEVELS (3 Options) */}
         <View style={styles.card}>
-          <View style={styles.operatingModeRow}>
-            <View>
-              <Text style={styles.operatingModeLabel}>Operating Mode</Text>
-              <Text style={styles.operatingModeValue}>AUTO CLOUD</Text>
-            </View>
-            <View style={styles.modeCloudBadge}>
-              <Text style={styles.cloudBadgeIcon}>☁️</Text>
-            </View>
+          <Text style={styles.sectionHeader}>CONTROL LEVELS</Text>
+          <View style={styles.levelsRow}>
+            {CONTROL_LEVELS.map((lvl) => {
+              const isSelected = selectedLevel === lvl.pct;
+              return (
+                <TouchableOpacity
+                  key={lvl.pct}
+                  style={[
+                    styles.levelCard,
+                    {
+                      borderColor: isSelected ? lvl.borderColor : 'rgba(255, 255, 255, 0.08)',
+                      backgroundColor: isSelected ? 'rgba(30, 41, 59, 0.95)' : '#0F172A',
+                    },
+                  ]}
+                  onPress={() => setSelectedLevel(lvl.pct)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.levelEmoji}>{lvl.icon}</Text>
+                  <Text style={[styles.levelTitle, { color: lvl.color }]}>{lvl.title}</Text>
+                  <Text style={[styles.levelSub, { color: lvl.color }]}>{lvl.sub}</Text>
+                  <Text style={styles.levelNote}>{lvl.note}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
-        {/* Action Buttons: Manual Control & Emergency Open */}
+        {/* Solid Blue Apply Command Button */}
         <TouchableOpacity
-          style={styles.manualControlBtn}
-          onPress={() => navigation?.navigate && navigation.navigate('ManualOverride')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.manualControlBtnText}>Manual Control</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.emergencyOpenBtn}
-          onPress={handleEmergencyOpen}
+          style={[styles.applyBtn, sending && styles.btnDisabled]}
+          onPress={handleApplyCommand}
           disabled={sending}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
-          <Text style={styles.emergencyOpenBtnText}>Emergency Open (50%)</Text>
+          <Text style={styles.applyBtnText}>
+            {sending ? 'Dispatching...' : 'Apply Command'}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container:        { flex: 1, backgroundColor: '#F8FAFC' },
-  header:           { backgroundColor: '#0F4C81', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 14 },
-  headerTop:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerBackIcon:   { fontSize: 22, color: '#FFF' },
-  headerTitle:      { fontSize: 20, fontWeight: '800', color: '#FFF' },
-  headerGearIcon:   { fontSize: 18 },
-  scroll:           { padding: 16, paddingBottom: 40 },
-  card:             { backgroundColor: '#FFF', borderRadius: 16, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  cardSectionTitle: { fontSize: 13, fontWeight: '700', color: '#64748B', marginBottom: 6 },
-  gateHeroRow:      { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 14 },
-  gateHeroVal:      { fontSize: 32, fontWeight: '900' },
-  servoAngleText:   { fontSize: 15, color: '#64748B', fontWeight: '700' },
-  spillwayVisualizer:{ height: 110, backgroundColor: '#F1F5F9', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#CBD5E1', marginBottom: 16 },
-  damConcreteWall:  { flex: 1, flexDirection: 'row', position: 'relative' },
-  waterReservoirSide:{ flex: 1, backgroundColor: '#BAE6FD', justifyContent: 'center', alignItems: 'center' },
-  reservoirSideText:{ fontSize: 10, color: '#0369A1', fontWeight: '800' },
-  gateSluiceLeaf:   { width: 40, backgroundColor: '#475569', position: 'absolute', right: 70, top: 0, borderBottomLeftRadius: 4, borderBottomRightRadius: 4, justifyContent: 'center', alignItems: 'center' },
-  gateLeafLabel:    { fontSize: 9, color: '#FFF', fontWeight: '900' },
-  dischargeStream:  { width: 70, backgroundColor: '#38BDF8', position: 'absolute', right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center' },
-  dischargeText:    { fontSize: 10, color: '#0C4A6E', fontWeight: '800' },
-  guideStepsRow:    { flexDirection: 'row', justifyContent: 'space-between' },
-  stepCol:          { flex: 1, alignItems: 'center' },
-  stepDot:          { width: 10, height: 10, borderRadius: 5, marginBottom: 4 },
-  stepPct:          { fontSize: 13, fontWeight: '800', color: '#0F172A' },
-  stepLabel:        { fontSize: 9, color: '#64748B', textAlign: 'center', marginTop: 2 },
-  operatingModeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  operatingModeLabel:{ fontSize: 11, color: '#64748B', fontWeight: '600' },
-  operatingModeValue:{ fontSize: 16, fontWeight: '900', color: '#0F172A', marginTop: 2 },
-  modeCloudBadge:   { width: 38, height: 38, borderRadius: 19, backgroundColor: '#F0F9FF', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#BAE6FD' },
-  cloudBadgeIcon:   { fontSize: 20 },
-  manualControlBtn: { backgroundColor: '#0F4C81', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  manualControlBtnText:{ color: '#FFF', fontSize: 15, fontWeight: '800' },
-  emergencyOpenBtn: { backgroundColor: '#EF4444', paddingVertical: 14, borderRadius: 12, alignItems: 'center', shadowColor: '#EF4444', shadowOpacity: 0.15, shadowRadius: 6, elevation: 2 },
-  emergencyOpenBtnText:{ color: '#FFF', fontSize: 15, fontWeight: '900' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0B132B',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderColor: '#1E293B',
+    backgroundColor: '#0B132B',
+  },
+  backBtn: {
+    padding: 6,
+  },
+  backIcon: {
+    fontSize: 20,
+    color: '#94A3B8',
+    fontWeight: 'bold',
+  },
+  headerTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  scroll: {
+    padding: 16,
+    gap: 16,
+  },
+  card: {
+    backgroundColor: '#1E293B',
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  sectionHeader: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
+  gateHeroRow: {
+    marginBottom: 16,
+  },
+  gateVal: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  gateStatusSub: {
+    fontSize: 13,
+    color: '#94A3B8',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  damVisualizer: {
+    height: 100,
+    backgroundColor: '#0F172A',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  levelsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  levelCard: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 2,
+  },
+  levelEmoji: {
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  levelTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  levelSub: {
+    fontSize: 10,
+    fontWeight: '800',
+    marginTop: 1,
+  },
+  levelNote: {
+    fontSize: 9,
+    color: '#94A3B8',
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 12,
+  },
+  applyBtn: {
+    backgroundColor: '#007AFF',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#007AFF',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  btnDisabled: {
+    opacity: 0.6,
+  },
+  applyBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
 });

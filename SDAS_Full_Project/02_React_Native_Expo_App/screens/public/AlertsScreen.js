@@ -1,170 +1,206 @@
-// SDAS — Public Alerts Screen
-// Shows alert history list with severity colours & 3-language translations
+// SDAS — Public Alert Status Screen
+// Matches Design Screen 4: 4 Operational Tiers (NORMAL, PRE-WARNING, WARNING, DANGER) with high-contrast status cards
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import {
-  View, Text, StyleSheet, FlatList,
-  RefreshControl, TouchableOpacity,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
-import { fetchAlerts, acknowledgeAlert } from '../../services/alerts';
-import { subscribeAlerts } from '../../services/realtime';
 import { useLanguage } from '../../services/i18n';
-import LanguageSelector from '../../components/LanguageSelector';
 
-const SEVERITY_COLORS = {
-  INFO:      '#27AE60',
-  WARNING:   '#F39C12',
-  CRITICAL:  '#E67E22',
-  EMERGENCY: '#E74C3C',
-};
-
-const SEVERITY_EMOJI = {
-  INFO:      '✅',
-  WARNING:   '⚠️',
-  CRITICAL:  '🚧',
-  EMERGENCY: '🚨',
-};
-
-export default function AlertsScreen() {
+export default function AlertsScreen({ navigation }) {
   const { t } = useLanguage();
-  const [alerts,     setAlerts]     = useState([]);
-  const [filter,     setFilter]     = useState('ALL');
-  const [loading,    setLoading]    = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const loadAlerts = useCallback(async () => {
-    try {
-      const data = await fetchAlerts(100);
-      setAlerts(data);
-    } catch (e) {
-      console.error('AlertsScreen error:', e);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadAlerts();
-    const channel = subscribeAlerts((newAlert) => {
-      setAlerts((prev) => [newAlert, ...prev]);
-    });
-    return () => channel.unsubscribe();
-  }, []);
-
-  const handleAck = async (id) => {
-    try {
-      await acknowledgeAlert(id);
-      setAlerts((prev) => prev.map((a) => a.id === id ? { ...a, acknowledged: true } : a));
-    } catch (e) { /* ignore */ }
-  };
-
-  const filteredAlerts = alerts.filter((a) => {
-    if (filter === 'ALL') return true;
-    if (filter === 'WARNINGS') return a.severity === 'WARNING' || a.severity === 'CRITICAL' || a.severity === 'EMERGENCY' || a.alert_type?.includes('DANGER') || a.alert_type?.includes('SURGE');
-    if (filter === 'INFO') return a.severity === 'INFO' || a.alert_type?.includes('NORMAL') || a.alert_type?.includes('SYSTEM');
-    return true;
-  });
-
-  const renderAlert = ({ item }) => {
-    if (!item) return null;
-    const severity = item.severity || 'INFO';
-    const color = SEVERITY_COLORS[severity] ?? '#7F8C8D';
-    const emoji = SEVERITY_EMOJI[severity]  ?? '📢';
-    const time  = item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live';
-    const alertType = item.alert_type ? String(item.alert_type).replace(/_/g, ' ') : severity;
-    const isDanger = severity === 'EMERGENCY' || String(item.alert_type || '').includes('DANGER');
-    const isWarn = severity === 'WARNING' || severity === 'CRITICAL';
-
-    return (
-      <View style={[styles.card, { borderLeftColor: color, backgroundColor: isDanger ? '#FEF2F2' : isWarn ? '#FFFBEB' : '#FFF' }]}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardEmoji}>{emoji}</Text>
-          <View style={styles.cardInfo}>
-            <Text style={[styles.cardType, { color }]}>{alertType}</Text>
-            <Text style={styles.cardTime}>{time}</Text>
-          </View>
-          <Text style={styles.cardBell}>{isDanger || isWarn ? '🔔' : 'ℹ️'}</Text>
-        </View>
-        <Text style={styles.cardMsg}>{item.message || 'Alert broadcast from monitoring node.'}</Text>
-        {item.water_level != null && !isNaN(item.water_level) && (
-          <Text style={styles.waterLevelText}>Water Level: {Number(item.water_level).toFixed(1)}%</Text>
-        )}
-      </View>
-    );
-  };
+  const TIERS = [
+    {
+      id: 'NORMAL',
+      title: 'NORMAL',
+      desc: 'Dam level is normal.\nNo action required.',
+      color: '#10B981',
+      bgGlow: 'rgba(16, 185, 129, 0.08)',
+      borderColor: 'rgba(16, 185, 129, 0.4)',
+      icon: '🛡️',
+      dotColor: '#10B981',
+    },
+    {
+      id: 'PRE_WARNING',
+      title: 'PRE-WARNING',
+      subHeader: '70% - 85% (Stable)',
+      desc: 'Water level rising.\nMonitoring in progress.',
+      color: '#F59E0B',
+      bgGlow: 'rgba(245, 158, 11, 0.08)',
+      borderColor: 'rgba(245, 158, 11, 0.4)',
+      icon: '👁️',
+      dotColor: '#F59E0B',
+    },
+    {
+      id: 'WARNING',
+      title: 'WARNING',
+      subHeader: '70% - 85% (Rapid Rise)',
+      desc: 'Controlled release mode.\nMove to safe area if required.',
+      color: '#F97316',
+      bgGlow: 'rgba(249, 115, 22, 0.08)',
+      borderColor: 'rgba(249, 115, 22, 0.4)',
+      icon: '📢',
+      dotColor: '#F97316',
+    },
+    {
+      id: 'DANGER',
+      title: 'DANGER',
+      subHeader: '> 85%',
+      desc: 'Gate opened 50%.\nMove to safe location and follow official instructions.',
+      color: '#EF4444',
+      bgGlow: 'rgba(239, 68, 68, 0.08)',
+      borderColor: 'rgba(239, 68, 68, 0.4)',
+      icon: '🚨',
+      dotColor: '#EF4444',
+    },
+  ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
+
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>🚨 Alerts & Warnings</Text>
-          <LanguageSelector compact={true} />
-        </View>
-        <Text style={styles.headerSub}>Real-Time Public Safety Broadcasts</Text>
+        <TouchableOpacity
+          onPress={() => navigation?.goBack && navigation.goBack()}
+          activeOpacity={0.7}
+          style={styles.backBtn}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>ALERT STATUS</Text>
+        <View style={{ width: 32 }} />
       </View>
 
-      {/* 3 Filter Chips from Screen 3 */}
-      <View style={styles.filterChipsRow}>
-        {[
-          { id: 'ALL',      label: 'All' },
-          { id: 'WARNINGS', label: 'Warnings' },
-          { id: 'INFO',     label: 'Info' },
-        ].map((f) => (
-          <TouchableOpacity
-            key={f.id}
-            style={[styles.chipBtn, filter === f.id && styles.chipBtnActive]}
-            onPress={() => setFilter(f.id)}
-            activeOpacity={0.8}
+      <ScrollView contentContainerStyle={styles.scroll}>
+        {TIERS.map((tier) => (
+          <View
+            key={tier.id}
+            style={[
+              styles.tierCard,
+              {
+                backgroundColor: '#1E293B',
+                borderColor: tier.borderColor,
+              },
+            ]}
           >
-            <Text style={[styles.chipText, filter === f.id && styles.chipTextActive]}>
-              {f.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <View style={styles.cardLeft}>
+              <View style={styles.titleRow}>
+                <View style={[styles.dot, { backgroundColor: tier.dotColor }]} />
+                <Text style={[styles.tierTitle, { color: tier.color }]}>{tier.title}</Text>
+              </View>
 
-      <FlatList
-        data={filteredAlerts}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderAlert}
-        contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadAlerts(); }} />}
-        ListEmptyComponent={
-          !loading && (
-            <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>🛡️</Text>
-              <Text style={styles.emptyText}>{t.noAlerts}</Text>
+              {tier.subHeader && (
+                <Text style={styles.subHeader}>{tier.subHeader}</Text>
+              )}
+
+              <Text style={styles.tierDesc}>{tier.desc}</Text>
             </View>
-          )
-        }
-      />
-    </View>
+
+            {/* Right Badge Icon */}
+            <View style={[styles.iconBadge, { borderColor: tier.borderColor, backgroundColor: tier.bgGlow }]}>
+              <Text style={styles.badgeEmoji}>{tier.icon}</Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: '#F8FAFC' },
-  header:       { backgroundColor: '#0F4C81', padding: 20, paddingTop: 48 },
-  headerTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle:  { fontSize: 20, fontWeight: '800', color: '#FFF' },
-  headerSub:    { color: '#90CAF9', fontSize: 12, marginTop: 4 },
-  filterChipsRow:{ flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, gap: 8, backgroundColor: '#FFF', borderBottomWidth: 1, borderColor: '#E2E8F0' },
-  chipBtn:      { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#F1F5F9' },
-  chipBtnActive:{ backgroundColor: '#10B981' },
-  chipText:     { fontSize: 12, fontWeight: '700', color: '#64748B' },
-  chipTextActive:{ color: '#FFF' },
-  list:         { padding: 16, paddingBottom: 40 },
-  card:         { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 12, borderLeftWidth: 5, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  cardHeader:   { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  cardEmoji:    { fontSize: 20, marginRight: 10 },
-  cardInfo:     { flex: 1 },
-  cardType:     { fontSize: 13, fontWeight: '800', textTransform: 'uppercase' },
-  cardTime:     { fontSize: 11, color: '#94A3B8', marginTop: 1 },
-  cardBell:     { fontSize: 16 },
-  cardMsg:      { fontSize: 13, color: '#334155', lineHeight: 18, marginBottom: 6 },
-  waterLevelText:{ fontSize: 11, fontWeight: '700', color: '#0F4C81' },
-  empty:        { alignItems: 'center', marginTop: 60 },
-  emptyEmoji:   { fontSize: 40, marginBottom: 10 },
-  emptyText:    { color: '#94A3B8', fontSize: 14, fontWeight: '600' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0B132B',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderColor: '#1E293B',
+  },
+  backBtn: {
+    padding: 6,
+  },
+  backIcon: {
+    fontSize: 20,
+    color: '#94A3B8',
+    fontWeight: 'bold',
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  scroll: {
+    padding: 16,
+    gap: 14,
+  },
+  tierCard: {
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardLeft: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  tierTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  subHeader: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#CBD5E1',
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  tierDesc: {
+    fontSize: 12,
+    color: '#94A3B8',
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  iconBadge: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeEmoji: {
+    fontSize: 22,
+  },
 });

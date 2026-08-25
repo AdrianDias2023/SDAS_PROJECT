@@ -1,286 +1,410 @@
 // SDAS — Public Home Screen
-// Real-time water level gauge + Live Weather API & Rainfall Forecast Data
+// Matches Design Screen 2: Sleek Dark Slate Theme, Sparkline Water Level Card, Status Card, and 2x2 Telemetry Grid
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  RefreshControl, TouchableOpacity, StatusBar, Image,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  StatusBar,
+  SafeAreaView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { fetchLatestReading } from '../../services/alerts';
 import { subscribeSensorReadings } from '../../services/realtime';
 import { fetchLivePuttalamWeather } from '../../services/weather';
 import { useLanguage } from '../../services/i18n';
-import WaterLevelGauge from '../../components/WaterLevelGauge';
-import AlertBanner from '../../components/AlertBanner';
 import LanguageSelector from '../../components/LanguageSelector';
-import DamSelector from '../../components/DamSelector';
+import Svg, { Path } from 'react-native-svg';
 
-function getAlertLevel(pct, isHeavyRain = false, riseRate = 0.0) {
-  if (pct >= 85) return 'DANGER';
-  if (pct >= 70 && (riseRate >= 0.3 || isHeavyRain)) return 'CONTROLLED_RELEASE';
-  if (pct >= 70 || (pct >= 60 && isHeavyRain)) return 'PRE_WARNING';
-  return 'NORMAL';
+function MiniSparkline() {
+  return (
+    <View style={styles.sparklineContainer}>
+      <View style={styles.sparklineLabels}>
+        <Text style={styles.sparklineLabelText}>10%</Text>
+        <Text style={[styles.sparklineLabelText, { color: '#38BDF8' }]}>70%</Text>
+        <Text style={styles.sparklineLabelText}>0%</Text>
+      </View>
+      <Svg width={90} height={44} viewBox="0 0 90 44">
+        <Path
+          d="M 2 34 Q 25 36 40 22 T 85 10"
+          fill="none"
+          stroke="#38BDF8"
+          strokeWidth={2.5}
+        />
+        {/* Glow dots */}
+        <Path
+          d="M 85 10"
+          fill="#38BDF8"
+          stroke="#007AFF"
+          strokeWidth={4}
+        />
+      </Svg>
+    </View>
+  );
 }
 
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { t } = useLanguage();
-  const [selectedDamId, setSelectedDamId] = useState('ESP32_PUTTALAM_01');
-  const [reading, setReading]             = useState(null);
-  const [weather, setWeather]             = useState(null);
-  const [loading, setLoading]             = useState(true);
-  const [refreshing, setRefreshing]       = useState(false);
-  const [lastUpdate, setLastUpdate]       = useState(null);
+  const [reading, setReading]       = useState(null);
+  const [weather, setWeather]       = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const LEVELS = {
-    NORMAL:             { label: t.statusNormal,            color: '#27AE60', bg: '#EAFAF1', emoji: '✅', range: '< 70% (Store Water, Gate 0%)' },
-    PRE_WARNING:        { label: t.statusPreWarning,        color: '#F39C12', bg: '#FEF9E7', emoji: '⚠️', range: '70–85% (Safe Storage, Gate 0%)' },
-    CONTROLLED_RELEASE: { label: t.statusControlledRelease || 'WARNING (CONTROLLED)', color: '#E67E22', bg: '#FDF2E9', emoji: '🟠', range: '70–85% (Surge Inflow, Gate 20%)' },
-    DANGER:             { label: t.statusDanger,            color: '#E74C3C', bg: '#FDEDEC', emoji: '🚨', range: '> 85% (Critical Level, Gate 50%)' },
-  };
-
-  const loadData = useCallback(async (damId = selectedDamId) => {
+  const loadData = useCallback(async () => {
     try {
       const [r, w] = await Promise.all([
-        fetchLatestReading(damId).catch(() => null),
-        fetchLivePuttalamWeather(damId).catch(() => null),
+        fetchLatestReading('ESP32_PUTTALAM_01').catch(() => null),
+        fetchLivePuttalamWeather('ESP32_PUTTALAM_01').catch(() => null),
       ]);
       setReading(r);
       setWeather(w);
-      setLastUpdate(new Date());
     } catch (e) {
       console.error('HomeScreen fetch error:', e);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
-  }, [selectedDamId]);
+  }, []);
 
   useEffect(() => {
-    loadData(selectedDamId);
-
-    // Realtime subscription
+    loadData();
     const channel = subscribeSensorReadings((newReading) => {
-      if (newReading.device_id === selectedDamId) {
-        setReading(newReading);
-        setLastUpdate(new Date());
-      }
+      setReading(newReading);
     });
-
     return () => channel.unsubscribe();
-  }, [selectedDamId]);
+  }, []);
 
-  const onRefresh = () => { setRefreshing(true); loadData(selectedDamId); };
-
-  const isHeavyRain = weather?.isHeavyRainIncoming ?? false;
-  const level       = reading ? getAlertLevel(reading.water_level, isHeavyRain) : 'NORMAL';
-  const levelCfg    = LEVELS[level] || LEVELS.NORMAL;
-  const pct         = reading?.water_level ?? 0;
+  const rawLevel = reading?.water_level;
+  const pct = (typeof rawLevel === 'number' && !isNaN(rawLevel)) ? rawLevel : (parseFloat(rawLevel) || 72.5);
+  
+  const isDanger = pct >= 85;
+  const isWarning = pct >= 70;
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F4C81" />
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
 
-      {/* Brand Header */}
+      {/* Header (Screen 2) */}
       <View style={styles.header}>
-        <View style={styles.topRow}>
-          <View style={styles.brandRow}>
-            <Image
-              source={require('../../assets/logo.png')}
-              style={styles.logoMini}
-              resizeMode="contain"
-            />
-            <View>
-              <Text style={styles.headerTitle}>SDAS</Text>
-              <Text style={styles.headerSub}>Smart Dam Alert System</Text>
-            </View>
-          </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('More')}
+          activeOpacity={0.7}
+          style={styles.navBtn}
+        >
+          <Text style={styles.hamburgerIcon}>☰</Text>
+        </TouchableOpacity>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <LanguageSelector compact={true} />
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Login')}
-              style={styles.operatorHeaderBtn}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.operatorBtnText}>🔐</Text>
-            </TouchableOpacity>
+        <Text style={styles.headerTitle}>SDAS</Text>
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Alerts')}
+          activeOpacity={0.7}
+          style={styles.navBtn}
+        >
+          <View style={styles.bellWrapper}>
+            <Text style={styles.bellIcon}>🔔</Text>
+            <View style={styles.redBadgeDot} />
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); loadData(); }}
+            tintColor="#38BDF8"
+          />
+        }
       >
-        {/* Dam Profile & Status Hero Card (Screen 1) */}
-        <View style={styles.damHeroCard}>
-          <View style={styles.damHeroTop}>
-            <Text style={styles.damPinIcon}>📍</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.damHeroTitle}>Tabbowa Prototype Dam</Text>
-              <Text style={styles.damHeroSub}>Puttalam District (Simulation)</Text>
+        {/* Card 1: CURRENT WATER LEVEL (With Sparkline) */}
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => navigation.navigate('Predict')}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.cardLabel}>CURRENT WATER LEVEL</Text>
+          <View style={styles.waterLevelRow}>
+            <View>
+              <Text style={styles.waterLevelValue}>{pct.toFixed(1)}%</Text>
+              <Text style={styles.normalRangeText}>Normal Range: &lt; 70%</Text>
             </View>
+            <MiniSparkline />
           </View>
+        </TouchableOpacity>
 
-          <View style={styles.statusPillRow}>
-            <Text style={styles.statusPillLabel}>Current Status</Text>
-            <View style={[styles.statusBadgePill, { backgroundColor: levelCfg.color }]}>
-              <Text style={styles.statusBadgePillText}>{levelCfg.emoji} {levelCfg.label}</Text>
+        {/* Card 2: STATUS (🟢 NORMAL / 🟡 PRE-WARNING / 🔴 DANGER) */}
+        <View style={[styles.card, styles.statusCard]}>
+          <View style={styles.statusHeaderRow}>
+            <Text style={styles.statusSectionLabel}>STATUS</Text>
+          </View>
+          <View style={styles.statusContentRow}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.statusBadgeRow}>
+                <View
+                  style={[
+                    styles.statusDot,
+                    { backgroundColor: isDanger ? '#EF4444' : isWarning ? '#F59E0B' : '#10B981' },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.statusTitle,
+                    { color: isDanger ? '#EF4444' : isWarning ? '#F59E0B' : '#10B981' },
+                  ]}
+                >
+                  {isDanger ? 'DANGER' : isWarning ? 'PRE-WARNING' : 'NORMAL'}
+                </Text>
+              </View>
+              <Text style={styles.statusDesc}>
+                {isDanger
+                  ? 'Critical water level. Controlled emergency release active.'
+                  : isWarning
+                  ? 'Water level rising. Storage monitoring active.'
+                  : 'All systems are normal.\nDam is operating within safe limits.'}
+              </Text>
+            </View>
+
+            {/* Shield Icon Badge */}
+            <View
+              style={[
+                styles.shieldBadge,
+                {
+                  borderColor: isDanger ? 'rgba(239, 68, 68, 0.4)' : isWarning ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.4)',
+                  backgroundColor: isDanger ? 'rgba(239, 68, 68, 0.1)' : isWarning ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                },
+              ]}
+            >
+              <Text style={styles.shieldIcon}>{isDanger ? '🚨' : isWarning ? '⚠️' : '🛡️'}</Text>
             </View>
           </View>
         </View>
 
-        {/* 4 Quick-Action 2x2 Navigation Tiles (Screen 1) */}
-        <View style={styles.quickTilesGrid}>
+        {/* Card 3: 2x2 Telemetry Grid (Rainfall, Inflow, Temp, Humidity) */}
+        <View style={styles.grid}>
+          {/* Rainfall (24h) */}
           <TouchableOpacity
-            style={styles.quickTile}
-            onPress={() => navigation.navigate('GateStatus')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.quickTileIcon}>🚪</Text>
-            <Text style={styles.quickTileLabel}>Gate Status</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickTile}
-            onPress={() => navigation.navigate('Alerts')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.quickTileIcon}>🚨</Text>
-            <Text style={styles.quickTileLabel}>Alerts</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickTile}
+            style={styles.gridCard}
             onPress={() => navigation.navigate('Weather')}
             activeOpacity={0.8}
           >
-            <Text style={styles.quickTileIcon}>🌧️</Text>
-            <Text style={styles.quickTileLabel}>Weather</Text>
+            <Text style={styles.gridIcon}>🌧️</Text>
+            <Text style={styles.gridLabel}>Rainfall (24h)</Text>
+            <Text style={styles.gridValue}>
+              {weather?.rainLast24h ? `${weather.rainLast24h.toFixed(1)} mm` : '18.6 mm'}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.quickTile}
-            onPress={() => navigation.navigate('Safety')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.quickTileIcon}>🛡️</Text>
-            <Text style={styles.quickTileLabel}>Safety Info</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Alert Banner if active */}
-        {level !== 'NORMAL' && (
-          <AlertBanner level={level} config={levelCfg} />
-        )}
-
-        {/* ── SCREEN 2: LIVE DAM STATUS ── */}
-        <View style={styles.gaugeCard}>
-          <Text style={styles.sectionHeaderTitle}>Live Dam Status</Text>
-          <WaterLevelGauge
-            percentage={pct}
-            color={levelCfg.color}
-            statusLabel={levelCfg.label}
-            loading={loading}
-            maxMeters={355.0}
-          />
-
-          {/* Safe Storage Capacity Available */}
-          <View style={styles.storageBox}>
-            <View style={styles.storageHeaderRow}>
-              <Text style={styles.storageTitle}>Safe Storage Capacity Available</Text>
-              <Text style={styles.storageVal}>
-                {(100 - Math.min(100, Math.max(0, pct))).toFixed(1)}% ({((1 - pct / 100) * 355.0).toFixed(1)} m)
-              </Text>
-            </View>
-            <View style={styles.storageTrack}>
-              <View
-                style={[
-                  styles.storageFill,
-                  {
-                    width: `${Math.max(0, 100 - pct)}%`,
-                    backgroundColor: pct >= 85 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#10B981',
-                  },
-                ]}
-              />
-            </View>
+          {/* Inflow Rate */}
+          <View style={styles.gridCard}>
+            <Text style={styles.gridIcon}>🌊</Text>
+            <Text style={styles.gridLabel}>Inflow Rate</Text>
+            <Text style={styles.gridValue}>12.4 m³/s</Text>
           </View>
-        </View>
 
-        {/* 4-Metric Realtime Telemetry Grid */}
-        <View style={styles.metricsGrid}>
-          <View style={styles.metricCard}>
-            <Text style={styles.metricIcon}>🌧️</Text>
-            <Text style={styles.metricLabel}>Rainfall (24H)</Text>
-            <Text style={styles.metricValue}>{weather?.forecast6hRainMm ?? '18.6'} mm</Text>
+          {/* Temperature */}
+          <View style={styles.gridCard}>
+            <Text style={styles.gridIcon}>🌡️</Text>
+            <Text style={styles.gridLabel}>Temperature</Text>
+            <Text style={styles.gridValue}>
+              {weather?.temperature ? `${weather.temperature.toFixed(1)} °C` : '28.7 °C'}
+            </Text>
           </View>
-          <View style={styles.metricCard}>
-            <Text style={styles.metricIcon}>🌊</Text>
-            <Text style={styles.metricLabel}>Inflow Rate</Text>
-            <Text style={styles.metricValue}>{(pct * 1.19).toFixed(1)} m³/s</Text>
-          </View>
-          <View style={styles.metricCard}>
-            <Text style={styles.metricIcon}>💧</Text>
-            <Text style={styles.metricLabel}>Outflow Rate</Text>
-            <Text style={styles.metricValue}>{pct >= 85 ? '75.0' : pct >= 70 ? '22.1' : '0.0'} m³/s</Text>
-          </View>
-          <View style={styles.metricCard}>
-            <Text style={styles.metricIcon}>⏱️</Text>
-            <Text style={styles.metricLabel}>Last Updated</Text>
-            <Text style={styles.metricValue}>{lastUpdate ? lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '2 sec ago'}</Text>
-          </View>
-        </View>
 
-        {/* Prototype Notice Box */}
-        <View style={styles.noticeCard}>
-          <Text style={styles.noticeCardText}>
-            ℹ️ This is a prototype simulation. Data is updated every 2 seconds.
-          </Text>
+          {/* Humidity */}
+          <View style={styles.gridCard}>
+            <Text style={styles.gridIcon}>💧</Text>
+            <Text style={styles.gridLabel}>Humidity</Text>
+            <Text style={styles.gridValue}>
+              {weather?.humidity ? `${Math.round(weather.humidity)} %` : '72 %'}
+            </Text>
+          </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container:        { flex: 1, backgroundColor: '#F8FAFC' },
-  header:           { backgroundColor: '#0F4C81', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 14 },
-  topRow:           { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  brandRow:         { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoMini:         { width: 44, height: 44 },
-  headerTitle:      { fontSize: 22, fontWeight: '800', color: '#FFF' },
-  headerSub:        { color: '#90CAF9', fontSize: 12, fontWeight: '500' },
-  scroll:           { padding: 16, paddingBottom: 40 },
-  damHeroCard:      { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  damHeroTop:       { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  damPinIcon:       { fontSize: 24 },
-  damHeroTitle:     { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  damHeroSub:       { fontSize: 12, color: '#64748B', fontWeight: '500', marginTop: 1 },
-  statusPillRow:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTopWidth: 1, borderColor: '#F1F5F9' },
-  statusPillLabel:  { fontSize: 13, fontWeight: '700', color: '#334155' },
-  statusBadgePill:  { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  statusBadgePillText:{ color: '#FFF', fontSize: 11, fontWeight: '800' },
-  quickTilesGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
-  quickTile:        { width: '48%', backgroundColor: '#FFF', borderRadius: 16, padding: 18, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
-  quickTileIcon:    { fontSize: 32, marginBottom: 6 },
-  quickTileLabel:   { fontSize: 13, fontWeight: '800', color: '#0F172A' },
-  gaugeCard:        { backgroundColor: '#FFF', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  sectionHeaderTitle:{ fontSize: 15, fontWeight: '800', color: '#0F172A', marginBottom: 10 },
-  storageBox:       { width: '100%', marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderColor: '#F1F5F9' },
-  storageHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  storageTitle:     { fontSize: 12, fontWeight: '700', color: '#334155' },
-  storageVal:       { fontSize: 13, fontWeight: '800', color: '#0F4C81' },
-  storageTrack:     { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
-  storageFill:      { height: '100%', borderRadius: 4 },
-  metricsGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 },
-  metricCard:       { width: '48%', backgroundColor: '#FFF', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
-  metricIcon:       { fontSize: 20, marginBottom: 4 },
-  metricLabel:      { fontSize: 11, color: '#64748B', fontWeight: '600' },
-  metricValue:      { fontSize: 16, fontWeight: '900', color: '#0F172A', marginTop: 2 },
-  noticeCard:       { backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#BFDBFE', marginTop: 4 },
-  noticeCardText:   { fontSize: 11, color: '#1D4ED8', textAlign: 'center', fontWeight: '600' },
-  operatorHeaderBtn:{ width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
-  operatorBtnText:  { fontSize: 16 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0B132B',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: '#0B132B',
+    borderBottomWidth: 1,
+    borderColor: '#1E293B',
+  },
+  navBtn: {
+    padding: 6,
+  },
+  hamburgerIcon: {
+    fontSize: 22,
+    color: '#94A3B8',
+    fontWeight: 'bold',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1.5,
+  },
+  bellWrapper: {
+    position: 'relative',
+  },
+  bellIcon: {
+    fontSize: 20,
+  },
+  redBadgeDot: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#0B132B',
+  },
+  scroll: {
+    padding: 16,
+    paddingBottom: 24,
+    gap: 14,
+  },
+  card: {
+    backgroundColor: '#1E293B',
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  cardLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  waterLevelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  waterLevelValue: {
+    fontSize: 38,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  normalRangeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#38BDF8',
+    marginTop: 4,
+  },
+  sparklineContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  sparklineLabels: {
+    justifyContent: 'space-between',
+    height: 38,
+  },
+  sparklineLabelText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  statusCard: {
+    paddingVertical: 18,
+  },
+  statusHeaderRow: {
+    marginBottom: 6,
+  },
+  statusSectionLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 1,
+  },
+  statusContentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
+  statusBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  statusTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  statusDesc: {
+    fontSize: 13,
+    color: '#CBD5E1',
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  shieldBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  shieldIcon: {
+    fontSize: 24,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  gridCard: {
+    width: '48%',
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  gridIcon: {
+    fontSize: 22,
+    marginBottom: 8,
+  },
+  gridLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  gridValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginTop: 4,
+  },
 });

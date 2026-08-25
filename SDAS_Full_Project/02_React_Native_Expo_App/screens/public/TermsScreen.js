@@ -1,10 +1,16 @@
-// SDAS — Terms & Conditions and Privacy Policy Onboarding Screen
-// Professional, first-launch agreement panel with 3-language switcher
+// SDAS — Welcome & Onboarding Landing Screen
+// Matches Design Screen 1: Shield Logo, Modern Dark Slate Backdrop, "Get Started" & "I'm an Operator" buttons
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Image, StatusBar,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  StatusBar,
+  SafeAreaView,
+  ImageBackground,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../../services/i18n';
@@ -14,7 +20,6 @@ export const TERMS_STORAGE_KEY = '@sdas_terms_accepted';
 
 export default function TermsScreen({ onAccept }) {
   const { t } = useLanguage();
-  const [agreed, setAgreed] = useState(false);
 
   const handleProceed = async (targetRole = 'public') => {
     try {
@@ -26,119 +31,159 @@ export default function TermsScreen({ onAccept }) {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F4C81" />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
 
-      {/* Header with Emblem */}
-      <View style={styles.header}>
-        <View style={styles.topRow}>
+      {/* Top Bar with Language Selector */}
+      <View style={styles.topBar}>
+        <View />
+        <LanguageSelector compact={true} />
+      </View>
+
+      {/* Center Hero Content */}
+      <View style={styles.heroContent}>
+        {/* Shield Water Logo */}
+        <View style={styles.logoContainer}>
           <Image
             source={require('../../assets/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>{t.appName}</Text>
-            <Text style={styles.headerSub}>{t.appFullName}</Text>
-          </View>
         </View>
 
-        <View style={styles.langBar}>
-          <LanguageSelector compact={true} />
-        </View>
+        {/* Brand Title & Subtitle */}
+        <Text style={styles.title}>SDAS</Text>
+        <Text style={styles.subtitle}>SMART DAM ALERT SYSTEM</Text>
+
+        {/* Tagline */}
+        <Text style={styles.tagline}>
+          Early Warning. Smart Decisions.{'\n'}Safer Communities.
+        </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.sectionTitle}>⚖️ {t.termsTitle}</Text>
-        <Text style={styles.sectionSubtitle}>{t.termsSubtitle}</Text>
-
-        {/* Card 1: Purpose */}
-        <View style={styles.policyCard}>
-          <Text style={styles.policyTitle}>🎯 {t.termsP1Title}</Text>
-          <Text style={styles.policyDesc}>{t.termsP1Desc}</Text>
-        </View>
-
-        {/* Card 2: Alert Disclaimer */}
-        <View style={styles.policyCard}>
-          <Text style={styles.policyTitle}>⚠️ {t.termsP2Title}</Text>
-          <Text style={styles.policyDesc}>{t.termsP2Desc}</Text>
-        </View>
-
-        {/* Card 3: Privacy & Data Usage */}
-        <View style={styles.policyCard}>
-          <Text style={styles.policyTitle}>🛡️ {t.termsP3Title}</Text>
-          <Text style={styles.policyDesc}>{t.termsP3Desc}</Text>
-        </View>
-
-        {/* Card 4: Operator Accountability */}
-        <View style={styles.policyCard}>
-          <Text style={styles.policyTitle}>🔑 {t.termsP4Title}</Text>
-          <Text style={styles.policyDesc}>{t.termsP4Desc}</Text>
-        </View>
-
-        {/* Card 5: Academic Notice */}
-        <View style={styles.policyCard}>
-          <Text style={styles.policyTitle}>🏛️ {t.termsP5Title}</Text>
-          <Text style={styles.policyDesc}>{t.termsP5Desc}</Text>
-        </View>
-
-        {/* Agreement Checkbox */}
+      {/* Bottom Action Buttons */}
+      <View style={styles.actionSection}>
         <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setAgreed(!agreed)}
-          activeOpacity={0.8}
-        >
-          <View style={[styles.checkbox, agreed && styles.checkboxActive]}>
-            {agreed && <Text style={styles.checkmark}>✓</Text>}
-          </View>
-          <Text style={styles.checkboxLabel}>{t.agreeCheckbox}</Text>
-        </TouchableOpacity>
-
-        {/* Action Buttons */}
-        <TouchableOpacity
-          style={[styles.primaryBtn, !agreed && styles.btnDisabled]}
+          style={styles.getStartedBtn}
           onPress={() => handleProceed('public')}
-          disabled={!agreed}
           activeOpacity={0.85}
         >
-          <Text style={styles.primaryBtnText}>💧 {t.viewAsPublic}</Text>
+          <Text style={styles.getStartedBtnText}>Get Started</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.secondaryBtn, !agreed && styles.btnDisabled]}
+          style={styles.operatorBtn}
           onPress={() => handleProceed('operator')}
-          disabled={!agreed}
           activeOpacity={0.85}
         >
-          <Text style={styles.secondaryBtnText}>🔐 {t.loginAsOperator}</Text>
+          <Text style={styles.operatorBtnText}>I'm an Operator</Text>
         </TouchableOpacity>
-      </ScrollView>
-    </View>
+
+        <Text style={styles.footerNote}>
+          Prototype Flood Early Warning Portal • Puttalam District
+        </Text>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: '#F8FAFC' },
-  header:         { backgroundColor: '#0F4C81', paddingHorizontal: 20, paddingTop: 48, paddingBottom: 16 },
-  topRow:         { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  logo:           { width: 50, height: 50 },
-  headerTitle:    { fontSize: 22, fontWeight: '800', color: '#FFF' },
-  headerSub:      { color: '#90CAF9', fontSize: 12, fontWeight: '500' },
-  langBar:        { marginTop: 12, alignItems: 'flex-start' },
-  scroll:         { padding: 20, paddingBottom: 40 },
-  sectionTitle:   { fontSize: 18, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
-  sectionSubtitle:{ fontSize: 12, color: '#64748B', lineHeight: 18, marginBottom: 16 },
-  policyCard:     { backgroundColor: '#FFF', borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 2 },
-  policyTitle:    { fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 6 },
-  policyDesc:     { fontSize: 11, color: '#475569', lineHeight: 17 },
-  checkboxRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 14, backgroundColor: '#EFF6FF', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#BFDBFE' },
-  checkbox:       { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#3B82F6', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF' },
-  checkboxActive: { backgroundColor: '#0284C7', borderColor: '#0284C7' },
-  checkmark:      { color: '#FFF', fontSize: 13, fontWeight: 'bold' },
-  checkboxLabel:  { fontSize: 11, color: '#1E40AF', flex: 1, fontWeight: '600', lineHeight: 16 },
-  primaryBtn:     { backgroundColor: '#0F4C81', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginBottom: 10 },
-  primaryBtnText: { color: '#FFF', fontWeight: '800', fontSize: 13 },
-  secondaryBtn:   { backgroundColor: '#FFF', borderRadius: 12, paddingVertical: 13, alignItems: 'center', borderWidth: 1.5, borderColor: '#0F4C81' },
-  secondaryBtnText:{ color: '#0F4C81', fontWeight: '800', fontSize: 13 },
-  btnDisabled:    { opacity: 0.4 },
+  container: {
+    flex: 1,
+    backgroundColor: '#0B132B',
+    justifyContent: 'space-between',
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  heroContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  logoContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(30, 41, 59, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 1.5,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+    shadowColor: '#38BDF8',
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+  },
+  title: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 1.5,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  tagline: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#CBD5E1',
+    textAlign: 'center',
+    lineHeight: 22,
+    maxWidth: 280,
+  },
+  actionSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    gap: 12,
+  },
+  getStartedBtn: {
+    backgroundColor: '#007AFF',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#007AFF',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  getStartedBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  operatorBtn: {
+    backgroundColor: '#1E293B',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#334155',
+  },
+  operatorBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  footerNote: {
+    color: '#64748B',
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 6,
+  },
 });

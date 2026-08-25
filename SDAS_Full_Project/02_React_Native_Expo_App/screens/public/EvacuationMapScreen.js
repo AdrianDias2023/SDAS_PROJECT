@@ -1,211 +1,247 @@
-// SDAS — Public Evacuation Map & Safe Zones Screen
-// Displays interactive map showing Dam Location, High-Ground Safe Zones, and Emergency Routes (Prototype Simulation)
+// SDAS — Live Map & Safety Zones Screen
+// Matches Design Screen 5: Full Inundation Contour Map Visualizer, Zoom Controls, and 4-Tier Safety Legend
 
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Linking, Alert,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
-import { useLanguage } from '../../services/i18n';
-import LanguageSelector from '../../components/LanguageSelector';
-import DamSelector from '../../components/DamSelector';const DAM_REGIONS = {
-  ESP32_PUTTALAM_01: {
-    dam: {
-      name: 'Tabbowa Prototype Dam',
-      lat: 8.0362,
-      lng: 79.8283,
-      elevation: '12m MSL',
-      district: 'Puttalam District',
-    },
-    safeZones: [
-      {
-        id: 'sz-p1',
-        name: 'Puttalam Town High Ground',
-        distance: '4.2 km',
-        elevation: 'Elevation: 46 m',
-        lat: 8.0380,
-        lng: 79.8320,
-      },
-      {
-        id: 'sz-p2',
-        name: 'Nattandiya School Ground',
-        distance: '6.7 km',
-        elevation: 'Elevation: 41 m',
-        lat: 7.9120,
-        lng: 80.0150,
-      },
-      {
-        id: 'sz-p3',
-        name: 'St. Anne\'s Church Area',
-        distance: '7.9 km',
-        elevation: 'Elevation: 52 m',
-        lat: 8.0290,
-        lng: 79.8250,
-      },
-    ],
-  },
-};
+import Svg, { Path, Circle, Rect, G, Defs, RadialGradient, Stop } from 'react-native-svg';
 
-export default function EvacuationMapScreen() {
-  const { lang, t } = useLanguage();
-  const [selectedDamId, setSelectedDamId] = useState('ESP32_PUTTALAM_01');
-
-  const region = DAM_REGIONS[selectedDamId] || DAM_REGIONS.ESP32_PUTTALAM_01;
-  const currentDam = region.dam;
-  const safeZones = region.safeZones;
-
-  const openInMaps = (lat, lng, label) => {
-    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-    Linking.openURL(url).catch(() => {
-      Alert.alert('Error', 'Unable to open Google Maps navigation.');
-    });
-  };
-
-  const callHotline = (phone) => {
-    Linking.openURL(`tel:${phone}`).catch(() => {
-      Alert.alert('Error', `Could not initiate call to ${phone}`);
-    });
-  };
+export default function EvacuationMapScreen({ navigation }) {
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
+
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>🗺️ Evacuation & Safety</Text>
-          <LanguageSelector compact={true} />
-        </View>
-        <Text style={styles.headerSub}>{currentDam.district} Disaster Response Corridor</Text>
+        <TouchableOpacity
+          onPress={() => navigation?.goBack && navigation.goBack()}
+          activeOpacity={0.7}
+          style={styles.backBtn}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>LIVE MAP & SAFETY ZONES</Text>
+        <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Prototype Map Container */}
-        <View style={styles.mapCard}>
-          <View style={styles.mapHeaderRow}>
-            <Text style={styles.mapTitle}>Evacuation Zones (Prototype)</Text>
-            <View style={styles.liveGpsBadge}>
-              <Text style={styles.liveGpsText}>📍 GPS ACTIVE</Text>
-            </View>
-          </View>
+      {/* Map Graphic Canvas */}
+      <View style={styles.mapContainer}>
+        <Svg width="100%" height="100%" viewBox="0 0 360 460">
+          <Defs>
+            <RadialGradient id="dangerGlow" cx="50%" cy="50%" r="50%">
+              <Stop offset="0%" stopColor="#EF4444" stopOpacity="0.85" />
+              <Stop offset="40%" stopColor="#F97316" stopOpacity="0.75" />
+              <Stop offset="70%" stopColor="#F59E0B" stopOpacity="0.6" />
+              <Stop offset="100%" stopColor="#10B981" stopOpacity="0.2" />
+            </RadialGradient>
+          </Defs>
 
-          {/* Graphical Map Representation */}
-          <View style={styles.mapGraphic}>
-            <View style={styles.damPin}>
-              <Text style={styles.pinIcon}>💧</Text>
-              <Text style={styles.pinDamText}>Tabbowa Dam</Text>
-            </View>
-            <View style={[styles.shelterPin, { top: 20, left: 30 }]}>
-              <Text style={styles.pinIcon}>🟢</Text>
-              <Text style={styles.pinText}>Zone 1</Text>
-            </View>
-            <View style={[styles.shelterPin, { bottom: 25, left: 80 }]}>
-              <Text style={styles.pinIcon}>🟢</Text>
-              <Text style={styles.pinText}>Zone 2</Text>
-            </View>
-            <View style={[styles.shelterPin, { top: 30, right: 35 }]}>
-              <Text style={styles.pinIcon}>🟢</Text>
-              <Text style={styles.pinText}>Zone 3</Text>
-            </View>
-          </View>
+          {/* Topography Base Map */}
+          <Rect x="0" y="0" width="360" height="460" fill="#2D4A3E" />
 
-          {/* Map Legend (Screen 7) */}
-          <View style={styles.legendRow}>
-            <View style={styles.legendItem}>
-              <Text style={styles.legendIcon}>💧</Text>
-              <Text style={styles.legendText}>Dam Location</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <Text style={styles.legendIcon}>🟢</Text>
-              <Text style={styles.legendText}>Safe Locations</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <Text style={styles.legendIcon}>🔴</Text>
-              <Text style={styles.legendText}>High Risk Areas</Text>
-            </View>
-          </View>
-        </View>
+          {/* River Stream */}
+          <Path
+            d="M 170 0 C 180 80, 160 140, 180 230 S 140 340, 160 460"
+            fill="none"
+            stroke="#0284C7"
+            strokeWidth="28"
+          />
 
-        {/* Nearest Safe Locations List */}
-        <Text style={styles.sectionHeading}>Nearest Safe Locations</Text>
-        
-        {safeZones.map((zone, index) => (
+          {/* Secondary Streams */}
+          <Path
+            d="M 0 120 Q 120 160 175 200"
+            fill="none"
+            stroke="#38BDF8"
+            strokeWidth="8"
+          />
+          <Path
+            d="M 360 280 Q 240 260 165 240"
+            fill="none"
+            stroke="#38BDF8"
+            strokeWidth="8"
+          />
+
+          {/* Inundation Risk Contour Cones */}
+          {/* 1. Safe Zone (Green) */}
+          <Path
+            d="M 180 230 L 100 120 A 120 120 0 0 1 260 120 Z"
+            fill="#10B981"
+            fillOpacity="0.45"
+          />
+          {/* 2. Caution Zone (Yellow) */}
+          <Path
+            d="M 180 230 L 120 150 A 80 80 0 0 1 240 150 Z"
+            fill="#F59E0B"
+            fillOpacity="0.6"
+          />
+          {/* 3. Warning Zone (Orange) */}
+          <Path
+            d="M 180 230 L 140 180 A 50 50 0 0 1 220 180 Z"
+            fill="#F97316"
+            fillOpacity="0.75"
+          />
+          {/* 4. Danger Zone (Red) */}
+          <Path
+            d="M 180 230 L 155 205 A 30 30 0 0 1 205 205 Z"
+            fill="#EF4444"
+            fillOpacity="0.9"
+          />
+
+          {/* Dam Marker Icon */}
+          <Circle cx="180" cy="230" r="14" fill="#007AFF" stroke="#FFFFFF" strokeWidth="3" />
+          <Circle cx="180" cy="230" r="4" fill="#FFFFFF" />
+        </Svg>
+
+        {/* Floating Map Controls (+, -, Location) */}
+        <View style={styles.floatingControls}>
           <TouchableOpacity
-            key={zone.id}
-            style={styles.zoneCard}
-            onPress={() => openInMaps(zone.lat, zone.lng, zone.name)}
+            style={styles.controlBtn}
+            onPress={() => setZoomLevel((z) => Math.min(3, z + 0.2))}
             activeOpacity={0.8}
           >
-            <View style={styles.zoneNumCircle}>
-              <Text style={styles.zoneNumText}>{index + 1}</Text>
-            </View>
-            <View style={styles.zoneInfoCol}>
-              <Text style={styles.zoneName}>{lang === 'si' ? zone.nameSi : lang === 'ta' ? zone.nameTa : zone.name}</Text>
-              <Text style={styles.zoneSub}>
-                Distance: <Text style={styles.zoneBold}>{zone.distance}</Text> • Elevation: <Text style={styles.zoneBold}>{zone.elevation.split(' ')[0]}</Text>
-              </Text>
-            </View>
-            <Text style={styles.zoneChevron}>›</Text>
+            <Text style={styles.controlBtnText}>+</Text>
           </TouchableOpacity>
-        ))}
+          <View style={styles.controlDivider} />
+          <TouchableOpacity
+            style={styles.controlBtn}
+            onPress={() => setZoomLevel((z) => Math.max(0.6, z - 0.2))}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.controlBtnText}>−</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.controlBtn, { marginTop: 12 }]}
+            onPress={() => alert('Centered to current GPS location.')}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 16 }}>🎯</Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* DMC Emergency Hotline 117 Card */}
-        <TouchableOpacity
-          style={styles.hotlineCard}
-          onPress={() => callHotline('117')}
-          activeOpacity={0.8}
-        >
-          <View style={styles.hotlineLeft}>
-            <Text style={styles.hotlineEmoji}>🚨</Text>
-            <View>
-              <Text style={styles.hotlineTitle}>DMC Hotline</Text>
-              <Text style={styles.hotlineNumber}>117</Text>
-            </View>
+        {/* Floating Bottom Legend Card */}
+        <View style={styles.legendCard}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
+            <Text style={styles.legendText}>Safe Zone</Text>
           </View>
-          <View style={styles.phoneCircle}>
-            <Text style={styles.phoneIcon}>📞</Text>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
+            <Text style={styles.legendText}>Caution Zone</Text>
           </View>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#F97316' }]} />
+            <Text style={styles.legendText}>Warning Zone</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+            <Text style={styles.legendText}>Danger Zone</Text>
+          </View>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container:      { flex: 1, backgroundColor: '#F8FAFC' },
-  header:         { backgroundColor: '#0F4C81', padding: 20, paddingTop: 48 },
-  headerTop:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerTitle:    { fontSize: 20, fontWeight: '800', color: '#FFF' },
-  headerSub:      { color: '#90CAF9', fontSize: 12, marginTop: 4 },
-  scroll:         { padding: 16, paddingBottom: 40 },
-  mapCard:        { backgroundColor: '#FFF', borderRadius: 16, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  mapHeaderRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  mapTitle:       { fontSize: 13, fontWeight: '800', color: '#0F172A' },
-  liveGpsBadge:   { backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  liveGpsText:    { fontSize: 9, fontWeight: '800', color: '#166534' },
-  mapGraphic:     { height: 160, backgroundColor: '#E0F2FE', borderRadius: 12, position: 'relative', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#BAE6FD' },
-  damPin:         { alignItems: 'center', backgroundColor: '#FFF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.1, elevation: 3 },
-  pinIcon:        { fontSize: 16 },
-  pinDamText:     { fontSize: 10, fontWeight: '800', color: '#0284C7' },
-  shelterPin:     { position: 'absolute', alignItems: 'center' },
-  pinText:        { fontSize: 9, fontWeight: '700', color: '#166534' },
-  legendRow:      { flexDirection: 'row', justifyContent: 'space-around', marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderColor: '#F1F5F9' },
-  legendItem:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  legendIcon:     { fontSize: 12 },
-  legendText:     { fontSize: 10, fontWeight: '700', color: '#475569' },
-  sectionHeading: { fontSize: 14, fontWeight: '800', color: '#0F172A', marginBottom: 10 },
-  zoneCard:       { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 4, elevation: 1 },
-  zoneNumCircle:  { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  zoneNumText:    { fontSize: 13, fontWeight: '800', color: '#0F4C81' },
-  zoneInfoCol:    { flex: 1 },
-  zoneName:       { fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 2 },
-  zoneSub:        { fontSize: 11, color: '#64748B' },
-  zoneBold:       { fontWeight: '700', color: '#334155' },
-  zoneChevron:    { fontSize: 20, color: '#94A3B8', fontWeight: 'bold', marginLeft: 8 },
-  hotlineCard:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginTop: 10, borderWidth: 1.5, borderColor: '#FCA5A5', shadowColor: '#EF4444', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
-  hotlineLeft:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  hotlineEmoji:   { fontSize: 26 },
-  hotlineTitle:   { fontSize: 11, color: '#64748B', fontWeight: '700' },
-  hotlineNumber:  { fontSize: 22, fontWeight: '900', color: '#DC2626' },
-  phoneCircle:    { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
-  phoneIcon:      { fontSize: 20 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0B132B',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderColor: '#1E293B',
+    backgroundColor: '#0B132B',
+  },
+  backBtn: {
+    padding: 6,
+  },
+  backIcon: {
+    fontSize: 20,
+    color: '#94A3B8',
+    fontWeight: 'bold',
+  },
+  headerTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  mapContainer: {
+    flex: 1,
+    position: 'relative',
+    backgroundColor: '#2D4A3E',
+  },
+  floatingControls: {
+    position: 'absolute',
+    right: 16,
+    bottom: 120,
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  controlBtn: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+  },
+  controlBtnText: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: 'bold',
+  },
+  controlDivider: {
+    height: 1,
+    backgroundColor: '#334155',
+  },
+  legendCard: {
+    position: 'absolute',
+    left: 16,
+    bottom: 20,
+    backgroundColor: 'rgba(30, 41, 59, 0.92)',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
 });
