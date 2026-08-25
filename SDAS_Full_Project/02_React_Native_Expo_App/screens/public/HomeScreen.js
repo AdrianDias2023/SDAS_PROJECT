@@ -127,70 +127,59 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Card 1: CURRENT WATER LEVEL (With Sparkline) */}
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => navigation.navigate('Predict')}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.cardLabel}>CURRENT WATER LEVEL</Text>
-          <View style={styles.waterLevelRow}>
-            <View>
-              <Text style={styles.waterLevelValue}>{pct.toFixed(1)}%</Text>
-              <Text style={styles.normalRangeText}>Normal Range: &lt; 70% • Storage: {storageAvailable}%</Text>
-            </View>
-            <MiniSparkline />
-          </View>
-        </TouchableOpacity>
+        {/* Dam Header Info */}
+        <View style={styles.damHeaderBox}>
+          <Text style={styles.damNameText}>Tabbowa Prototype Dam</Text>
+          <Text style={styles.damSubText}>Real-time Public Safety Portal</Text>
+        </View>
 
-        {/* Card 2: STATUS (Aligned strictly to 4-tier matrix) */}
-        <View style={[styles.card, styles.statusCard]}>
-          <View style={styles.statusHeaderRow}>
-            <Text style={styles.statusSectionLabel}>STATUS</Text>
+        {/* Hero Card: Dam Status Ring & Water Level */}
+        <View style={[styles.card, styles.heroRingCard]}>
+          <Text style={styles.cardLabel}>CURRENT DAM STATUS</Text>
+
+          {/* Large Circular Status Indicator */}
+          <View style={styles.statusRingWrapper}>
+            <View style={[styles.statusOuterRing, { borderColor: statusColor }]}>
+              <View style={[styles.statusInnerRing, { backgroundColor: `${statusColor}15` }]}>
+                <Text style={styles.statusEmojiRing}>{statusEmoji}</Text>
+                <Text style={[styles.statusLevelText, { color: '#FFFFFF' }]}>{pct.toFixed(1)}%</Text>
+                <Text style={[styles.statusBadgeText, { color: statusColor }]}>{statusLabel}</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.statusContentRow}>
-            <View style={{ flex: 1 }}>
-              <View style={styles.statusBadgeRow}>
-                <View
-                  style={[
-                    styles.statusDot,
-                    { backgroundColor: statusColor },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.statusTitle,
-                    { color: statusColor },
-                  ]}
-                >
-                  {statusLabel}
+
+          {/* Sluice Gate & Storage Preservation Bar */}
+          <View style={styles.preservationContainer}>
+            <View style={styles.metricRow}>
+              <Text style={styles.metricRowLabel}>Storage Available</Text>
+              <Text style={[styles.metricRowValue, { color: '#38BDF8' }]}>{storageAvailable}% Capacity</Text>
+            </View>
+            
+            {/* Storage Progress Bar */}
+            <View style={styles.progressBarTrack}>
+              <View style={[styles.progressBarFill, { width: `${Math.min(100, Math.max(0, storageAvailable))}%` }]} />
+            </View>
+
+            <View style={styles.gateStatusRow}>
+              <View style={styles.gateLeft}>
+                <Text style={styles.gateIcon}>🚪</Text>
+                <Text style={styles.gateLabel}>Spillway Gate Status:</Text>
+              </View>
+              <View style={styles.gateBadge}>
+                <Text style={styles.gateBadgeText}>
+                  {pct >= 85 ? '50% EMERGENCY RELEASE' : pct >= 70 ? '0% CLOSED (MONITORING)' : '0% CLOSED (NORMAL)'}
                 </Text>
               </View>
-              <Text style={styles.statusDesc}>
-                {isDanger
-                  ? 'Critical water level (>85%). Controlled emergency release (50%) active.'
-                  : isWarning
-                  ? 'Water level rising (70–85%). Gate 0% CLOSED. Monitoring in progress.'
-                  : 'All systems are normal (<70%). Gate 0% CLOSED. Operating within safe limits.'}
-              </Text>
             </View>
 
-            {/* Shield Icon Badge */}
-            <View
-              style={[
-                styles.shieldBadge,
-                {
-                  borderColor: isDanger ? 'rgba(239, 68, 68, 0.4)' : isWarning ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.4)',
-                  backgroundColor: isDanger ? 'rgba(239, 68, 68, 0.1)' : isWarning ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                },
-              ]}
-            >
-              <Text style={styles.shieldIcon}>{isDanger ? '🚨' : isWarning ? '👁️' : '🛡️'}</Text>
+            <View style={styles.updateTimeRow}>
+              <Text style={styles.updateTimeDot}>●</Text>
+              <Text style={styles.updateTimeText}>Live Telemetry • Updated 10 seconds ago</Text>
             </View>
           </View>
         </View>
 
-        {/* Card 3: 2x2 Telemetry Grid (Rainfall, Inflow, Temp, Humidity) */}
+        {/* Card 2: Environmental & Rainfall Telemetry */}
         <View style={styles.grid}>
           {/* Rainfall (24h) */}
           <TouchableOpacity
@@ -229,6 +218,25 @@ export default function HomeScreen() {
               {weather?.humidity ? `${Math.round(weather.humidity)} %` : '72 %'}
             </Text>
           </View>
+        </View>
+
+        {/* Quick Safety Navigation Buttons */}
+        <View style={styles.actionBtnRow}>
+          <TouchableOpacity
+            style={styles.primaryActionBtn}
+            onPress={() => navigation.navigate('Map')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.primaryActionBtnText}>🗺️ View Safety Map</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryActionBtn}
+            onPress={() => navigation.navigate('Alerts')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.secondaryActionBtnText}>🚨 Recent Alerts</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -384,6 +392,184 @@ const styles = StyleSheet.create({
   },
   shieldIcon: {
     fontSize: 24,
+  },
+  damHeaderBox: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  damNameText: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  damSubText: {
+    fontSize: 12,
+    color: '#38BDF8',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  heroRingCard: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  statusRingWrapper: {
+    marginVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusOuterRing: {
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    borderWidth: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  statusInnerRing: {
+    width: 146,
+    height: 146,
+    borderRadius: 73,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusEmojiRing: {
+    fontSize: 26,
+    marginBottom: 2,
+  },
+  statusLevelText: {
+    fontSize: 34,
+    fontWeight: '900',
+    letterSpacing: -1,
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    marginTop: 2,
+  },
+  preservationContainer: {
+    width: '100%',
+    marginTop: 8,
+    gap: 10,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  metricRowLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#CBD5E1',
+  },
+  metricRowValue: {
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  progressBarTrack: {
+    width: '100%',
+    height: 10,
+    backgroundColor: '#0F172A',
+    borderRadius: 5,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#38BDF8',
+    borderRadius: 4,
+  },
+  gateStatusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  gateLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  gateIcon: {
+    fontSize: 16,
+  },
+  gateLabel: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  gateBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: '#1E293B',
+    borderRadius: 6,
+  },
+  gateBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#38BDF8',
+  },
+  updateTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  updateTimeDot: {
+    fontSize: 8,
+    color: '#10B981',
+  },
+  updateTimeText: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  actionBtnRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 4,
+  },
+  primaryActionBtn: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    shadowColor: '#007AFF',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  primaryActionBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  secondaryActionBtn: {
+    flex: 1,
+    backgroundColor: '#1E293B',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  secondaryActionBtnText: {
+    color: '#CBD5E1',
+    fontSize: 14,
+    fontWeight: '800',
   },
   grid: {
     flexDirection: 'row',

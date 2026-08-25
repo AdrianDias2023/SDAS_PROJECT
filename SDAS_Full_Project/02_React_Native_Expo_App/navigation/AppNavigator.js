@@ -61,14 +61,14 @@ function PublicTabs() {
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />, tabBarLabel: 'Home' }}
       />
       <Tab.Screen
+        name="Alerts"
+        component={AlertsScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚨" focused={focused} />, tabBarLabel: 'Alert' }}
+      />
+      <Tab.Screen
         name="Map"
         component={EvacuationMapScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🗺️" focused={focused} />, tabBarLabel: 'Map' }}
-      />
-      <Tab.Screen
-        name="Alerts"
-        component={AlertsScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚨" focused={focused} />, tabBarLabel: 'Alerts' }}
       />
       <Tab.Screen
         name="Safety"
@@ -99,25 +99,25 @@ function OperatorTabs() {
       <Tab.Screen
         name="Dashboard"
         component={OperatorDashboard}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />, tabBarLabel: 'Home' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />, tabBarLabel: 'Dashboard' }}
       />
       <Tab.Screen
-        name="Control"
+        name="AI"
+        component={PredictionScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🤖" focused={focused} />, tabBarLabel: 'AI' }}
+      />
+      <Tab.Screen
+        name="Gate"
         component={GateControlScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚪" focused={focused} />, tabBarLabel: 'Control' }}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚪" focused={focused} />, tabBarLabel: 'Gate' }}
       />
       <Tab.Screen
-        name="Manual"
-        component={ManualOverrideScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🎮" focused={focused} />, tabBarLabel: 'Manual' }}
+        name="HealthTab"
+        component={SystemHealthScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🛡️" focused={focused} />, tabBarLabel: 'Health' }}
       />
       <Tab.Screen
-        name="SimulationTab"
-        component={SimulationScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="⚡" focused={focused} />, tabBarLabel: 'Simulation' }}
-      />
-      <Tab.Screen
-        name="AuditTab"
+        name="Logs"
         component={AuditLogsScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📋" focused={focused} />, tabBarLabel: 'Logs' }}
       />
