@@ -178,7 +178,7 @@ export default function AboutScreen() {
           </Text>
         </View>
 
-        <Text style={styles.versionText}>SDAS Mobile v1.0.0 • Build 2026</Text>
+        <Text style={styles.versionText}>SDAS Mobile v1.2.0 • Build 2026</Text>
       </ScrollView>
     </SafeAreaView>
   );

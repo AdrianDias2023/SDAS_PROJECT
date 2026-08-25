@@ -11,7 +11,7 @@ import { supabase } from '../../services/supabase';
 import { useLanguage } from '../../services/i18n';
 import LanguageSelector from '../../components/LanguageSelector';
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
   const { t } = useLanguage();
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
@@ -23,10 +23,17 @@ export default function LoginScreen() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: password,
+    });
     setLoading(false);
     if (error) {
       Alert.alert('Login Failed', error.message);
+    } else if (data?.session) {
+      if (navigation?.navigate) {
+        navigation.navigate('OperatorTabs');
+      }
     }
   };
 
@@ -35,6 +42,17 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      {/* Back to Public Button */}
+      {navigation?.canGoBack && navigation.canGoBack() && (
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.backBtnText}>← {t.tabHome || 'Back to Public'}</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Brand Header */}
       <View style={styles.header}>
         <Image
@@ -108,4 +126,6 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.6 },
   btnText:     { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
   note:        { textAlign: 'center', color: '#94A3B8', fontSize: 11, marginTop: 24, lineHeight: 18 },
+  backBtn:     { position: 'absolute', top: 48, left: 20, zIndex: 10, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#E2E8F0', borderRadius: 20 },
+  backBtnText: { color: '#0F4C81', fontWeight: '700', fontSize: 13 },
 });

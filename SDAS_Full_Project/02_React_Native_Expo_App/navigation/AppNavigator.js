@@ -129,29 +129,17 @@ function OperatorTabs() {
   );
 }
 
-// ─── Main navigator: shows Login or OperatorTabs based on session ─
-function OperatorStack({ session }) {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {session ? (
-        <Stack.Screen name="OperatorTabs" component={OperatorTabs} />
-      ) : (
-        <Stack.Screen name="Login" component={LoginScreen} />
-      )}
-    </Stack.Navigator>
-  );
-}
-
-// ─── Root: two top-level stacks via Stack navigator ───────────
+// ─── Root Navigator ───────────────────────────────────────────
 export default function AppNavigator({ session }) {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {/* Always show public app */}
+      {/* Default: Public App */}
       <Stack.Screen name="PublicTabs" component={PublicTabs} />
-      {/* Operator stack is accessible via Login button */}
-      <Stack.Screen name="OperatorStack">
-        {() => <OperatorStack session={session} />}
-      </Stack.Screen>
+      
+      {/* Operator Screens */}
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="OperatorTabs" component={OperatorTabs} />
+      <Stack.Screen name="OperatorStack" component={session ? OperatorTabs : LoginScreen} />
     </Stack.Navigator>
   );
 }

@@ -106,6 +106,13 @@ export default function OperatorDashboard() {
   const [user,          setUser]         = useState(null);
   const [refreshing,    setRefreshing]   = useState(false);
 
+  const LEVELS = {
+    NORMAL:             { label: t.statusNormal || 'NORMAL',            color: '#27AE60', bg: '#EAFAF1', emoji: '✅', range: '< 70% (Store Water, Gate 0%)' },
+    PRE_WARNING:        { label: t.statusPreWarning || 'PRE-WARNING',   color: '#F39C12', bg: '#FEF9E7', emoji: '⚠️', range: '70–85% (Safe Storage, Gate 0%)' },
+    CONTROLLED_RELEASE: { label: t.statusControlledRelease || 'WARNING (CONTROLLED)', color: '#E67E22', bg: '#FDF2E9', emoji: '🟠', range: '70–85% (Surge Inflow, Gate 20%)' },
+    DANGER:             { label: t.statusDanger || 'DANGER',            color: '#E74C3C', bg: '#FDEDEC', emoji: '🚨', range: '> 85% (Critical Level, Gate 50%)' },
+  };
+
   const loadData = useCallback(async (hours = 24, damId = selectedDamId) => {
     try {
       const [r, alerts, hist, { data: { user } }, { data: st }] = await Promise.all([
