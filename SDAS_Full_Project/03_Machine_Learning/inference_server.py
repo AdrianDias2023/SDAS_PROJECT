@@ -18,6 +18,11 @@ Usage:
 import json
 import os
 import sys
+
+# Silence TensorFlow C++ warnings and disable GPU lookups on CPU cloud servers (Render)
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -31,6 +36,8 @@ import tensorflow as tf
 # Force UTF-8 on Windows consoles
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ── Global model state ─────────────────────────────────────────
 lstm_model        = None
@@ -46,20 +53,26 @@ def load_all_models():
     global lstm_model, autoencoder_model, rf_model, rf_features, scaler, anomaly_threshold, models_loaded
     try:
         print("[SDAS ML] Loading LSTM model...")
-        lstm_model = tf.keras.models.load_model('models/lstm_model.h5', compile=False)
+        lstm_path = os.path.join(BASE_DIR, 'models', 'lstm_model.h5')
+        lstm_model = tf.keras.models.load_model(lstm_path, compile=False)
 
         print("[SDAS ML] Loading Autoencoder model...")
-        autoencoder_model = tf.keras.models.load_model('models/autoencoder_model.h5', compile=False)
+        ae_path = os.path.join(BASE_DIR, 'models', 'autoencoder_model.h5')
+        autoencoder_model = tf.keras.models.load_model(ae_path, compile=False)
 
         print("[SDAS ML] Loading Random Forest risk model...")
-        rf_model = joblib.load('models/random_forest_risk.pkl')
-        rf_features = joblib.load('models/rf_features.pkl')
+        rf_path = os.path.join(BASE_DIR, 'models', 'random_forest_risk.pkl')
+        rf_features_path = os.path.join(BASE_DIR, 'models', 'rf_features.pkl')
+        rf_model = joblib.load(rf_path)
+        rf_features = joblib.load(rf_features_path)
 
         print("[SDAS ML] Loading scaler...")
-        scaler = joblib.load('dataset/scaler.pkl')
+        scaler_path = os.path.join(BASE_DIR, 'dataset', 'scaler.pkl')
+        scaler = joblib.load(scaler_path)
 
         print("[SDAS ML] Loading anomaly threshold...")
-        with open('models/anomaly_threshold.json') as f:
+        thresh_path = os.path.join(BASE_DIR, 'models', 'anomaly_threshold.json')
+        with open(thresh_path) as f:
             threshold_data = json.load(f)
         anomaly_threshold = threshold_data['mse_threshold']
 
@@ -136,6 +149,16 @@ def inverse_water_level(scaled_val: float) -> float:
 
 
 # ── Endpoints ──────────────────────────────────────────────────
+
+@app.get("/")
+def root():
+    return {
+        "message": "SDAS Hybrid ML Inference Server is Live",
+        "status": "online",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
 
 @app.get("/health")
 def health():
