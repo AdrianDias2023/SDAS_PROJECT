@@ -35,7 +35,10 @@
 #include <ESP32Servo.h>       // Install: "ESP32Servo" by Kevin Harrington
 #include <DHT.h>              // Install: "DHT sensor library" by Adafruit
 #include <ArduinoJson.h>      // Install: "ArduinoJson" by Benoit Blanchon v6+
+#include <esp_task_wdt.h>     // Hardware Task Watchdog Timer
+#include <time.h>             // NTP Real-Time Clock Sync
 
+#define WDT_TIMEOUT_SECONDS 8 // 8s auto-recovery if firmware freezes
 
 // ════════════════════════════════════════════════════════════════════════════════
 //   USER CONFIGURATION — EDIT THESE BEFORE FLASHING
@@ -672,6 +675,9 @@ void connectWiFi() {
   if (WiFi.status() == WL_CONNECTED) {
     wifiOK = true;
     Serial.printf("\n[WiFi] Connected | IP: %s\n", WiFi.localIP().toString().c_str());
+    // 3. NTP Time Synchronization (Sri Lanka UTC+5:30 = 19800s offset)
+    configTime(19800, 0, "pool.ntp.org", "time.nist.gov");
+    Serial.println(F("[NTP] Real-Time Clock Synchronized (UTC+5:30 Colombo)"));
   } else {
     wifiOK = false;
     Serial.println("\n[WiFi] Failed — OFFLINE MODE active");
@@ -690,6 +696,11 @@ void setup() {
   Serial.println(F("  SDAS Smart Dam Alert System v1.0"));
   Serial.println(F("  Puttalam District, Sri Lanka"));
   Serial.println(F("========================================\n"));
+
+  // ── 2. Hardware Task Watchdog Timer (8s Timeout Auto-Recovery) ─────────────
+  esp_task_wdt_init(WDT_TIMEOUT_SECONDS, true);
+  esp_task_wdt_add(NULL);
+  Serial.println(F("[WATCHDOG] Hardware Task WDT Initialized (8s freeze protection)"));
 
   // ── GPIO setup ─────────────────────────────────────────────────────────────
   pinMode(TRIG_1, OUTPUT); pinMode(ECHO_1, INPUT);
@@ -744,6 +755,9 @@ void setup() {
 // ════════════════════════════════════════════════════════════════════════════════
 
 void loop() {
+  // ── Feed Hardware Task Watchdog Timer (Prevents freeze reboots) ────────────
+  esp_task_wdt_reset();
+
   unsigned long now = millis();
 
   // ════ 0. CHECK PHYSICAL EMERGENCY BUTTONS (Instant Real-Time Response) ════
@@ -778,9 +792,14 @@ void loop() {
 
     // 2. Dual JSN-SR04T water level
     float newLevel = readWaterLevel();
+    // ── Data Integrity & Plausibility Filter ──────────────────────────────
     if (newLevel >= 0.0f) {
-      prevLevelPct  = waterLevelPct;
-      waterLevelPct = newLevel;
+      if (newLevel > 100.0f || (waterLevelPct > 0.0f && fabs(newLevel - waterLevelPct) > 30.0f)) {
+        Serial.printf("\n[DATA INTEGRITY GUARD] Corrupted/Spike reading %.1f%% REJECTED (Prev: %.1f%%)\n", newLevel, waterLevelPct);
+      } else {
+        prevLevelPct  = waterLevelPct;
+        waterLevelPct = newLevel;
+      }
     }
 
     // 3. Rate of rise (% per 2-second reading)
