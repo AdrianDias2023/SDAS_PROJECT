@@ -93,7 +93,7 @@ function OperatorTabs() {
       screenOptions={{
         headerShown:       false,
         tabBarStyle:       { backgroundColor: '#0B132B', borderTopWidth: 1, borderColor: '#1E293B', height: 64, paddingBottom: 6 },
-        tabBarLabelStyle:  { fontSize: 9, marginBottom: 4, fontWeight: '700' },
+        tabBarLabelStyle:  { fontSize: 8, marginBottom: 4, fontWeight: '700' },
         tabBarActiveTintColor:   '#38BDF8',
         tabBarInactiveTintColor: '#64748B',
       }}
@@ -112,6 +112,11 @@ function OperatorTabs() {
         name="Gate"
         component={GateControlScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🚪" focused={focused} />, tabBarLabel: 'Gate' }}
+      />
+      <Tab.Screen
+        name="SimulationTab"
+        component={SimulationScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🎮" focused={focused} />, tabBarLabel: 'Sim' }}
       />
       <Tab.Screen
         name="CommunityReview"

@@ -268,7 +268,7 @@ export default function CommunityReportsScreen({ navigation }) {
                     item.confirmedByUser && styles.confirmBtnTextActive,
                   ]}
                 >
-                  {item.confirmedByUser ? '✓ Confirmed' : '👍 I Confirm'}
+                  {item.confirmedByUser ? '✓ Confirmed' : '👍 I see this too'}
                 </Text>
               </TouchableOpacity>
             </View>
