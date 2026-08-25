@@ -1,5 +1,5 @@
-// SDAS — Operator Dashboard Screen
-// Matches Design Screen 8: 2x2 Telemetry Grid (Water, Gate, Health, Battery), AI Risk Prediction Card, and System Status Checklist
+// SDAS — Operator Dashboard Screen (1. Dashboard)
+// Precision UI aligned with the official SDAS Operator App design mockup
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -14,6 +14,28 @@ import {
 } from 'react-native';
 import { fetchLatestReading } from '../../services/alerts';
 import { subscribeSensorReadings } from '../../services/realtime';
+import Svg, { Path } from 'react-native-svg';
+
+function CyanSparkline() {
+  return (
+    <View style={{ marginTop: 6 }}>
+      <Svg width={90} height={24} viewBox="0 0 90 24">
+        <Path
+          d="M 2 18 Q 25 22 45 12 T 88 4"
+          fill="none"
+          stroke="#38BDF8"
+          strokeWidth={2.5}
+        />
+        <Path
+          d="M 88 4"
+          fill="#38BDF8"
+          stroke="#38BDF8"
+          strokeWidth={3}
+        />
+      </Svg>
+    </View>
+  );
+}
 
 export default function OperatorDashboard({ navigation }) {
   const [reading, setReading]       = useState(null);
@@ -45,27 +67,24 @@ export default function OperatorDashboard({ navigation }) {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
 
-      {/* Header */}
+      {/* Header matching Operator Screen 1 */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('More')}
+          onPress={() => navigation.navigate('PublicTabs')}
           activeOpacity={0.7}
           style={styles.navBtn}
         >
-          <Text style={styles.hamburgerIcon}>☰</Text>
+          <Text style={styles.headerIcon}>☰</Text>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>OPERATOR DASHBOARD</Text>
+        <Text style={styles.headerTitle}>Dashboard</Text>
 
         <TouchableOpacity
-          onPress={() => navigation.navigate('Alerts')}
+          onPress={() => { setRefreshing(true); loadData(); }}
           activeOpacity={0.7}
           style={styles.navBtn}
         >
-          <View style={styles.bellWrapper}>
-            <Text style={styles.bellIcon}>🔔</Text>
-            <View style={styles.redBadgeDot} />
-          </View>
+          <Text style={styles.headerIcon}>🔄</Text>
         </TouchableOpacity>
       </View>
 
@@ -78,141 +97,94 @@ export default function OperatorDashboard({ navigation }) {
             tintColor="#38BDF8"
           />
         }
+        showsVerticalScrollIndicator={false}
       >
-        {/* 2x2 Telemetry Summary Grid */}
+        {/* Hero Card: SYSTEM MODE */}
+        <View style={styles.heroModeCard}>
+          <View style={styles.modeLeft}>
+            <View style={styles.modeDotRing}>
+              <View style={styles.modeDotInner} />
+            </View>
+            <View>
+              <Text style={styles.modeLabel}>SYSTEM MODE</Text>
+              <Text style={styles.modeVal}>AUTO CLOUD</Text>
+            </View>
+          </View>
+          <View style={styles.cloudBadge}>
+            <Text style={styles.cloudIcon}>☁️</Text>
+          </View>
+        </View>
+
+        {/* 2x2 Telemetry Grid */}
         <View style={styles.grid}>
           {/* 1. Water Level */}
           <View style={styles.gridCard}>
-            <View style={styles.gridHeaderRow}>
-              <Text style={styles.gridLabel}>Water Level</Text>
-              <Text style={styles.gridEmoji}>🌊</Text>
-            </View>
-            <Text style={styles.gridValue}>{pct.toFixed(1)}%</Text>
+            <Text style={styles.cardLabel}>Water Level</Text>
+            <Text style={styles.cardValueCyan}>{pct.toFixed(1)}%</Text>
+            <CyanSparkline />
           </View>
 
-          {/* 2. Gate Position */}
+          {/* 2. Gate Status */}
           <TouchableOpacity
             style={styles.gridCard}
-            onPress={() => navigation.navigate('Control')}
+            onPress={() => navigation.navigate('Gate')}
             activeOpacity={0.8}
           >
-            <View style={styles.gridHeaderRow}>
-              <Text style={styles.gridLabel}>Gate Position</Text>
-              <Text style={styles.gridEmoji}>🚪</Text>
+            <Text style={styles.cardLabel}>Gate Status</Text>
+            <Text style={styles.cardValueWhite}>0%</Text>
+            <View style={styles.gateRow}>
+              <Text style={styles.cardSubText}>CLOSED</Text>
+              <Text style={styles.lockIcon}>🔒</Text>
             </View>
-            <Text style={styles.gridValue}>0%</Text>
-            <Text style={styles.gridSub}>Closed</Text>
           </TouchableOpacity>
 
-          {/* 3. System Health */}
-          <View style={styles.gridCard}>
-            <View style={styles.gridHeaderRow}>
-              <Text style={styles.gridLabel}>System Health</Text>
-              <Text style={styles.gridEmoji}>🛡️</Text>
-            </View>
-            <Text style={[styles.gridValue, { color: '#10B981' }]}>Good</Text>
-          </View>
+          {/* 3. AI Risk Level */}
+          <TouchableOpacity
+            style={styles.gridCard}
+            onPress={() => navigation.navigate('AI')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.cardLabel}>AI Risk Level</Text>
+            <Text style={styles.cardValueGreen}>LOW</Text>
+          </TouchableOpacity>
 
-          {/* 4. Battery Level */}
-          <View style={styles.gridCard}>
-            <View style={styles.gridHeaderRow}>
-              <Text style={styles.gridLabel}>Battery Level</Text>
-              <Text style={styles.gridEmoji}>🔋</Text>
-            </View>
-            <Text style={styles.gridValue}>87%</Text>
-          </View>
+          {/* 4. AI Confidence */}
+          <TouchableOpacity
+            style={styles.gridCard}
+            onPress={() => navigation.navigate('AI')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.cardLabel}>AI Confidence</Text>
+            <Text style={styles.cardValueWhite}>91%</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* SYSTEM MODE Card */}
-        <View style={styles.card}>
-          <View style={styles.systemModeRow}>
-            <View>
-              <Text style={styles.sectionHeader}>SYSTEM MODE</Text>
-              <View style={styles.systemModeStatusRow}>
-                <View style={styles.statusDotGreen} />
-                <Text style={styles.systemModeText}>AUTO CLOUD</Text>
-              </View>
-            </View>
-            <View style={styles.cloudIconBadge}>
-              <Text style={{ fontSize: 20 }}>☁️</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* AI RISK PREDICTION Card (1-Hour LSTM Lookahead) */}
-        <View style={styles.card}>
-          <Text style={styles.sectionHeader}>AI RISK PREDICTION</Text>
-          <View style={styles.aiRiskContent}>
-            {/* Circular Risk Badge */}
-            <View style={styles.riskCircleBadge}>
-              <Text style={styles.riskCircleText}>Low{'\n'}Risk</Text>
+        {/* System Health Section Header & Row */}
+        <View style={styles.healthSectionCard}>
+          <Text style={styles.sectionTitle}>System Health</Text>
+          <View style={styles.healthRow}>
+            <View style={styles.healthCol}>
+              <Text style={styles.healthIcon}>📟</Text>
+              <Text style={styles.healthName}>ESP32</Text>
+              <Text style={styles.healthStatus}>Online</Text>
             </View>
 
-            <View style={styles.riskDetailsCol}>
-              <Text style={styles.riskTitle}>No overflow risk predicted</Text>
-              <Text style={styles.riskSub}>in next 1 hour (LSTM Forecaster)</Text>
-              <Text style={styles.confidenceText}>Confidence: 91%</Text>
+            <View style={styles.healthCol}>
+              <Text style={styles.healthIcon}>📡</Text>
+              <Text style={styles.healthName}>Sensors</Text>
+              <Text style={styles.healthStatus}>Online</Text>
             </View>
-          </View>
-        </View>
 
-        {/* SYSTEM STATUS Section */}
-        <View style={styles.card}>
-          <Text style={styles.sectionHeader}>SYSTEM STATUS</Text>
-          <View style={styles.statusList}>
-            {[
-              { name: 'Sensors (2x JSN-SR04T)', status: 'Online' },
-              { name: 'ESP32 Controller', status: 'Online' },
-              { name: 'GSM Module (SIM800L)', status: 'Online' },
-              { name: 'Internet / Cloud Sync', status: 'Online' },
-            ].map((item, idx) => (
-              <View key={idx} style={styles.statusRow}>
-                <View style={styles.statusNameRow}>
-                  <View style={styles.statusDotGreen} />
-                  <Text style={styles.statusName}>{item.name}</Text>
-                </View>
-                <View style={styles.statusValRow}>
-                  <View style={styles.statusDotGreen} />
-                  <Text style={styles.statusVal}>{item.status}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* COMMUNITY REPORTS REVIEW Section */}
-        <View style={styles.card}>
-          <View style={styles.communityHeaderRow}>
-            <Text style={styles.sectionHeader}>COMMUNITY REPORTS REVIEW</Text>
-            <View style={styles.pendingBadge}>
-              <Text style={styles.pendingBadgeText}>1 Pending</Text>
+            <View style={styles.healthCol}>
+              <Text style={styles.healthIcon}>📶</Text>
+              <Text style={styles.healthName}>GSM</Text>
+              <Text style={styles.healthStatus}>Online</Text>
             </View>
-          </View>
 
-          <View style={styles.reportItemBox}>
-            <View style={styles.reportTopRow}>
-              <Text style={styles.reportIdText}>Report #001 • Water Rising</Text>
-              <Text style={styles.reportUsersText}>👥 23 Confirmed</Text>
-            </View>
-            <Text style={styles.reportLocationText}>📍 Puttalam Lower Basin Sector 3</Text>
-            <Text style={styles.reportDetailText}>"Rapid water rise observed at downstream bridge approach road."</Text>
-
-            <View style={styles.operatorActionRow}>
-              <TouchableOpacity
-                style={styles.approveBtn}
-                onPress={() => Alert.alert('Report Approved', 'Community alert verified and broadcasted as official advisory.')}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.approveBtnText}>✓ Approve Alert</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.rejectBtn}
-                onPress={() => Alert.alert('Report Dismissed', 'Community report dismissed after sensor check.')}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.rejectBtnText}>✕ Reject</Text>
-              </TouchableOpacity>
+            <View style={styles.healthCol}>
+              <Text style={styles.healthIcon}>🔋</Text>
+              <Text style={styles.healthName}>Battery</Text>
+              <Text style={styles.healthStatus}>87%</Text>
             </View>
           </View>
         </View>
@@ -232,44 +204,83 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
+    backgroundColor: '#0B132B',
     borderBottomWidth: 1,
     borderColor: '#1E293B',
-    backgroundColor: '#0B132B',
   },
   navBtn: {
     padding: 6,
   },
-  hamburgerIcon: {
-    fontSize: 22,
+  headerIcon: {
+    fontSize: 18,
     color: '#94A3B8',
-    fontWeight: 'bold',
   },
   headerTitle: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 1,
-  },
-  bellWrapper: {
-    position: 'relative',
-  },
-  bellIcon: {
-    fontSize: 20,
-  },
-  redBadgeDot: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
-    borderWidth: 1.5,
-    borderColor: '#0B132B',
+    letterSpacing: 0.5,
   },
   scroll: {
     padding: 16,
-    gap: 16,
+    paddingBottom: 32,
+    gap: 14,
+  },
+  heroModeCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  modeLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  modeDotRing: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#10B981',
+  },
+  modeDotInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#10B981',
+  },
+  modeLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.8,
+  },
+  modeVal: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#10B981',
+    marginTop: 2,
+  },
+  cloudBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  cloudIcon: {
+    fontSize: 22,
   },
   grid: {
     flexDirection: 'row',
@@ -280,230 +291,82 @@ const styles = StyleSheet.create({
     width: '48%',
     backgroundColor: '#1E293B',
     borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    minHeight: 105,
+    justifyContent: 'space-between',
+  },
+  cardLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#94A3B8',
+  },
+  cardValueCyan: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#38BDF8',
+    marginTop: 2,
+  },
+  cardValueWhite: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginTop: 2,
+  },
+  cardValueGreen: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#10B981',
+    marginTop: 2,
+  },
+  gateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  cardSubText: {
+    fontSize: 12,
+    color: '#CBD5E1',
+    fontWeight: '700',
+  },
+  lockIcon: {
+    fontSize: 16,
+  },
+  healthSectionCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  gridHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  gridLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#94A3B8',
-  },
-  gridEmoji: {
-    fontSize: 16,
-  },
-  gridValue: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  gridSub: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-  card: {
-    backgroundColor: '#1E293B',
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  sectionHeader: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 1,
-    marginBottom: 14,
-  },
-  aiRiskContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 18,
-  },
-  riskCircleBadge: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#0F172A',
-    borderWidth: 2,
-    borderColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  riskCircleText: {
-    color: '#10B981',
-    fontSize: 13,
-    fontWeight: '800',
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  riskDetailsCol: {
-    flex: 1,
-  },
-  riskTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  riskSub: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-  confidenceText: {
+  sectionTitle: {
     fontSize: 12,
-    color: '#38BDF8',
+    fontWeight: '800',
+    color: '#94A3B8',
+    marginBottom: 12,
+  },
+  healthRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  healthCol: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  healthIcon: {
+    fontSize: 20,
+  },
+  healthName: {
+    fontSize: 11,
     fontWeight: '700',
-    marginTop: 6,
+    color: '#E2E8F0',
   },
-  statusList: {
-    gap: 12,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  statusNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statusValRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  statusDotGreen: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#10B981',
-  },
-  statusName: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#CBD5E1',
-  },
-  statusVal: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#10B981',
-  },
-  systemModeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  systemModeStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
-  },
-  systemModeText: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#10B981',
-    letterSpacing: 0.5,
-  },
-  cloudIconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#0F172A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  communityHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  pendingBadge: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#F59E0B',
-  },
-  pendingBadgeText: {
+  healthStatus: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#F59E0B',
-  },
-  reportItemBox: {
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
-    gap: 6,
-  },
-  reportTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  reportIdText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#38BDF8',
-  },
-  reportUsersText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#94A3B8',
-  },
-  reportLocationText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#CBD5E1',
-  },
-  reportDetailText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    fontStyle: 'italic',
-  },
-  operatorActionRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 6,
-  },
-  approveBtn: {
-    flex: 1,
-    backgroundColor: '#10B981',
-    borderRadius: 8,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  approveBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  rejectBtn: {
-    flex: 1,
-    backgroundColor: '#334155',
-    borderRadius: 8,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  rejectBtnText: {
-    color: '#CBD5E1',
-    fontSize: 12,
-    fontWeight: '700',
+    color: '#10B981',
   },
 });

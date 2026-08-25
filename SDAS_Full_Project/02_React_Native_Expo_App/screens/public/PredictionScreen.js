@@ -1,42 +1,21 @@
+// SDAS — Operator AI Prediction Screen (2. AI Prediction)
+// Precision UI aligned with the official SDAS Operator App design mockup
+
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  RefreshControl, TouchableOpacity, SafeAreaView, StatusBar,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
-import { fetchLatestPrediction } from '../../services/alerts';
-import { fetchLivePuttalamWeather } from '../../services/weather';
-import { useLanguage } from '../../services/i18n';
+import Svg, { Path, Circle, Line, Text as SvgText } from 'react-native-svg';
 
 export default function PredictionScreen({ navigation }) {
-  const { t } = useLanguage();
-  const [prediction, setPrediction] = useState(null);
-  const [weather,    setWeather]    = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-
-  const loadData = useCallback(async () => {
-    try {
-      const [pred, w] = await Promise.all([
-        fetchLatestPrediction().catch(() => null),
-        fetchLivePuttalamWeather().catch(() => null),
-      ]);
-      setPrediction(pred);
-      setWeather(w);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => { loadData(); }, []);
-
-  const forecastPoints = [
-    { time: 'Now', val: 72.5 },
-    { time: '15m', val: 73.2 },
-    { time: '30m', val: 73.9 },
-    { time: '45m', val: 74.6 },
-    { time: '60m', val: 75.2 },
-  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -44,101 +23,90 @@ export default function PredictionScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation?.goBack && navigation.goBack()} activeOpacity={0.7} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => navigation?.goBack && navigation.goBack()}
+          activeOpacity={0.7}
+          style={styles.backBtn}
+        >
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>AI FORECAST & RISK</Text>
-        <TouchableOpacity onPress={() => alert('3-Stage Hybrid AI: LSTM Forecaster (1-Hour) + Random Forest Classifier + Autoencoder Guardian.')} activeOpacity={0.7}>
-          <Text style={styles.infoIcon}>ℹ️</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>AI Prediction</Text>
+        <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); loadData(); }} tintColor="#38BDF8" />}
-      >
-        {/* Card 1: 1-Hour Forecast Hero Card (LSTM) */}
-        <View style={styles.card}>
-          <Text style={styles.cardSectionLabel}>1-HOUR AHEAD FORECAST (LSTM ENGINE)</Text>
-          
-          <View style={styles.metricGrid}>
-            <View style={styles.metricItem}>
-              <Text style={styles.metricItemLabel}>Current Level</Text>
-              <Text style={styles.metricItemValue}>72.5%</Text>
-              <Text style={styles.metricItemSub}>Baseline</Text>
-            </View>
-            <View style={styles.metricItem}>
-              <Text style={styles.metricItemLabel}>Next 1-Hour Pred.</Text>
-              <Text style={[styles.metricItemValue, { color: '#38BDF8' }]}>75.2%</Text>
-              <Text style={styles.metricItemSub}>+2.7% expected</Text>
-            </View>
-          </View>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Forecast Chart Card matching Screen 2 Mockup */}
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Water Level Forecast (Next 6 Hours)</Text>
 
-          {/* 5-Step Lookahead Trend Chart */}
-          <View style={styles.chartWrapper}>
-            <View style={styles.barsRow}>
-              {forecastPoints.map((pt, idx) => (
-                <View key={idx} style={styles.barCol}>
-                  <View style={[styles.barFill, { height: `${(pt.val / 100) * 100}%`, backgroundColor: pt.val >= 85 ? '#EF4444' : pt.val >= 70 ? '#F59E0B' : '#10B981' }]} />
-                  <Text style={styles.barValText}>{pt.val}%</Text>
-                </View>
-              ))}
-            </View>
-            <View style={styles.axisRow}>
-              {forecastPoints.map((pt, idx) => (
-                <Text key={idx} style={styles.axisLabel}>{pt.time}</Text>
-              ))}
+          {/* SVG Wave Chart with Axes */}
+          <View style={styles.svgWrapper}>
+            <Svg width="100%" height={160} viewBox="0 0 320 160">
+              {/* Horizontal Gridlines */}
+              <Line x1="10" y1="20" x2="270" y2="20" stroke="rgba(255,255,255,0.06)" strokeDasharray="4,4" />
+              <Line x1="10" y1="50" x2="270" y2="50" stroke="rgba(255,255,255,0.06)" strokeDasharray="4,4" />
+              <Line x1="10" y1="80" x2="270" y2="80" stroke="rgba(255,255,255,0.06)" strokeDasharray="4,4" />
+              <Line x1="10" y1="110" x2="270" y2="110" stroke="rgba(255,255,255,0.06)" strokeDasharray="4,4" />
+              <Line x1="10" y1="140" x2="270" y2="140" stroke="rgba(255,255,255,0.06)" strokeDasharray="4,4" />
+
+              {/* Y Axis Labels */}
+              <SvgText x="280" y="24" fill="#64748B" fontSize="9" fontWeight="bold">100%</SvgText>
+              <SvgText x="280" y="54" fill="#64748B" fontSize="9" fontWeight="bold">75%</SvgText>
+              <SvgText x="280" y="84" fill="#64748B" fontSize="9" fontWeight="bold">50%</SvgText>
+              <SvgText x="280" y="114" fill="#64748B" fontSize="9" fontWeight="bold">25%</SvgText>
+              <SvgText x="280" y="144" fill="#64748B" fontSize="9" fontWeight="bold">0%</SvgText>
+
+              {/* Cyan Forecast Path */}
+              <Path
+                d="M 15 115 C 60 90, 80 120, 120 70 S 200 40, 265 60"
+                fill="none"
+                stroke="#38BDF8"
+                strokeWidth={3}
+              />
+
+              {/* Forecast Point Dots */}
+              <Circle cx="15" cy="115" r="4" fill="#38BDF8" />
+              <Circle cx="65" cy="98" r="4" fill="#38BDF8" />
+              <Circle cx="115" cy="72" r="5" fill="#FFFFFF" stroke="#38BDF8" strokeWidth={2} />
+              <Circle cx="165" cy="55" r="4" fill="#38BDF8" />
+              <Circle cx="215" cy="48" r="4" fill="#38BDF8" />
+              <Circle cx="265" cy="60" r="4" fill="#38BDF8" />
+            </Svg>
+
+            {/* X-Axis Labels */}
+            <View style={styles.xAxisRow}>
+              <Text style={styles.xAxisLabel}>Now</Text>
+              <Text style={styles.xAxisLabel}>+1h</Text>
+              <Text style={styles.xAxisLabel}>+2h</Text>
+              <Text style={styles.xAxisLabel}>+3h</Text>
+              <Text style={styles.xAxisLabel}>+4h</Text>
+              <Text style={styles.xAxisLabel}>+5h</Text>
             </View>
           </View>
         </View>
 
-        {/* Card 2: AI Reliability & Confidence */}
-        <View style={styles.card}>
-          <Text style={styles.cardSectionLabel}>AI RELIABILITY & CONFIDENCE</Text>
-          <View style={styles.reliabilityRow}>
-            <Text style={styles.reliabilityVal}>91%</Text>
-            <Text style={styles.reliabilityModel}>Model: LSTM Forecast Engine</Text>
-          </View>
-          
-          <View style={styles.probTrack}>
-            <View style={[styles.probFill, { width: '91%', backgroundColor: '#10B981' }]} />
-          </View>
-          <Text style={styles.confidenceNote}>High precision validation (RMSE &lt; 0.04 m on test split)</Text>
+        {/* Prediction Value Card */}
+        <View style={styles.predictionCard}>
+          <Text style={styles.predLabel}>Predicted Level at +1 Hour</Text>
+          <Text style={styles.predValue}>75.2%</Text>
         </View>
 
-        {/* Card 3: Flood Risk Assessment (Random Forest) */}
-        <View style={styles.card}>
-          <Text style={styles.cardSectionLabel}>FLOOD OVERFLOW RISK</Text>
-          <View style={styles.riskHeaderRow}>
-            <View style={styles.riskBadgeWrapper}>
-              <View style={[styles.dot, { backgroundColor: '#10B981' }]} />
-              <Text style={[styles.riskLevelText, { color: '#10B981' }]}>LOW RISK</Text>
-            </View>
-            <Text style={styles.riskProbText}>Prob: 8.4%</Text>
+        {/* 2-Column Risk & Confidence Grid */}
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Risk Level</Text>
+            <Text style={styles.statValMedium}>MEDIUM</Text>
           </View>
 
-          <View style={styles.probTrack}>
-            <View style={[styles.probFill, { width: '8.4%', backgroundColor: '#10B981' }]} />
-          </View>
-          <View style={styles.probLabelsRow}>
-            <Text style={styles.probSubLabel}>Safe (&lt; 20%)</Text>
-            <Text style={styles.probSubLabel}>Moderate (20–60%)</Text>
-            <Text style={styles.probSubLabel}>High (&gt; 60%)</Text>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Confidence</Text>
+            <Text style={styles.statValWhite}>91%</Text>
           </View>
         </View>
 
-        {/* Card 4: Sensor Integrity Guardian (Autoencoder) */}
-        <View style={styles.card}>
-          <Text style={styles.cardSectionLabel}>SENSOR INTEGRITY (AUTOENCODER)</Text>
-          <View style={styles.anomalyRow}>
-            <View>
-              <Text style={styles.anomalyStatusText}>Normal Baseline</Text>
-              <Text style={styles.anomalySubText}>Zero sensor drift detected</Text>
-            </View>
-            <View style={styles.shieldBadge}>
-              <Text style={styles.shieldIcon}>🛡️</Text>
-            </View>
-          </View>
+        {/* Model Footer Tag */}
+        <View style={styles.modelFooterCard}>
+          <Text style={styles.modelFooterText}>Model: LSTM Forecast Engine</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -169,199 +137,101 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerTitle: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 1,
-  },
-  infoIcon: {
-    fontSize: 20,
+    letterSpacing: 0.5,
   },
   scroll: {
     padding: 16,
     paddingBottom: 32,
     gap: 14,
   },
-  card: {
+  chartCard: {
     backgroundColor: '#1E293B',
-    borderRadius: 18,
-    padding: 18,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
   },
-  cardSectionLabel: {
+  chartTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 12,
+  },
+  svgWrapper: {
+    marginTop: 4,
+  },
+  xAxisRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingRight: 50,
+    marginTop: 6,
+  },
+  xAxisLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  predictionCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 4,
+  },
+  predLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  predValue: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#38BDF8',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 4,
+  },
+  statLabel: {
     fontSize: 11,
     fontWeight: '800',
     color: '#94A3B8',
-    letterSpacing: 1,
-    marginBottom: 12,
   },
-  metricGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+  statValMedium: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#F59E0B',
   },
-  metricItem: {
-    flex: 1,
-  },
-  metricItemLabel: {
-    fontSize: 11,
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  metricItemValue: {
+  statValWhite: {
     fontSize: 22,
     fontWeight: '900',
     color: '#FFFFFF',
-    marginTop: 2,
   },
-  metricItemSub: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  chartWrapper: {
-    height: 120,
-    justifyContent: 'flex-end',
-    marginTop: 4,
-  },
-  barsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    height: 90,
-    gap: 8,
-  },
-  barCol: {
-    flex: 1,
-    height: '100%',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  barFill: {
-    width: '100%',
-    borderRadius: 6,
-  },
-  barValText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#CBD5E1',
-    marginTop: 4,
-  },
-  axisRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  axisLabel: {
-    fontSize: 11,
-    color: '#94A3B8',
-    fontWeight: '600',
-    textAlign: 'center',
-    flex: 1,
-  },
-  reliabilityRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginBottom: 8,
-  },
-  reliabilityVal: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#10B981',
-  },
-  reliabilityModel: {
-    fontSize: 12,
-    color: '#38BDF8',
-    fontWeight: '700',
-  },
-  confidenceNote: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  riskHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  riskBadgeWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  riskLevelText: {
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  riskProbText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    fontWeight: '700',
-  },
-  probTrack: {
-    height: 10,
+  modelFooterCard: {
     backgroundColor: '#0F172A',
-    borderRadius: 5,
-    overflow: 'hidden',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#334155',
   },
-  probFill: {
-    height: '100%',
-    borderRadius: 5,
-  },
-  probLabelsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 6,
-  },
-  probSubLabel: {
-    fontSize: 10,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  anomalyRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  anomalyStatusText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#10B981',
-  },
-  anomalySubText: {
+  modelFooterText: {
     fontSize: 12,
+    fontWeight: '700',
     color: '#94A3B8',
-    marginTop: 2,
-  },
-  shieldBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-  },
-  shieldIcon: {
-    fontSize: 22,
   },
 });

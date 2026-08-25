@@ -1,5 +1,5 @@
-// SDAS — Public Alert Status Screen
-// Matches Design Screen 4: 4 Operational Tiers (NORMAL, PRE-WARNING, WARNING, DANGER) with high-contrast status cards
+// SDAS — Public Alerts Screen (2. Alerts)
+// Precision UI aligned with the official SDAS Public User App design mockup
 
 import React from 'react';
 import {
@@ -11,103 +11,84 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
-import { useLanguage } from '../../services/i18n';
+
+const ALERTS = [
+  {
+    id: 'NORMAL',
+    title: 'NORMAL',
+    desc: 'Water level is stable.',
+    time: 'Today, 08:30 AM',
+    color: '#10B981',
+    bgColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+    icon: '✅',
+  },
+  {
+    id: 'PRE_WARNING',
+    title: 'PRE-WARNING',
+    desc: 'Water level is rising.',
+    time: 'Today, 10:30 AM',
+    color: '#D97706',
+    bgColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+    icon: '⚠️',
+  },
+  {
+    id: 'WARNING',
+    title: 'WARNING',
+    desc: 'Controlled release started.',
+    time: 'Yesterday, 04:45 PM',
+    color: '#EA580C',
+    bgColor: '#FFF7ED',
+    borderColor: '#FED7AA',
+    icon: '⚠️',
+  },
+  {
+    id: 'DANGER',
+    title: 'DANGER',
+    desc: 'Emergency release active.',
+    time: 'Yesterday, 06:30 PM',
+    color: '#DC2626',
+    bgColor: '#FEF2F2',
+    borderColor: '#FECACA',
+    icon: '🚨',
+  },
+];
 
 export default function AlertsScreen({ navigation }) {
-  const { t } = useLanguage();
-
-  const TIERS = [
-    {
-      id: 'NORMAL',
-      title: 'NORMAL',
-      desc: 'Dam level is normal.\nNo action required.',
-      color: '#10B981',
-      bgGlow: 'rgba(16, 185, 129, 0.08)',
-      borderColor: 'rgba(16, 185, 129, 0.4)',
-      icon: '🛡️',
-      dotColor: '#10B981',
-    },
-    {
-      id: 'PRE_WARNING',
-      title: 'PRE-WARNING',
-      subHeader: '70% - 85% (Stable)',
-      desc: 'Water level rising.\nMonitoring in progress.',
-      color: '#F59E0B',
-      bgGlow: 'rgba(245, 158, 11, 0.08)',
-      borderColor: 'rgba(245, 158, 11, 0.4)',
-      icon: '👁️',
-      dotColor: '#F59E0B',
-    },
-    {
-      id: 'WARNING',
-      title: 'WARNING',
-      subHeader: '70% - 85% (Rapid Rise)',
-      desc: 'Controlled release mode.\nMove to safe area if required.',
-      color: '#F97316',
-      bgGlow: 'rgba(249, 115, 22, 0.08)',
-      borderColor: 'rgba(249, 115, 22, 0.4)',
-      icon: '📢',
-      dotColor: '#F97316',
-    },
-    {
-      id: 'DANGER',
-      title: 'DANGER',
-      subHeader: '> 85%',
-      desc: 'Gate opened 50%.\nMove to safe location and follow official instructions.',
-      color: '#EF4444',
-      bgGlow: 'rgba(239, 68, 68, 0.08)',
-      borderColor: 'rgba(239, 68, 68, 0.4)',
-      icon: '🚨',
-      dotColor: '#EF4444',
-    },
-  ];
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
-      {/* Header */}
+      {/* Header matching Mockup Screen 2 */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation?.goBack && navigation.goBack()}
-          activeOpacity={0.7}
-          style={styles.backBtn}
-        >
-          <Text style={styles.backIcon}>←</Text>
+        <Text style={styles.headerTitle}>Alerts</Text>
+        <TouchableOpacity style={styles.filterBtn} activeOpacity={0.7}>
+          <Text style={styles.filterIcon}>🌪️</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>ALERT STATUS</Text>
-        <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {TIERS.map((tier) => (
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {ALERTS.map((item) => (
           <View
-            key={tier.id}
+            key={item.id}
             style={[
-              styles.tierCard,
+              styles.alertCard,
               {
-                backgroundColor: '#1E293B',
-                borderColor: tier.borderColor,
+                backgroundColor: item.bgColor,
+                borderColor: item.borderColor,
               },
             ]}
           >
-            <View style={styles.cardLeft}>
-              <View style={styles.titleRow}>
-                <View style={[styles.dot, { backgroundColor: tier.dotColor }]} />
-                <Text style={[styles.tierTitle, { color: tier.color }]}>{tier.title}</Text>
+            <View style={styles.cardHeaderRow}>
+              <View style={styles.titleGroup}>
+                <Text style={styles.alertIcon}>{item.icon}</Text>
+                <Text style={[styles.alertTitle, { color: item.color }]}>{item.title}</Text>
               </View>
-
-              {tier.subHeader && (
-                <Text style={styles.subHeader}>{tier.subHeader}</Text>
-              )}
-
-              <Text style={styles.tierDesc}>{tier.desc}</Text>
             </View>
 
-            {/* Right Badge Icon */}
-            <View style={[styles.iconBadge, { borderColor: tier.borderColor, backgroundColor: tier.bgGlow }]}>
-              <Text style={styles.badgeEmoji}>{tier.icon}</Text>
-            </View>
+            <Text style={styles.alertDesc}>{item.desc}</Text>
+            <Text style={styles.alertTime}>{item.time}</Text>
           </View>
         ))}
       </ScrollView>
@@ -118,7 +99,7 @@ export default function AlertsScreen({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#0B132B',
+    backgroundColor: '#F8FAFC',
   },
   header: {
     flexDirection: 'row',
@@ -126,81 +107,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderColor: '#1E293B',
-  },
-  backBtn: {
-    padding: 6,
-  },
-  backIcon: {
-    fontSize: 20,
-    color: '#94A3B8',
-    fontWeight: 'bold',
+    borderColor: '#E2E8F0',
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#FFFFFF',
-    letterSpacing: 1,
-  },
-  scroll: {
-    padding: 16,
-    gap: 14,
-  },
-  tierCard: {
-    borderRadius: 18,
-    padding: 20,
-    borderWidth: 1.5,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardLeft: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  tierTitle: {
     fontSize: 18,
     fontWeight: '900',
-    letterSpacing: 0.5,
+    color: '#0F172A',
   },
-  subHeader: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#CBD5E1',
-    marginTop: 2,
-    marginBottom: 4,
-  },
-  tierDesc: {
-    fontSize: 12,
-    color: '#94A3B8',
-    lineHeight: 18,
-    fontWeight: '500',
-  },
-  iconBadge: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 1.5,
+  filterBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  badgeEmoji: {
-    fontSize: 22,
+  filterIcon: {
+    fontSize: 16,
+  },
+  scroll: {
+    padding: 16,
+    paddingBottom: 32,
+    gap: 14,
+  },
+  alertCard: {
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+    gap: 6,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  titleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  alertIcon: {
+    fontSize: 20,
+  },
+  alertTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  alertDesc: {
+    fontSize: 14,
+    color: '#334155',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  alertTime: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+    marginTop: 4,
   },
 });

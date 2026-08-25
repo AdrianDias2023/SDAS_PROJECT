@@ -1,7 +1,7 @@
-// SDAS — Audit & Logs Screen (Operator)
-// Matches Design Screen 12: Filter Chips (All Logs, Gate Actions, Alerts, System), Timeline Event Rows, and "View Full Log" button
+// SDAS — Operator Audit Logs Screen (6. Audit Logs)
+// Precision UI aligned with the official SDAS Operator App design mockup
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -12,139 +12,91 @@ import {
   StatusBar,
 } from 'react-native';
 
+const AUDIT_LOGS = [
+  {
+    id: '1',
+    time: '10:30 AM',
+    title: 'Gate position changed',
+    sub: '0% → 20%',
+    badge: 'Manual Override',
+    icon: '🚪',
+    iconColor: '#F59E0B',
+    bgColor: 'rgba(245, 158, 11, 0.15)',
+  },
+  {
+    id: '2',
+    time: '09:45 AM',
+    title: 'Sensor data recorded',
+    sub: 'Water: 72.5%',
+    badge: 'Telemetry',
+    icon: '📊',
+    iconColor: '#38BDF8',
+    bgColor: 'rgba(56, 189, 248, 0.15)',
+  },
+  {
+    id: '3',
+    time: '08:15 AM',
+    title: 'AI warning generated',
+    sub: 'Risk: Medium',
+    badge: 'AI Engine',
+    icon: '⚠️',
+    iconColor: '#EF4444',
+    bgColor: 'rgba(239, 68, 68, 0.15)',
+  },
+  {
+    id: '4',
+    time: '08:00 AM',
+    title: 'System mode changed',
+    sub: 'AUTO CLOUD',
+    badge: 'Cloud Sync',
+    icon: '⚙️',
+    iconColor: '#10B981',
+    bgColor: 'rgba(16, 185, 129, 0.15)',
+  },
+];
+
 export default function AuditLogsScreen({ navigation }) {
-  const [activeFilter, setActiveFilter] = useState('ALL');
-
-  const LOG_ENTRIES = [
-    {
-      id: '1',
-      type: 'GATE',
-      icon: '🚪',
-      title: 'Gate closed (0%)',
-      sub: 'By: System Auto',
-      time: 'Today, 09:30 AM',
-    },
-    {
-      id: '2',
-      type: 'WATER',
-      icon: '🌊',
-      title: 'Water level pre-warning (72.5%)',
-      sub: 'Telemetry confirmed • Monitoring active',
-      time: 'Today, 09:10 AM',
-    },
-    {
-      id: '3',
-      type: 'SYSTEM',
-      icon: '🌧️',
-      title: 'Rainfall data updated',
-      sub: '18.6 mm',
-      time: 'Today, 08:15 AM',
-    },
-    {
-      id: '4',
-      type: 'SYSTEM',
-      icon: '👤',
-      title: 'Operator login',
-      sub: 'operator@sdas.lk',
-      time: 'Today, 08:10 AM',
-    },
-    {
-      id: '5',
-      type: 'GATE',
-      icon: '🎮',
-      title: 'Gate opened 20%',
-      sub: 'By: Operator',
-      time: 'Today, 08:45 AM',
-    },
-  ];
-
-  const filteredLogs = LOG_ENTRIES.filter((l) => {
-    if (activeFilter === 'ALL') return true;
-    if (activeFilter === 'GATE') return l.type === 'GATE';
-    if (activeFilter === 'ALERTS') return l.type === 'WATER';
-    if (activeFilter === 'SYSTEM') return l.type === 'SYSTEM';
-    return true;
-  });
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
 
-      {/* Header */}
+      {/* Header matching Operator Screen 6 */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation?.goBack && navigation.goBack()}
           activeOpacity={0.7}
-          style={styles.navBtn}
+          style={styles.backBtn}
         >
-          <Text style={styles.hamburgerIcon}>☰</Text>
+          <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>AUDIT & LOGS</Text>
+        <Text style={styles.headerTitle}>Audit Logs</Text>
 
-        <TouchableOpacity
-          onPress={() => navigation?.navigate && navigation.navigate('Alerts')}
-          activeOpacity={0.7}
-          style={styles.navBtn}
-        >
-          <View style={styles.bellWrapper}>
-            <Text style={styles.bellIcon}>🔔</Text>
-            <View style={styles.redBadgeDot} />
-          </View>
+        <TouchableOpacity style={styles.filterBtn} activeOpacity={0.7}>
+          <Text style={styles.filterIcon}>🌪️</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Filter Chips Row */}
-        <View style={styles.filterRow}>
-          {[
-            { id: 'ALL', label: 'All Logs' },
-            { id: 'GATE', label: 'Gate Actions' },
-            { id: 'ALERTS', label: 'Alerts' },
-            { id: 'SYSTEM', label: 'System' },
-          ].map((chip) => {
-            const isActive = activeFilter === chip.id;
-            return (
-              <TouchableOpacity
-                key={chip.id}
-                style={[styles.chipBtn, isActive && styles.chipBtnActive]}
-                onPress={() => setActiveFilter(chip.id)}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                  {chip.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Chronological Logs List */}
-        <View style={styles.logsContainer}>
-          {filteredLogs.map((log) => (
-            <View key={log.id} style={styles.logRow}>
-              <View style={styles.logIconCircle}>
-                <Text style={{ fontSize: 18 }}>{log.icon}</Text>
-              </View>
-
-              <View style={styles.logDetailsCol}>
-                <Text style={styles.logTitle}>{log.title}</Text>
-                <Text style={styles.logSub}>{log.sub}</Text>
-              </View>
-
-              <Text style={styles.logTime}>{log.time}</Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {AUDIT_LOGS.map((item) => (
+          <View key={item.id} style={styles.card}>
+            <View style={[styles.iconBox, { backgroundColor: item.bgColor }]}>
+              <Text style={styles.logIcon}>{item.icon}</Text>
             </View>
-          ))}
-        </View>
 
-        {/* View Full Log Button */}
-        <TouchableOpacity
-          style={styles.viewFullBtn}
-          onPress={() => alert('Cryptographic audit trail exported to Supabase logs table.')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.viewFullBtnText}>View Full Log</Text>
-        </TouchableOpacity>
+            <View style={styles.contentCol}>
+              <View style={styles.topRow}>
+                <Text style={styles.timeText}>{item.time}</Text>
+                <View style={styles.badgePill}>
+                  <Text style={styles.badgeText}>{item.badge}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.titleText}>{item.title}</Text>
+              <Text style={styles.subText}>{item.sub}</Text>
+            </View>
+          </View>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -161,125 +113,91 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
+    backgroundColor: '#0B132B',
     borderBottomWidth: 1,
     borderColor: '#1E293B',
-    backgroundColor: '#0B132B',
   },
-  navBtn: {
+  backBtn: {
     padding: 6,
   },
-  hamburgerIcon: {
-    fontSize: 22,
+  backIcon: {
+    fontSize: 20,
     color: '#94A3B8',
     fontWeight: 'bold',
   },
   headerTitle: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
-  bellWrapper: {
-    position: 'relative',
+  filterBtn: {
+    padding: 6,
   },
-  bellIcon: {
-    fontSize: 20,
-  },
-  redBadgeDot: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EF4444',
-    borderWidth: 1.5,
-    borderColor: '#0B132B',
+  filterIcon: {
+    fontSize: 16,
   },
   scroll: {
     padding: 16,
-    gap: 16,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  chipBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: '#1E293B',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  chipBtnActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#94A3B8',
-  },
-  chipTextActive: {
-    color: '#FFFFFF',
-  },
-  logsContainer: {
-    backgroundColor: '#1E293B',
-    borderRadius: 18,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 6,
-  },
-  logRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    paddingBottom: 32,
     gap: 12,
   },
-  logIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#0F172A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  logDetailsCol: {
-    flex: 1,
-  },
-  logTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  logSub: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-  logTime: {
-    fontSize: 10,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  viewFullBtn: {
+  card: {
     backgroundColor: '#1E293B',
     borderRadius: 14,
-    paddingVertical: 16,
+    padding: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#334155',
-    marginTop: 6,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
-  viewFullBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logIcon: {
+    fontSize: 20,
+  },
+  contentCol: {
+    flex: 1,
+    gap: 2,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  timeText: {
+    fontSize: 11,
     fontWeight: '700',
+    color: '#64748B',
+  },
+  badgePill: {
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  titleText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginTop: 2,
+  },
+  subText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#38BDF8',
   },
 });

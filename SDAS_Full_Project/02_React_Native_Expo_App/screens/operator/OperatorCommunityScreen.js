@@ -1,5 +1,5 @@
-// SDAS — Operator Community Reports Review Console
-// Allows dam operators to verify crowd-sourced situation reports with distance-to-dam calculations
+// SDAS — Operator Community Reports Review Screen (4. Community Reports)
+// Precision UI aligned with the official SDAS Operator App design mockup
 
 import React, { useState } from 'react';
 import {
@@ -11,68 +11,42 @@ import {
   Alert,
   SafeAreaView,
   StatusBar,
-  TextInput,
 } from 'react-native';
 import { supabase } from '../../services/supabase';
 
 export default function OperatorCommunityScreen({ navigation }) {
+  const [activeTab, setActiveTab] = useState('PENDING');
   const [reports, setReports] = useState([
     {
       id: '102',
-      category: 'WATER_RISING',
-      categoryLabel: '💧 Water Rising',
+      category: 'Water Rising',
       color: '#EF4444',
-      lat: 8.0412,
-      lng: 79.8325,
-      locationName: 'Puttalam Downstream Causeway',
-      distanceKm: 2.4,
-      priority: 'HIGH PRIORITY',
-      time: '5 minutes ago',
-      confirmations: 25,
-      description: 'Water entered road approach near bridge culvert. Runoff increasing rapidly.',
+      time: '5 min ago',
+      location: 'Galle Road Area (8.0321, 80.2151)',
+      distance: '2.4 km from dam',
+      confirmedUsers: 25,
       status: 'PENDING_REVIEW',
     },
     {
       id: '103',
-      category: 'ROAD_FLOODING',
-      categoryLabel: '🚧 Road Flooding',
+      category: 'Road Flooded',
       color: '#F97316',
-      lat: 8.0520,
-      lng: 79.8450,
-      locationName: 'Old Mannar Road Low-Lying Sector',
-      distanceKm: 4.5,
-      priority: 'MEDIUM PRIORITY',
-      time: '18 minutes ago',
-      confirmations: 14,
-      description: 'Road impassable for two-wheelers and light cars. Standing water approx 8 inches.',
+      time: '18 min ago',
+      location: 'Main Street (8.0410, 80.2200)',
+      distance: '3.6 km from dam',
+      confirmedUsers: 14,
       status: 'PENDING_REVIEW',
-    },
-    {
-      id: '104',
-      category: 'HEAVY_RAIN',
-      categoryLabel: '🌧️ Heavy Rain',
-      color: '#38BDF8',
-      lat: 8.0210,
-      lng: 79.8150,
-      locationName: 'Tabbowa Catchment Area North',
-      distanceKm: 1.1,
-      priority: 'CRITICAL PRIORITY',
-      time: '32 minutes ago',
-      confirmations: 38,
-      description: 'Intense precipitation exceeding 40 mm/hr. Catchment runoff accelerating.',
-      status: 'APPROVED',
     },
   ]);
 
   const handleApprove = (id) => {
     Alert.alert(
       'Approve Community Alert',
-      'This will broadcast a verified public advisory to all SDAS users in this sector.',
+      `Approve Report #${id} and broadcast verified public warning?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Approve & Broadcast',
-          style: 'default',
+          text: 'Approve Alert',
           onPress: async () => {
             setReports((prev) =>
               prev.map((r) => (r.id === id ? { ...r, status: 'APPROVED' } : r))
@@ -83,9 +57,9 @@ export default function OperatorCommunityScreen({ navigation }) {
                 .update({ status: 'APPROVED', operator_note: 'Verified by Operator on Duty' })
                 .eq('id', id);
             } catch (e) {
-              console.log('Updated state locally');
+              console.log('Saved in state');
             }
-            Alert.alert('Alert Approved', `Report #${id} verified. Public safety notification dispatched.`);
+            Alert.alert('Approved', `Report #${id} verified.`);
           },
         },
       ]
@@ -95,11 +69,11 @@ export default function OperatorCommunityScreen({ navigation }) {
   const handleReject = (id) => {
     Alert.alert(
       'Reject Report',
-      'Dismiss this report as false alarm or unverified?',
+      `Dismiss Report #${id}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Reject Report',
+          text: 'Reject',
           style: 'destructive',
           onPress: async () => {
             setReports((prev) =>
@@ -108,149 +82,131 @@ export default function OperatorCommunityScreen({ navigation }) {
             try {
               await supabase
                 .from('community_reports')
-                .update({ status: 'REJECTED', operator_note: 'Dismissed by Operator after sensor verification' })
+                .update({ status: 'REJECTED', operator_note: 'Dismissed by Operator' })
                 .eq('id', id);
             } catch (e) {
-              console.log('Updated state locally');
+              console.log('Saved in state');
             }
-            Alert.alert('Report Dismissed', `Report #${id} marked as rejected.`);
+            Alert.alert('Dismissed', `Report #${id} rejected.`);
           },
         },
       ]
     );
   };
 
-  const pendingCount = reports.filter((r) => r.status === 'PENDING_REVIEW').length;
+  const pendingList = reports.filter((r) => r.status === 'PENDING_REVIEW');
+  const reviewedList = reports.filter((r) => r.status !== 'PENDING_REVIEW');
+  const displayList = activeTab === 'PENDING' ? pendingList : reviewedList;
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
 
-      {/* Header */}
+      {/* Header matching Operator Screen 4 */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>COMMUNITY REPORTS</Text>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{pendingCount} Pending</Text>
+        <TouchableOpacity
+          onPress={() => navigation?.goBack && navigation.goBack()}
+          activeOpacity={0.7}
+          style={styles.navBtn}
+        >
+          <Text style={styles.headerIcon}>☰</Text>
+        </TouchableOpacity>
+
+        <View style={styles.titleWithBadge}>
+          <Text style={styles.headerTitle}>Community Reports</Text>
+          <View style={styles.badgeRed}>
+            <Text style={styles.badgeRedText}>12</Text>
+          </View>
         </View>
+
+        <TouchableOpacity style={styles.navBtn} activeOpacity={0.7}>
+          <Text style={styles.headerIcon}>🌪️</Text>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Info Card */}
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>📢 Human Intelligence Verification</Text>
-          <Text style={styles.infoSub}>
-            Review crowd-sourced reports from downstream residents. Verified reports enhance AI situation awareness without directly triggering automatic sluice gates.
-          </Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Toggle Filter Tabs */}
+        <View style={styles.tabsRow}>
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === 'PENDING' && styles.tabBtnActive]}
+            onPress={() => setActiveTab('PENDING')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabBtnText, activeTab === 'PENDING' && styles.tabBtnTextActive]}>
+              Pending
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === 'REVIEWED' && styles.tabBtnActive]}
+            onPress={() => setActiveTab('REVIEWED')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabBtnText, activeTab === 'REVIEWED' && styles.tabBtnTextActive]}>
+              Reviewed
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Reports Feed */}
-        {reports.map((item) => (
-          <View
-            key={item.id}
-            style={[
-              styles.card,
-              { borderLeftColor: item.color, borderLeftWidth: 4 },
-            ]}
-          >
-            {/* Top Row: Report ID & Confirmations */}
+        {/* Reports Cards */}
+        {displayList.map((item) => (
+          <View key={item.id} style={styles.card}>
+            {/* Top Row: Drop Icon + Report ID + Time */}
             <View style={styles.cardTopRow}>
-              <View style={styles.idBadge}>
-                <Text style={styles.idText}>Report #{item.id}</Text>
+              <View style={styles.reportTitleGroup}>
+                <Text style={styles.dropIcon}>💧</Text>
+                <View>
+                  <Text style={styles.reportIdText}>Report #{item.id}</Text>
+                  <Text style={[styles.reportCatText, { color: item.color }]}>{item.category}</Text>
+                </View>
               </View>
-              <Text style={styles.confirmationsText}>👥 {item.confirmations} users confirmed</Text>
-            </View>
-
-            {/* Category & Time */}
-            <View style={styles.categoryRow}>
-              <Text style={[styles.categoryText, { color: item.color }]}>{item.categoryLabel}</Text>
               <Text style={styles.timeText}>{item.time}</Text>
             </View>
 
-            {/* Location & GPS Info */}
+            {/* Location & Distance */}
             <View style={styles.locationBox}>
-              <Text style={styles.locationName}>📍 {item.locationName}</Text>
-              <Text style={styles.coordsText}>
-                GPS: {item.lat.toFixed(4)}, {item.lng.toFixed(4)}
+              <Text style={styles.locNameText}>{item.location}</Text>
+              <Text style={styles.distText}>{item.distance}</Text>
+            </View>
+
+            {/* User Confirmations */}
+            <View style={styles.confirmRow}>
+              <Text style={styles.confirmLabel}>Confirmed by</Text>
+              <Text style={styles.confirmVal}>{item.confirmedUsers} users 👥👥+20</Text>
+            </View>
+
+            {/* Status */}
+            <View style={styles.statusRow}>
+              <Text style={styles.statusLabel}>Status</Text>
+              <Text style={styles.statusVal}>
+                {item.status === 'PENDING_REVIEW'
+                  ? 'Pending Review'
+                  : item.status === 'APPROVED'
+                  ? 'Approved & Broadcast'
+                  : 'Rejected'}
               </Text>
             </View>
 
-            {/* Distance from Dam Calculation */}
-            <View style={styles.distanceRow}>
-              <View style={styles.distanceBadge}>
-                <Text style={styles.distanceText}>📍 {item.distanceKm} km from dam</Text>
-              </View>
-              <View
-                style={[
-                  styles.priorityBadge,
-                  {
-                    backgroundColor:
-                      item.distanceKm <= 2.0
-                        ? 'rgba(239, 68, 68, 0.2)'
-                        : 'rgba(245, 158, 11, 0.2)',
-                    borderColor: item.distanceKm <= 2.0 ? '#EF4444' : '#F59E0B',
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.priorityText,
-                    { color: item.distanceKm <= 2.0 ? '#EF4444' : '#F59E0B' },
-                  ]}
+            {/* Decision Buttons */}
+            {item.status === 'PENDING_REVIEW' && (
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={styles.approveBtn}
+                  onPress={() => handleApprove(item.id)}
+                  activeOpacity={0.85}
                 >
-                  {item.priority}
-                </Text>
-              </View>
-            </View>
+                  <Text style={styles.approveBtnText}>Approve Alert</Text>
+                </TouchableOpacity>
 
-            {/* Description */}
-            <Text style={styles.descText}>"{item.description}"</Text>
-
-            {/* Status & Review Buttons */}
-            <View style={styles.actionContainer}>
-              {item.status === 'PENDING_REVIEW' ? (
-                <View style={styles.btnRow}>
-                  <TouchableOpacity
-                    style={styles.approveBtn}
-                    onPress={() => handleApprove(item.id)}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={styles.approveBtnText}>✓ Approve Alert</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.rejectBtn}
-                    onPress={() => handleReject(item.id)}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={styles.rejectBtnText}>✕ Reject</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View
-                  style={[
-                    styles.statusPill,
-                    {
-                      backgroundColor:
-                        item.status === 'APPROVED'
-                          ? 'rgba(16, 185, 129, 0.15)'
-                          : 'rgba(239, 68, 68, 0.15)',
-                      borderColor: item.status === 'APPROVED' ? '#10B981' : '#EF4444',
-                    },
-                  ]}
+                <TouchableOpacity
+                  style={styles.rejectBtn}
+                  onPress={() => handleReject(item.id)}
+                  activeOpacity={0.85}
                 >
-                  <Text
-                    style={[
-                      styles.statusPillText,
-                      { color: item.status === 'APPROVED' ? '#10B981' : '#EF4444' },
-                    ]}
-                  >
-                    {item.status === 'APPROVED'
-                      ? '✓ Approved & Broadcasted to Public'
-                      : '✕ Rejected by Operator'}
-                  </Text>
-                </View>
-              )}
-            </View>
+                  <Text style={styles.rejectBtnText}>Reject</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         ))}
       </ScrollView>
@@ -273,47 +229,64 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#1E293B',
   },
+  navBtn: {
+    padding: 6,
+  },
+  headerIcon: {
+    fontSize: 18,
+    color: '#94A3B8',
+  },
+  titleWithBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
-  badge: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#F59E0B',
+  badgeRed: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#F59E0B',
+  badgeRedText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#FFFFFF',
   },
   scroll: {
     padding: 16,
     paddingBottom: 32,
     gap: 14,
   },
-  infoCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#334155',
+  tabsRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
-  infoTitle: {
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#1E293B',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  tabBtnActive: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  tabBtnText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#38BDF8',
-  },
-  infoSub: {
-    fontSize: 12,
     color: '#94A3B8',
-    lineHeight: 18,
-    marginTop: 4,
+  },
+  tabBtnTextActive: {
+    color: '#FFFFFF',
   },
   card: {
     backgroundColor: '#1E293B',
@@ -321,41 +294,30 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
-    gap: 8,
+    gap: 10,
   },
   cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
-  idBadge: {
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  idText: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#38BDF8',
-  },
-  confirmationsText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#CBD5E1',
-  },
-  categoryRow: {
+  reportTitleGroup: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
   },
-  categoryText: {
-    fontSize: 15,
+  dropIcon: {
+    fontSize: 24,
+  },
+  reportIdText: {
+    fontSize: 14,
     fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  reportCatText: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginTop: 2,
   },
   timeText: {
     fontSize: 11,
@@ -364,102 +326,75 @@ const styles = StyleSheet.create({
   },
   locationBox: {
     backgroundColor: '#0F172A',
+    borderRadius: 10,
     padding: 10,
-    borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: '#334155',
+    gap: 2,
   },
-  locationName: {
+  locNameText: {
     fontSize: 13,
     fontWeight: '700',
+    color: '#E2E8F0',
+  },
+  distText: {
+    fontSize: 11,
+    color: '#38BDF8',
+    fontWeight: '600',
+  },
+  confirmRow: {
+    gap: 2,
+  },
+  confirmLabel: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '700',
+  },
+  confirmVal: {
+    fontSize: 13,
+    fontWeight: '800',
     color: '#FFFFFF',
   },
-  coordsText: {
+  statusRow: {
+    gap: 2,
+  },
+  statusLabel: {
     fontSize: 11,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  distanceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  distanceBadge: {
-    backgroundColor: 'rgba(56, 189, 248, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.3)',
-  },
-  distanceText: {
-    fontSize: 11,
+    color: '#94A3B8',
     fontWeight: '700',
-    color: '#38BDF8',
   },
-  priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  priorityText: {
-    fontSize: 10,
-    fontWeight: '900',
-  },
-  descText: {
+  statusVal: {
     fontSize: 13,
-    color: '#E2E8F0',
-    lineHeight: 18,
-    fontStyle: 'italic',
-    marginTop: 2,
+    fontWeight: '800',
+    color: '#F59E0B',
   },
-  actionContainer: {
-    marginTop: 6,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderColor: '#334155',
-  },
-  btnRow: {
+  actionRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
+    marginTop: 4,
   },
   approveBtn: {
     flex: 1,
     backgroundColor: '#10B981',
     borderRadius: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
-    shadowColor: '#10B981',
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 2,
   },
   approveBtnText: {
     color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '900',
   },
   rejectBtn: {
     flex: 1,
-    backgroundColor: '#334155',
+    backgroundColor: '#7F1D1D',
     borderRadius: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   rejectBtnText: {
-    color: '#CBD5E1',
+    color: '#FCA5A5',
     fontSize: 13,
-    fontWeight: '700',
-  },
-  statusPill: {
-    borderRadius: 8,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  statusPillText: {
-    fontSize: 12,
     fontWeight: '800',
   },
 });
