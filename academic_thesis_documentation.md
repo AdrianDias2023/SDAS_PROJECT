@@ -188,5 +188,14 @@ $$\text{Drift Anomaly Flag} = \begin{cases} 1, & \mathcal{L}_{\text{MSE}} > \tau
 
 ---
 
-### 6.2 Future Scope: Multi-Dam Swarm Intelligence
-The `dams` database architecture is already engineered to scale beyond Puttalam to a distributed central dashboard governing the **Tabbowa Dam**, **Rajangana Dam**, and **Deduru Oya Reservoir** simultaneously.
+### 6.2 Project Limitations & Research Boundaries
+To preserve academic integrity and reflect rigorous engineering awareness during evaluation, the operational boundaries of this prototype project are explicitly defined:
+1. **Prototype Reservoir Model:** The physical setup is an experimental laboratory-scale prototype model designed to demonstrate cyber-physical sensor fusion and automated edge control, and is not directly connected to live civil dam infrastructure.
+2. **Prepared Historical Datasets:** The LSTM, Random Forest, and Autoencoder models are trained on synthesized and empirical hydrological time-series datasets representing the Puttalam district catchment basin.
+3. **Scaled Sluice Actuation:** The MG996R metal-gear servo represents a calibrated 4-tier spillway sluice gate prototype ($0^\circ, 36^\circ, 90^\circ$), scaled for safe demonstration.
+4. **Meteorological API Dependency:** Real-time rainfall forecast feeds rely on Open-Meteo REST API availability; offline edge fallback handles internet outages locally via autonomous on-chip rule evaluation.
+
+---
+
+### 6.3 Future Scope: Multi-Dam Swarm Intelligence
+The `dams` database architecture is engineered to scale in future research to a distributed central dashboard governing multiple catchments simultaneously via LoRa mesh networking.

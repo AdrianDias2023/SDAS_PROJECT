@@ -273,3 +273,12 @@ npx expo start
 1. Open `SDAS_Full_Project/04_ESP32_Integration/SDAS_ESP32_Code.ino` in Arduino IDE.
 2. Ensure `ESP32Servo`, `DHT sensor library`, and `ArduinoJson` libraries are installed.
 3. Flash to ESP32 DevKit board.
+
+---
+
+## 🔬 Project Limitations & Research Boundaries
+
+1. **Prototype Reservoir Model:** The experimental physical setup is an acrylic laboratory-scale dam prototype designed to demonstrate cyber-physical IoT automation and sensor fusion; it is not connected to live national civil dam infrastructure.
+2. **Synthesized & Empirical Datasets:** The 3-stage ML pipeline (LSTM, Random Forest, Autoencoder) is trained on empirical and synthesized hydrological time-series datasets representing the Puttalam catchment basin.
+3. **Scaled Gate Actuation:** The MG996R metal-gear servo implements a calibrated 4-tier spillway gate prototype ($0^\circ, 36^\circ, 90^\circ$).
+4. **Meteorological API Integration:** Real-time rainfall forecast feeds utilize Open-Meteo REST API; autonomous offline edge logic safeguards local operations during internet outages.

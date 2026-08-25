@@ -131,7 +131,11 @@
 
 ---
 
-## 📽️ Slide 15: Conclusion & Future Work
+## 📽️ Slide 15: Conclusion, Prototype Boundaries & Future Work
 * **Summary:** SDAS is an AI-enabled IoT prototype simulation developed to demonstrate reservoir monitoring, predictive water-level analysis, controlled gate operation, emergency alerting, and operator-assisted safety management.
+* **Prototype Boundaries & Research Scope:**
+  1. Experimental laboratory-scale prototype model demonstrating cyber-physical control (not connected to live civil infrastructure).
+  2. AI models trained and validated on prepared empirical hydrological time-series datasets.
+  3. Scaled 4-tier servo actuation ($0^\circ, 36^\circ, 90^\circ$) representing prototype spillway gates.
 * **Future Expansions:** Multi-dam LoRa mesh networking, drone aerial bathymetry integration, and solar-powered cellular gateways.
 * **Thank You & Q&A Session**

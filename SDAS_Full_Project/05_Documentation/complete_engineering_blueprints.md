@@ -17,8 +17,8 @@ graph TD
         RTC["NTP Time Sync (UTC+5:30)"]
         ESP["ESP32 Dual-Core 240MHz SoC"]
         SERVO["MG996R Servo (PWM 13, calibrated prototype gate range 0-90 deg)"]
-        BUZZ["85dB Active Siren (Pin 27)"]
-        RGB["RGB Status LED (Pins 12, 14, 26)"]
+        BUZZ["85dB Active Siren (Pin 14)"]
+        RGB["RGB Status LED (Pins 25, 26, 27)"]
         GSM["SIM800L Cellular GSM (Serial2 16/17)"]
         BTNS["Physical Push Buttons (Pins 32, 33, 23)"]
         
@@ -101,9 +101,9 @@ graph TD
 | **DHT22 Met Sensor**   | `GPIO 4` (Data) | 1-Wire Digital | $3.3\text{V}$ | Speed-of-Sound Calibration & Humidity |
 | **MG996R Servo**       | `GPIO 13` (PWM) | 50Hz PWM ($500-2400\mu\text{s}$) | $5.0\text{V} - 6.8\text{V}$ ($2\text{A}$ Peak) | Spillway Gate Actuator (Calibrated Prototype Range $0-90^\circ$) |
 | **SIM800L GSM Module** | `GPIO 16` (RX2), `GPIO 17` (TX2) | Hardware UART2 ($9600\text{ baud}$) | $3.7\text{V} - 4.2\text{V}$ ($2\text{A}$ Burst) | Autonomous Direct Cellular SMS |
-| **RGB Status LED**     | `GPIO 12` (R), `GPIO 14` (G), `GPIO 26` (B) | Active-HIGH Digital | $3.3\text{V}$ | 4-Tier Optical Status Indicator |
-| **Active 85dB Buzzer** | `GPIO 27` | Active-HIGH Digital | $5.0\text{V}$ | Emergency Evacuation Siren |
-| **Physical Button OPEN**| `GPIO 32` | Internal Pull-Up | $3.3\text{V}$ | Manual Override: Full Open |
+| **RGB Status LED**     | `GPIO 25` (R), `GPIO 26` (G), `GPIO 27` (B) | Active-HIGH Digital | $3.3\text{V}$ | 4-Tier Optical Status Indicator |
+| **Active 85dB Buzzer** | `GPIO 14` | Active-HIGH Digital | $5.0\text{V}$ | Emergency Evacuation Siren |
+| **Physical Button OPEN**| `GPIO 32` | Internal Pull-Up | $3.3\text{V}$ | Manual Override: 50% Emergency Release |
 | **Physical Button CLOSE**|`GPIO 33` | Internal Pull-Up | $3.3\text{V}$ | Manual Override: Close (Interlocked) |
 | **Physical Button STOP**| `GPIO 23` | Internal Pull-Up | $3.3\text{V}$ | Manual Override: Instant Hold / Reset |
 | **Battery Voltage ADC**| `GPIO 34` (ADC1_CH6) | Analog Input ($100\text{k}\Omega / 27\text{k}\Omega$) | $0-3.3\text{V}$ | 12V Mains & 18650 UPS Monitoring |
