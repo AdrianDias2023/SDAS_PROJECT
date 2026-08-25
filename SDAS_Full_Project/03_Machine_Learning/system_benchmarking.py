@@ -511,7 +511,7 @@ def test_multi_dam_network_routing():
 
     dam_config = {
         "dam_name": "Tabbowa Prototype Dam",
-        "location": "Puttalam District (Simulation)",
+        "location": "Puttalam District (Simulation Model)",
         "data_source": "Prototype Sensors + Simulated Data",
         "device_id": "ESP32_PUTTALAM_01",
         "lat": 8.0362,
@@ -523,7 +523,7 @@ def test_multi_dam_network_routing():
 
     sub_tests = [
         ("Prototype Dam Model Registration", dam_config["dam_name"] == "Tabbowa Prototype Dam", "Tabbowa Prototype Dam verified"),
-        ("Simulation Catchment Location", "Puttalam District (Simulation)" in dam_config["location"], "Puttalam Basin catchment isolated"),
+        ("Simulation Catchment Location", "Puttalam District (Simulation Model)" in dam_config["location"], "Puttalam Basin catchment isolated"),
         ("Dual Telemetry Ingestion Source", dam_config["data_source"] == "Prototype Sensors + Simulated Data", "Prototype sensor + simulation pipeline active"),
         ("Edge Device Node Binding", dam_config["device_id"] == "ESP32_PUTTALAM_01", "ESP32 hardware node linked to Tabbowa Dam"),
         ("Geo-spatial Spatial Anchor", dam_config["lat"] == 8.0362 and dam_config["lon"] == 79.8283, "GPS coordinates mapped to Puttalam District"),
@@ -542,7 +542,7 @@ def test_multi_dam_network_routing():
     return {"prototype_reservoir_passed": all_passed, "total_cases": len(sub_tests)}
 
 def main():
-    print("\n🔬 STARTING FULL SDAS SYSTEM BENCHMARKING SUITE...")
+    print("\n🔬 STARTING FULL SDAS 10-TEST PROTOTYPE VALIDATION BENCHMARK SUITE...")
     t1 = test_sensor_accuracy()
     t2 = test_communication_latency()
     t3 = test_alert_state_transitions()

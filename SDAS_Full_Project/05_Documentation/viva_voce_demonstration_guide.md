@@ -38,14 +38,14 @@ This guide outlines the **5-Stage Live Demonstration Protocol** to perform in fr
 
 ---
 
-## 🎬 Stage 3 — Critical Danger & Safe Emergency Release (50%)
-* **Objective:** Demonstrate safe maximum spillway actuation ($50\%$), 85dB acoustic siren, and civilian SMS broadcasting.
+## 🎬 Stage 3 — Critical Danger & Controlled Emergency Release (50%)
+* **Objective:** Demonstrate controlled emergency release ($50\%$), 85dB acoustic siren, and direct GSM SMS alert communication to configured emergency contacts.
 * **Examiner Action:** Select *"🔴 Critical Danger"* preset or set slider to **$91.5\%$** (Rainfall: $85\text{ mm}$). Press `[⚡ Broadcast Scenario to Live Cloud]`.
 * **Observed System Behavior:**
   - **ESP32 Edge:** Red LED pulses rapidly. 85dB siren sounds continuous emergency alarm.
-  - **MG996R Actuator:** Servo rotates to **$50\%$ (90° Calibrated Emergency Spill)**.
+  - **MG996R Actuator:** Servo rotates to **$50\%$ (90° Controlled Emergency Release)**.
   - **Mobile Public App:** Displays flashing `🚨 CRITICAL FLOOD WARNING (91.5%)`.
-  - **Map Screen:** Automatically highlights Safe Evacuation Routes and high-ground shelters in Puttalam District.
+  - **Map Screen:** Automatically highlights prototype evacuation zones and configured safety locations in Puttalam District (Simulation Model).
   - **GSM Engine:** Critical broadcast sent:
     > *"SDAS ALERT | STATUS: DANGER ALERT. Critical water level detected! Gate opened 50%. Move to safe location immediately."*
 

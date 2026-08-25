@@ -196,19 +196,23 @@ graph TD
 | Model Component | Architecture | Target Objective | Achieved Metrics |
 |---|---|---|---|
 | **LSTM Forecaster** | 2-Layer Stacked LSTM (64/32 units) + Dropout + Dense | 1-Hour Ahead Water Level Continuous Forecasting | **MAE: 2.319%** \| **RMSE: 3.873%** |
-| **Random Forest Ensemble** | 100 Calibrated Decision Trees (Max Depth 14) + Gini | Multi-Class Flood Risk & Overtopping Probability (%) | **Accuracy: 99.93%** \| **F1-Score: 99.93%** |
+| **Random Forest Ensemble** | 100 Calibrated Decision Trees (Max Depth 14) + Gini | Classifying flood-risk conditions using the prepared prototype dataset | **Test Accuracy: 99.93%** \| **F1-Score: 99.93%** |
 | **Deep Autoencoder** | Symmetric Encoder-Decoder (4 ➔ 16 ➔ 8 ➔ 16 ➔ 4) | Sensor Drift, Discrepancy & Outlier Filtering | **FAR: 4.1%** \| **Threshold: 0.001603** |
 
 ---
 
 ## 📱 Mobile Application & Edge Features
 
+> **SDAS is an AI-enabled IoT prototype simulation developed to demonstrate reservoir monitoring, predictive water-level analysis, controlled gate operation, emergency alerting, and operator-assisted safety management.**
+
 > The React Native Expo application provides a configurable simulated dam environment where operators can monitor reservoir conditions, water levels, alerts, and control actions through a single prototype dam model.
 
+- **Single Dam Prototype Simulation Environment:** Configurable simulated dam profile based on **Tabbowa Prototype Dam | Puttalam District (Simulation Model)** with dual-source telemetry (**Prototype Sensors + Simulated Data**).
 - **Multi-Language Support (i18n):** Native support for **English**, **Sinhala (සිංහල)**, and **Tamil (தமிழ்)** with instant header switcher and `AsyncStorage` persistence.
 - **Satellite Weather & Rain Radar:** Real-time live weather and 6-hour rainfall forecasts for the Puttalam basin from Open-Meteo API.
-- **Interactive Evacuation Map & Safe Zones:** High-ground relief shelters, elevation safety indicators, GPS directions, and direct DMC Hotline (`117`) dialing.
-- **Triple-Redundancy Alerting:** Automated GSM SMS $+$ Instant Mobile Push Notifications $+$ Continuous SOS Vibration/Audio Siren Alarm.
+- **Interactive Evacuation Map & Safe Zones:** Prototype evacuation zones and configured safety locations, elevation safety indicators, GPS directions, and emergency contacts.
+- **Direct GSM SMS Alert Communication:** Direct GSM SMS alert communication to configured emergency contacts via onboard SIM800L module.
+- **Controlled Emergency Release:** Automated gradual gate aperture control ($0\%, 0\%, 20\%, 50\%$) preventing uncontrolled overtopping while preserving reservoir capacity.
 - **Operator Control & System Diagnostics:**
   - Historical analysis charts (24h / 7d / 30d).
   - Live hardware health monitoring (Sensors 1 & 2 latency, GSM signal dBm, Battery UPS %, Node authorization).
@@ -217,7 +221,7 @@ graph TD
 
 ---
 
-## 📂 Repository Structure
+## 📂 Repository Structure (Evaluation-Ready Prototype)
 
 ```
 SDAS_PROJECT/

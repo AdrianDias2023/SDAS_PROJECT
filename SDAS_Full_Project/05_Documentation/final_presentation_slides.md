@@ -33,7 +33,7 @@
 
 ---
 
-## 📽️ Slide 4: Hardware Edge Architecture & Sensor Fusion
+## 📽️ Slide 4: Hardware & Edge Firmware (ESP32 Prototype Edge Firmware)
 * **Core Controller:** ESP32 DevKit V1 (Tensilica Dual-Core 240MHz, FreeRTOS).
 * **Dual Transducer Redundancy:** 2x JSN-SR04T Waterproof Ultrasonic Sensors (IP67) cross-validated with $<5\text{cm}$ tolerance.
 * **Dynamic Speed-of-Sound Compensation:** DHT22 temperature probe calibrates acoustic velocity:
@@ -92,7 +92,7 @@
 
 ---
 
-## 📽️ Slide 11: Empirical Testing & Benchmark Results
+## 📽️ Slide 11: 10-Test Prototype Validation Benchmark Suite (10/10 Validation Tests Passed)
 | Metric / Benchmark | Project Target | SDAS Achieved | Evaluation Verdict |
 |---|---|---|---|
 | **Sensor Accuracy (MAE)** | $\pm 2.0\text{ cm}$ | **$0.32\text{ cm}$** | **PASSED (99.78%)** |
@@ -118,7 +118,7 @@
 * **Stage 1:** Normal Baseline ($50\%$ level $\to$ Gate Closed $0\%$, Green LED, maximum storage conservation).
 * **Stage 2:** Pre-Warning ($72.5\%$ level stable $\to$ Gate Kept Closed $0\%$ to preserve storage, Yellow LED, monitoring active).
 * **Stage 3:** Warning / Controlled Release ($79\%$ surging $\to$ Gate Opens $20\%$ ($36^\circ$) Controlled Release to create buffer, Orange LED).
-* **Stage 4:** Critical Danger ($91.5\%$ danger $\to$ Gate Opens $50\%$ ($90^\circ$) Safe Emergency Spill, 85dB Siren, Evacuation SMS).
+* **Stage 4:** Critical Danger ($91.5\%$ danger $\to$ Gate Opens $50\%$ ($90^\circ$) Controlled Emergency Release, 85dB Siren, Evacuation SMS).
 * **Stage 5:** Internet Outage ($>30\text{s}$ disconnect $\to$ ESP32 autonomous local edge safety takes over).
 * **Stage 6:** Manual Override & Safety Interlock (Manual OPEN/STOP & rejecting manual close during danger).
 
@@ -132,6 +132,6 @@
 ---
 
 ## 📽️ Slide 15: Conclusion & Future Work
-* **Summary:** SDAS successfully transitions IoT prototypes into an industrial-grade, 4-tier fault-tolerant safety system.
+* **Summary:** SDAS is an AI-enabled IoT prototype simulation developed to demonstrate reservoir monitoring, predictive water-level analysis, controlled gate operation, emergency alerting, and operator-assisted safety management.
 * **Future Expansions:** Multi-dam LoRa mesh networking, drone aerial bathymetry integration, and solar-powered cellular gateways.
 * **Thank You & Q&A Session**

@@ -9,7 +9,7 @@
 
 ```mermaid
 graph TD
-    subgraph Edge_Hardware_Layer ["1. Edge Hardware Node (ESP32)"]
+    subgraph Edge_Hardware_Layer ["1. Edge Hardware Node (ESP32 Prototype Edge Firmware)"]
         JSN1["JSN-SR04T Sensor 1 (Trig 5, Echo 18)"]
         JSN2["JSN-SR04T Sensor 2 (Trig 19, Echo 21)"]
         DHT["DHT22 Met Sensor (Data 4)"]
@@ -259,7 +259,7 @@ flowchart TD
 | **🟢 NORMAL** | `< 70.0%` | `> 30.0%` | **0% CLOSED** | $0^\circ$ | Store water safely, continuous 60s cloud telemetry logging. |
 | **🟡 PRE-WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | **0% CLOSED** | $0^\circ$ | Water preserved; monitor rainfall radar & AI lookahead. |
 | **🟠 WARNING** | `70.0% – 85.0%` | `15.0% – 30.0%` | **20% OPEN** | $36^\circ$ | Controlled buffer release during rapid inflow surge. SMS alert dispatched. |
-| **🔴 DANGER** | `> 85.0%` | `< 15.0%` | **50% OPEN** | $90^\circ$ | Safe emergency spillway release; 85dB siren active; emergency SMS broadcast. |
+| **🔴 DANGER** | `> 85.0%` | `< 15.0%` | **50% OPEN** | $90^\circ$ | Controlled emergency release; 85dB siren active; direct GSM SMS alert communication to configured emergency contacts. |
 
 ### Physical Tank Ruler Distance Calibration (Centimeters)
 ```cpp

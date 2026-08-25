@@ -8,7 +8,7 @@ export const DAMS = [
     id: 'ESP32_PUTTALAM_01',
     name: 'Tabbowa Prototype Dam',
     shortName: 'Tabbowa Prototype Dam',
-    district: 'Puttalam District (Simulation)',
+    district: 'Puttalam District (Simulation Model)',
     dataSource: 'Prototype Sensors + Simulated Data',
     province: 'North Western Province',
     lat: 8.0362,
