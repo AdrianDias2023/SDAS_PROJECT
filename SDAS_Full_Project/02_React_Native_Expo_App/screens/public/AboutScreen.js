@@ -162,6 +162,21 @@ export default function AboutScreen() {
           <Text style={styles.institutionText}>{t.institution}</Text>
         </View>
 
+        {/* Terms & Privacy Policy Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardHeader}>⚖️ {t.termsTitle}</Text>
+          <Text style={styles.paragraph}>
+            {t.termsP1Desc}
+          </Text>
+          <Text style={[styles.paragraph, { marginTop: 6 }]}>
+            {t.termsP3Desc}
+          </Text>
+          <View style={styles.divider} />
+          <Text style={{ fontSize: 11, color: '#0F4C81', fontWeight: '700' }}>
+            ✓ {t.termsP5Desc}
+          </Text>
+        </View>
+
         <Text style={styles.versionText}>SDAS Mobile v1.0.0 • Build 2026</Text>
       </ScrollView>
     </SafeAreaView>

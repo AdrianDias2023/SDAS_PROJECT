@@ -18,6 +18,24 @@ export const translations = {
     tabOperator: "Operator",
     mapTitle: "Evacuation Safe Zones",
     
+    // Terms & Privacy Onboarding
+    termsTitle: "Terms & Conditions",
+    termsSubtitle: "Please review and accept our safety and privacy policies before proceeding.",
+    termsP1Title: "1. Purpose of Application",
+    termsP1Desc: "SDAS provides real-time dam telemetry, water level monitoring, and emergency notifications to support public safety and proactive disaster management.",
+    termsP2Title: "2. Alert & AI Prediction Disclaimer",
+    termsP2Desc: "Alerts and forecasts are synthesized from IoT sensor readings, rainfall radar, and AI models. Always follow official instructions issued by the Disaster Management Centre (DMC) during dangerous events.",
+    termsP3Title: "3. Data Usage & Privacy",
+    termsP3Desc: "Public users are completely anonymous. No personal tracking or location harvesting is performed. Only reservoir telemetry and operator audit actions are securely stored.",
+    termsP4Title: "4. Operator Accountability",
+    termsP4Desc: "Gate control functions are restricted to authenticated operators. All manual override actions are cryptographically signed and recorded in permanent audit trails.",
+    termsP5Title: "5. Academic Research Disclaimer",
+    termsP5Desc: "SDAS is developed as a final year engineering prototype under SLTC Research University and is designed as an auxiliary decision-support tool.",
+    agreeCheckbox: "I have read, understood, and agree to the Terms & Conditions and Privacy Policy.",
+    continueBtn: "Accept & Enter System",
+    viewAsPublic: "Enter as Public Citizen",
+    loginAsOperator: "Authorized Operator Login",
+    
     // Home Screen
     liveWaterLevel: "Live Water Level",
     currentStatus: "System Status",
@@ -55,7 +73,7 @@ export const translations = {
     acknowledged: "Acknowledged",
     unacknowledged: "Needs Attention",
     
-    // Prediction Screen (Hybrid Model: LSTM + Random Forest + Autoencoder)
+    // Prediction Screen
     mlTitle: "Hybrid AI Hydrological Pipeline",
     mlSubtitle: "LSTM Regression + Random Forest Ensemble Risk Model",
     forecast1h: "Next 1-Hour Water Level",
@@ -76,7 +94,7 @@ export const translations = {
     anomalyStatusNormal: "Sensors Verified (No Drift)",
     anomalyDetected: "Sensor Discrepancy / Drift Detected",
     
-    // About Screen (Proposal Content)
+    // About Screen
     aboutTitle: "About SDAS",
     aboutProject: "Project Overview",
     aboutProjectDesc: "Floods in the Puttalam region of Sri Lanka frequently cause devastation due to the lack of automated early warning and dam gate response. Manual gate operations historically take 30+ minutes. SDAS automates the entire loop with dual ultrasonic sensing, intelligent early warnings, automated gate actuation, and cloud-assisted AI forecasting.",
@@ -94,6 +112,7 @@ export const translations = {
     supervisor1: "Dr. Sanika Wijayasekara (Data Science & Cyber Security)",
     supervisor2: "Mr. Kavinda Tharindu (Data Science)",
     institution: "Faculty of Computing and IT\nSLTC Research University, Sri Lanka",
+    viewTermsLink: "📜 View Terms & Conditions / Privacy Policy",
     
     // Operator Screens
     operatorDashboard: "Operator Control Center",
@@ -135,6 +154,24 @@ export const translations = {
     tabAbout: "තොරතුරු",
     tabOperator: "ක්‍රියාකරු",
     mapTitle: "ආරක්ෂිත ඉවත් කිරීමේ කලාප",
+    
+    // Terms & Privacy Onboarding
+    termsTitle: "නියමයන් සහ කොන්දේසි",
+    termsSubtitle: "යෙදුම භාවිතා කිරීමට පෙර අපගේ ආරක්ෂණ සහ රහස්‍යතා ප්‍රතිපත්ති සමාලෝචනය කරන්න.",
+    termsP1Title: "1. යෙදුමේ අරමුණ",
+    termsP1Desc: "SDAS මඟින් ජල මට්ටම් අධීක්ෂණය සහ හදිසි අනතුරු ඇඟවීම් ලබා දෙමින් මහජන ආරක්ෂාව තහවුරු කරයි.",
+    termsP2Title: "2. අනතුරු ඇඟවීමේ වගකීම් ප්‍රකාශය",
+    termsP2Desc: "අනතුරු ඇඟවීම් AI සහ සංවේදක මඟින් ජනනය කෙරේ. හදිසි අවස්ථාවලදී සැමවිටම ආපදා කළමනාකරණ මධ්‍යස්ථානයේ (DMC) නිල උපදෙස් පිළිපදින්න.",
+    termsP3Title: "3. දත්ත භාවිතය සහ රහස්‍යතාව",
+    termsP3Desc: "මහජන පරිශීලකයින්ගේ කිසිදු පෞද්ගලික දත්තයක් රැස් නොකෙරේ. වේලි දත්ත පමණක් ආරක්ෂිතව ගබඩා කෙරේ.",
+    termsP4Title: "4. ක්‍රියාකරුගේ වගකීම",
+    termsP4Desc: "වේලි දොරටු පාලනය බලයලත් ක්‍රියාකරුවන්ට පමණක් සීමා වන අතර සියලු ක්‍රියාකාරකම් සටහන් වේ.",
+    termsP5Title: "5. අධ්‍යයන මූලාකෘති නිවේදනය",
+    termsP5Desc: "SDAS යනු SLTC පර්යේෂණ විශ්වවිද්‍යාලය යටතේ නිර්මාණය කරන ලද අවසන් වසර ඉංජිනේරු මූලාකෘතියකි.",
+    agreeCheckbox: "මම නියමයන් සහ රහස්‍යතා ප්‍රතිපත්තිය කියවා එකඟ වෙමි.",
+    continueBtn: "එකඟ වී පද්ධතියට පිවිසෙන්න",
+    viewAsPublic: "මහජන පරිශීලකයෙකු ලෙස පිවිසෙන්න",
+    loginAsOperator: "බලයලත් ක්‍රියාකරු පිවිසුම",
     
     // Home Screen
     liveWaterLevel: "සජීවී ජල මට්ටම",
@@ -212,6 +249,7 @@ export const translations = {
     supervisor1: "ආචාර්ය සනිකා විජයසේකර (දත්ත විද්‍යාව සහ සයිබර් ආරක්ෂාව)",
     supervisor2: "කාවින්ද තරිඳු මහතා (දත්ත විද්‍යාව)",
     institution: "පරිගණක හා තොරතුරු තාක්ෂණ පීඨය\nSLTC පර්යේෂණ විශ්වවිද්‍යාලය, ශ්‍රී ලංකාව",
+    viewTermsLink: "📜 නියමයන් සහ රහස්‍යතා ප්‍රතිපත්තිය බලන්න",
     
     // Operator Screens
     operatorDashboard: "ක්‍රියාකරු පාලන මධ්‍යස්ථානය",
@@ -242,7 +280,7 @@ export const translations = {
   
   ta: {
     appName: "SDAS",
-    appFullName: "ஸ்மார்ட் அணை எச்சரிக்கை அமைப்பு",
+    appFullName: "ස්மார்ட் அணை எச்சரிக்கை அமைப்பு",
     tagline: "இன்று பாதுகாப்பானது, நாளை உறுதியானது",
     
     // Tabs & Navigation
@@ -253,6 +291,24 @@ export const translations = {
     tabAbout: "விவரம்",
     tabOperator: "இயக்குநர்",
     mapTitle: "வெளியேற்ற பாதுகாப்பு மண்டலங்கள்",
+    
+    // Terms & Privacy Onboarding
+    termsTitle: "விதிமுறைகள் மற்றும் நிபந்தனைகள்",
+    termsSubtitle: "பயன்படுத்துவதற்கு முன் எங்கள் பாதுகாப்பு மற்றும் தனியுரிமைக் கொள்கைகளை மதிப்பாய்வு செய்யவும்.",
+    termsP1Title: "1. பயன்பாட்டின் நோக்கம்",
+    termsP1Desc: "SDAS அணை நீர் மட்டத்தைக் கண்காணித்து உடனடி எச்சரிக்கைகளை வழங்கி பொதுப் பாதுகாப்பை உறுதி செய்கிறது.",
+    termsP2Title: "2. எச்சரிக்கை மறுப்பு",
+    termsP2Desc: "எச்சரிக்கைகள் AI மற்றும் சென்சார்கள் மூலம் உருவாக்கப்படுகின்றன. அவசர காலங்களில் அதிகாரப்பூர்வ DMC வழிகாட்டுதல்களைப் பின்பற்றவும்.",
+    termsP3Title: "3. தரவுப் பயன்பாடு மற்றும் தனியுரிமை",
+    termsP3Desc: "பொதுப் பயனர்களின் தனிப்பட்ட தகவல்கள் சேகரிக்கப்படுவதில்லை. அணை அளவீடுகள் மட்டுமே பாதுகாப்பாக சேமிக்கப்படுகின்றன.",
+    termsP4Title: "4. இயக்குநரின் பொறுப்பு",
+    termsP4Desc: "கதவுக் கட்டுப்பாடு அங்கீகரிக்கப்பட்ட நபர்களுக்கு மட்டுமே. அனைத்து நடவடிக்கைகளும் பதிவு செய்யப்படுகின்றன.",
+    termsP5Title: "5. கல்வி ஆய்வு அறிவிப்பு",
+    termsP5Desc: "SDAS என்பது SLTC ஆராய்ச்சி பல்கலைக்கழகத்தின் கீழ் உருவாக்கப்பட்ட இறுதி ஆண்டு பொறியியல் முன்மாதிரி ஆகும்.",
+    agreeCheckbox: "விதிமுறைகள் மற்றும் தனியுரிமைக் கொள்கையை ஏற்றுக்கொள்கிறேன்.",
+    continueBtn: "ஏற்றுக்கொண்டு தொடரவும்",
+    viewAsPublic: "பொதுப் பயனராக நுழையவும்",
+    loginAsOperator: "அங்கீகரிக்கப்பட்ட இயக்குநர் உள்நுழைவு",
     
     // Home Screen
     liveWaterLevel: "நேரடி நீர் மட்டம்",
@@ -330,6 +386,7 @@ export const translations = {
     supervisor1: "டாக்டர் சனிகா விஜேசேகர (தரவு அறிவியல் & சைபர் பாதுகாப்பு)",
     supervisor2: "திரு. கவிந்த தரிந்து (தரவு அறிவியல்)",
     institution: "கணினியியல் மற்றும் தகவல் தொழில்நுட்ப பீடம்\nSLTC ஆராய்ச்சி பல்கலைக்கழகம், இலங்கை",
+    viewTermsLink: "📜 விதிமுறைகள் மற்றும் தனியுரிமைக் கொள்கையைப் பார்க்கவும்",
     
     // Operator Screens
     operatorDashboard: "இயக்குநர் கட்டுப்பாட்டு மையம்",
