@@ -16,14 +16,14 @@
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.sdas.operator"
+      "bundleIdentifier": "com.sdas.operatordam"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0B132B"
       },
-      "package": "com.sdas.operator",
+      "package": "com.sdas.operatordam",
       "versionCode": 8,
       "permissions": [
         "INTERNET",
