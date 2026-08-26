@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SDAS Operator - Dam Control",
-    "slug": "sdas-operator",
+    "slug": "sdasproject",
     "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
