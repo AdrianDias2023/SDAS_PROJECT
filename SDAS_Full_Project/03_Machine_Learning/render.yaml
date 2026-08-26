@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: sdas-ai-engine
+    runtime: python
+    rootDir: SDAS_Full_Project/03_Machine_Learning
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn inference_server:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8
+      - key: TF_CPP_MIN_LOG_LEVEL
+        value: "3"
+      - key: CUDA_VISIBLE_DEVICES
+        value: "-1"
