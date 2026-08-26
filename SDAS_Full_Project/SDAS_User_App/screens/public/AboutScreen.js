@@ -184,26 +184,6 @@ export default function AboutScreen({ navigation }) {
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
-
-          <View style={styles.divider} />
-
-          {/* Item 6: Operator Portal */}
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('Login')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <View style={styles.iconBox}>
-                <Text style={styles.menuIcon}>🔐</Text>
-              </View>
-              <View>
-                <Text style={styles.menuTitle}>Operator Access</Text>
-                <Text style={styles.menuSubtitle}>Dam control & AI diagnostics</Text>
-              </View>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Bottom Banner Button matching Mockup Screen 5 */}

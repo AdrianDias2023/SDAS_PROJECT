@@ -70,11 +70,11 @@ export default function OperatorDashboard({ navigation }) {
       {/* Header matching Operator Screen 1 */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('PublicTabs')}
+          onPress={() => navigation.navigate('Settings')}
           activeOpacity={0.7}
           style={styles.navBtn}
         >
-          <Text style={styles.headerIcon}>☰</Text>
+          <Text style={styles.headerIcon}>⚙️</Text>
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Dashboard</Text>
