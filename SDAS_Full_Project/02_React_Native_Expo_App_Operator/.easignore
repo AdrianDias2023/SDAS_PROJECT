@@ -1,0 +1,16 @@
+# EAS Build — files to exclude from upload
+# Reduces tarball size and avoids upload timeouts
+
+node_modules/
+.expo/
+dist/
+__tests__/
+*.test.js
+*.spec.js
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+android/
+ios/
