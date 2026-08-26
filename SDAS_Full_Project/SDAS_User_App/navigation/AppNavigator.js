@@ -1,4 +1,4 @@
-// SDAS — Public User App Navigation (5 Clean Safety Tabs)
+// SDAS — Public User App Navigation (6 Clean Safety & Weather Tabs)
 
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -9,9 +9,9 @@ import { View, Text } from 'react-native';
 import HomeScreen             from '../screens/public/HomeScreen';
 import AlertsScreen           from '../screens/public/AlertsScreen';
 import CommunityReportsScreen from '../screens/public/CommunityReportsScreen';
+import WeatherForecastScreen  from '../screens/public/WeatherForecastScreen';
 import SafetyInfoScreen       from '../screens/public/SafetyInfoScreen';
 import AboutScreen            from '../screens/public/AboutScreen';
-import WeatherForecastScreen  from '../screens/public/WeatherForecastScreen';
 import PublicGateStatusScreen from '../screens/public/PublicGateStatusScreen';
 import { useLanguage }        from '../services/i18n';
 
@@ -21,7 +21,7 @@ const Stack = createNativeStackNavigator();
 function TabIcon({ emoji, focused }) {
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: focused ? 20 : 18, opacity: focused ? 1 : 0.6 }}>
+      <Text style={{ fontSize: focused ? 18 : 16, opacity: focused ? 1 : 0.6 }}>
         {emoji}
       </Text>
       {focused && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#007AFF', marginTop: 2 }} />}
@@ -43,7 +43,7 @@ function PublicTabs() {
           height: 64,
           paddingBottom: 6,
         },
-        tabBarLabelStyle: { fontSize: 10, marginBottom: 4, fontWeight: '700' },
+        tabBarLabelStyle: { fontSize: 9, marginBottom: 4, fontWeight: '700' },
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: '#64748B',
       }}
@@ -62,6 +62,11 @@ function PublicTabs() {
         name="Community"
         component={CommunityReportsScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="📢" focused={focused} />, tabBarLabel: t('communityAlerts') || 'Community' }}
+      />
+      <Tab.Screen
+        name="Weather"
+        component={WeatherForecastScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🌦️" focused={focused} />, tabBarLabel: t('rainfall') || 'Weather' }}
       />
       <Tab.Screen
         name="Safety"

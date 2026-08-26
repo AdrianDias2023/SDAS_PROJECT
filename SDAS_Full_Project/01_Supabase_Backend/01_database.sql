@@ -136,6 +136,22 @@ CREATE TABLE IF NOT EXISTS community_reports (
 CREATE INDEX IF NOT EXISTS idx_community_created ON community_reports (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_community_status  ON community_reports (status, created_at DESC);
 
+-- ─── WEATHER METEOROLOGICAL TELEMETRY ─────────────────────────
+CREATE TABLE IF NOT EXISTS weather_data (
+  id             BIGSERIAL PRIMARY KEY,
+  location       TEXT NOT NULL DEFAULT 'Puttalam District',
+  latitude       FLOAT NOT NULL DEFAULT 8.0362,
+  longitude      FLOAT NOT NULL DEFAULT 79.8283,
+  temperature    NUMERIC(4, 1) NOT NULL,
+  humidity       NUMERIC(4, 1) NOT NULL,
+  rainfall       NUMERIC(5, 1) NOT NULL,
+  wind_speed     NUMERIC(4, 1) NOT NULL,
+  forecast_time  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_weather_created ON weather_data (created_at DESC);
+
 -- ─── ENABLE REALTIME ─────────────────────────────────────────
 -- Run these in Supabase Dashboard → Database → Replication
 -- Or uncomment and run:
@@ -143,3 +159,5 @@ CREATE INDEX IF NOT EXISTS idx_community_status  ON community_reports (status, c
 -- ALTER PUBLICATION supabase_realtime ADD TABLE alerts;
 -- ALTER PUBLICATION supabase_realtime ADD TABLE gate_control;
 -- ALTER PUBLICATION supabase_realtime ADD TABLE community_reports;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE weather_data;
+

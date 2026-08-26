@@ -1,4 +1,4 @@
-// SDAS — Operator Console Navigation (6 Engineering Tabs + Control Screens)
+// SDAS — Operator Console Navigation (7 Engineering & Weather Tabs)
 
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -8,8 +8,9 @@ import { View, Text } from 'react-native';
 // Operator Screens
 import LoginScreen             from '../screens/operator/LoginScreen';
 import OperatorDashboard       from '../screens/operator/OperatorDashboard';
-import GateControlScreen       from '../screens/operator/GateControlScreen';
 import PredictionScreen       from '../screens/public/PredictionScreen';
+import OperatorWeatherScreen   from '../screens/operator/OperatorWeatherScreen';
+import GateControlScreen       from '../screens/operator/GateControlScreen';
 import OperatorCommunityScreen from '../screens/operator/OperatorCommunityScreen';
 import SystemHealthScreen      from '../screens/operator/SystemHealthScreen';
 import AuditLogsScreen         from '../screens/operator/AuditLogsScreen';
@@ -25,7 +26,7 @@ const Stack = createNativeStackNavigator();
 function TabIcon({ emoji, focused }) {
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: focused ? 20 : 18, opacity: focused ? 1 : 0.6 }}>
+      <Text style={{ fontSize: focused ? 17 : 15, opacity: focused ? 1 : 0.6 }}>
         {emoji}
       </Text>
       {focused && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: '#38BDF8', marginTop: 2 }} />}
@@ -45,7 +46,7 @@ function OperatorTabs() {
           height: 64,
           paddingBottom: 6,
         },
-        tabBarLabelStyle: { fontSize: 8.5, marginBottom: 4, fontWeight: '700' },
+        tabBarLabelStyle: { fontSize: 8, marginBottom: 4, fontWeight: '700' },
         tabBarActiveTintColor: '#38BDF8',
         tabBarInactiveTintColor: '#64748B',
       }}
@@ -59,6 +60,11 @@ function OperatorTabs() {
         name="AI"
         component={PredictionScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🤖" focused={focused} />, tabBarLabel: 'AI' }}
+      />
+      <Tab.Screen
+        name="Weather"
+        component={OperatorWeatherScreen}
+        options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🌦️" focused={focused} />, tabBarLabel: 'Weather' }}
       />
       <Tab.Screen
         name="Gate"

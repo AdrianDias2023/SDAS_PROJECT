@@ -191,9 +191,19 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Weather Card */}
+        {/* Current Weather Card with View Weather Button */}
         <View style={styles.weatherCard}>
-          <Text style={styles.weatherCardHeader}>WEATHER</Text>
+          <View style={styles.weatherHeaderRow}>
+            <Text style={styles.weatherCardHeader}>CURRENT WEATHER</Text>
+            <TouchableOpacity
+              style={styles.viewWeatherBtn}
+              onPress={() => navigation.navigate('Weather')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.viewWeatherBtnText}>View Weather ›</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.weatherRow}>
             <View style={styles.weatherCol}>
               <Text style={styles.weatherIcon}>🌧️</Text>
@@ -216,6 +226,12 @@ export default function HomeScreen() {
                 </Text>
               </View>
             </View>
+          </View>
+
+          <View style={styles.weatherForecastSnippet}>
+            <Text style={styles.forecastSnippetText}>
+              🌧️ Forecast: Heavy rain possible • Inflow impact: <Text style={{ fontWeight: '800', color: '#F59E0B' }}>Medium</Text>
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -434,7 +450,36 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#64748B',
     letterSpacing: 1,
+  },
+  weatherHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
+  },
+  viewWeatherBtn: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+  },
+  viewWeatherBtnText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0284C7',
+  },
+  weatherForecastSnippet: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  forecastSnippetText: {
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '600',
   },
   weatherRow: {
     flexDirection: 'row',
