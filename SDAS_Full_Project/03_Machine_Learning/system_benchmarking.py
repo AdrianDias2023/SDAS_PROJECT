@@ -410,7 +410,7 @@ def test_historical_analytics():
         {"water": 58.0, "rain": 12.0},
         {"water": 71.0, "rain": 25.0}, # Pre-warning crossed
         {"water": 86.0, "rain": 40.0}, # Danger crossed (peak rise: +15%)
-        {"water": 82.0, "rain": 10.0}, # Gate 100% actuated, draining
+        {"water": 82.0, "rain": 10.0}, # Gate 50% actuated (90° Emergency Spillway), draining
         {"water": 70.0, "rain": 0.0},
         {"water": 60.0, "rain": 0.0},
     ]

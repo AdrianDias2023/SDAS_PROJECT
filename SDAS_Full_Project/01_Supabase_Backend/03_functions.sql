@@ -49,13 +49,18 @@ BEGIN
   LIMIT 1;
 
   -- 4. Evaluate Canonical 4-Tier SDAS Matrix
+  -- Tier 1: < 70.0%             -> NORMAL (0% Closed)
+  -- Tier 2: 70.0% - 85.0% Stable -> PRE_WARNING (0% Closed)
+  -- Tier 3: 70.0% - 85.0% Rapid  -> WARNING (20% Buffer)
+  -- Tier 4: > 85.0%              -> DANGER (50% Spillway)
   IF NEW.water_level > 85.0 THEN
     v_alert_type := 'DANGER';
     v_severity   := 'EMERGENCY';
     v_message    := format('DANGER: Water level at %.1f%% (>85.0%% critical). Sluice gate actuated to 50%% (90° Emergency Spillway). Immediate evacuation.', NEW.water_level);
 
-  ELSIF NEW.water_level > 70.0 THEN
-    -- Rate-of-rise threshold: > 9.00%/min strictly matches firmware RISE_RATE_THRESHOLD (0.30% per 2 seconds)
+  ELSIF NEW.water_level >= 70.0 THEN
+    -- Rate of rise normalized to %/minute across timestamped telemetry intervals,
+    -- evaluated against calibrated surge threshold of 9.00%/min (mathematically equivalent to 0.30% per 2-second sampling interval on physical edge node)
     IF v_rate_of_rise > 9.00 THEN
       v_alert_type := 'WARNING';
       v_severity   := 'HIGH';
@@ -69,7 +74,7 @@ BEGIN
   ELSE
     v_alert_type := 'NORMAL';
     v_severity   := 'INFO';
-    v_message    := format('NORMAL: Water level at %.1f%%. Sluice gate closed (0° Water Conservation).', NEW.water_level);
+    v_message    := format('NORMAL: Water level at %.1f%% (<70.0%% normal hold). Sluice gate closed (0° Water Conservation).', NEW.water_level);
   END IF;
 
   -- 5. Insert alert record if alert type changed or if in active emergency

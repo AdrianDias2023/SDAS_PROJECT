@@ -234,7 +234,7 @@ float readWaterLevel() {
 AlertLevel evaluateLevel(float pct, float rateOfRise, AlertLevel current) {
 
   // ── DANGER band (>85%) — immediate, no hysteresis going UP ─────────────────
-  if (pct >= THRESH_DANGER) {
+  if (pct > THRESH_DANGER) {
     return LEVEL_DANGER;
   }
 

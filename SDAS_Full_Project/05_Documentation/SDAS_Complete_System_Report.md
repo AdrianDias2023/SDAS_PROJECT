@@ -169,7 +169,7 @@ While physical ML models compute numerical predictions, **Google Gemini API (Gem
   1. 📊 **Dashboard:** Dynamic Hardware Connectivity Bar, Mode Banner (`🟢 AUTO CLOUD` vs `🔴 MANUAL OVERRIDE`), 2x2 Telemetry grid, and Subsystem health indicators.
   2. 🤖 **AI:** Interactive 6-Hour LSTM predictive lookahead curve (+1h predicted `75.8%`, MAE `2.32%`) and Autoencoder sensor anomaly telemetry.
   3. 🌦️ **Weather:** Upstream meteorological monitoring, 6-hour aggregate precipitation ($45\text{ mm}$ expected), and hydrological inflow coupling ($r = 0.883$).
-  4. 🚪 **Gate:** Sluice gate cross-section visualizer, 3-tier selectable actuation buttons (`0% CLOSED`, `20% BUFFER RELEASE`, `50% EMERGENCY RELEASE`, `100% MAX`), Emergency STOP 🛑 lock, and Hardware Safety Interlock protection.
+  4. 🚪 **Gate:** Sluice gate cross-section visualizer, 3-tier selectable actuation buttons (`0% CLOSED`, `20% BUFFER RELEASE`, `50% EMERGENCY RELEASE`), Emergency STOP 🛑 lock, and Hardware Safety Interlock protection.
   5. 📢 **Reports:** Citizen incident moderation triage queue with `[ ✅ Approve Alert ]` and `[ ❌ Reject Report ]` actions.
   6. ❤️ **Health:** Deep diagnostic telemetry for ESP32 edge node, dual JSN-SR04T sensors, DHT22, SIM800L GSM module, cloud sync ping, and 18650 battery backup ($87\%$).
   7. 📜 **Logs:** Immutable chronological audit trail of all gate actuations, sensor syncs, and operator interventions.

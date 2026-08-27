@@ -59,10 +59,10 @@ CREATE POLICY "Admins can update user roles"
 CREATE POLICY "Public can read sensor readings"
   ON sensor_readings FOR SELECT TO anon, authenticated USING (TRUE);
 
--- Direct ingestion restricted to authenticated hardware / system accounts
+-- Direct ingestion restricted strictly to authenticated hardware/operator accounts
 CREATE POLICY "Authorized hardware can insert readings"
   ON sensor_readings FOR INSERT TO authenticated
-  WITH CHECK (TRUE);
+  WITH CHECK (public.is_operator_or_admin());
 
 -- ─── ALERTS (Safety Broadcast Protection) ────────────────────
 -- Public can read all active and historical flood warnings
@@ -84,9 +84,9 @@ CREATE POLICY "Operators can acknowledge alerts"
 CREATE POLICY "Public can read ML predictions"
   ON ml_predictions FOR SELECT TO anon, authenticated USING (TRUE);
 
-CREATE POLICY "System can insert predictions"
+CREATE POLICY "Authorized AI engine can insert predictions"
   ON ml_predictions FOR INSERT TO authenticated
-  WITH CHECK (TRUE);
+  WITH CHECK (public.is_operator_or_admin());
 
 -- ─── GATE CONTROL (Actuator Interlock Protection) ─────────────
 -- Public can read current gate aperture and operational mode
@@ -135,7 +135,7 @@ CREATE POLICY "Public can read weather data"
 
 CREATE POLICY "Authorized system can insert weather data"
   ON weather_data FOR INSERT TO authenticated
-  WITH CHECK (TRUE);
+  WITH CHECK (public.is_operator_or_admin());
 
 -- ─── EMERGENCY CONTACTS (SMS Directory Protection) ───────────
 CREATE POLICY "Public can read contacts"
