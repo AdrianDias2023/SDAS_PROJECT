@@ -1,5 +1,5 @@
 // SDAS — Operator Weather Monitoring & Inflow Risk Screen
-// Connects Open-Meteo Meteorological Data with AI Reservoir Inflow Forecast
+// Connects Open-Meteo Meteorological Data with AI Reservoir Inflow Forecast & Live Telemetry Badge
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -34,16 +34,18 @@ export default function OperatorWeatherScreen({ navigation }) {
   }, [loadWeather]);
 
   const w = weather || {
+    isLive: false,
+    dataSource: 'SIMULATION / CALIBRATED CACHE',
     temp: 28.0,
     humidity: 72,
     windSpeed: 15.0,
     rainfall: 18.0,
-    condition: 'Light Rain',
+    condition: 'Tropical Monsoon Rain',
     icon: '🌧️',
     total6hRain: 45.0,
     impactLevel: 'MEDIUM',
     impactColor: '#F59E0B',
-    impactReason: 'Rainfall forecast may increase water inflow during next hours.',
+    impactReason: 'Rainfall forecast indicates moderate inflow increase over next 6 hours.',
     forecast6Hours: [
       { time: '10 AM', prob: 20, rain: 2.0, icon: '🌦️' },
       { time: '12 PM', prob: 40, rain: 5.0, icon: '🌧️' },
@@ -58,8 +60,15 @@ export default function OperatorWeatherScreen({ navigation }) {
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Weather Monitoring</Text>
+        <TouchableOpacity
+          onPress={() => navigation?.goBack && navigation.goBack()}
+          activeOpacity={0.7}
+          style={styles.backBtn}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={styles.headerTitle}>Weather & Inflow Radar</Text>
           <Text style={styles.headerSub}>Tabbowa Catchment • Puttalam Basin</Text>
         </View>
         <TouchableOpacity
@@ -88,6 +97,19 @@ export default function OperatorWeatherScreen({ navigation }) {
           />
         }
       >
+        {/* Live vs Simulation Status Badge */}
+        <View style={[styles.statusBadge, w.isLive ? styles.badgeLive : styles.badgeSim]}>
+          <Text style={styles.statusDot}>{w.isLive ? '🟢' : '🟡'}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.statusTitle, w.isLive ? styles.textGreen : styles.textAmber]}>
+              {w.isLive ? 'LIVE METEOROLOGICAL TELEMETRY' : 'SIMULATION / CALIBRATED WEATHER'}
+            </Text>
+            <Text style={styles.statusSub}>
+              {w.isLive ? 'Open-Meteo Satellite Radar (Active Stream)' : 'Standard Monsoon Runoff Model (Offline)'}
+            </Text>
+          </View>
+        </View>
+
         {/* Card 1: Meteorological Overview */}
         <View style={styles.card}>
           <Text style={styles.cardSectionLabel}>METEOROLOGICAL TELEMETRY</Text>
@@ -99,74 +121,52 @@ export default function OperatorWeatherScreen({ navigation }) {
             </View>
 
             <View style={styles.metricBox}>
-              <Text style={styles.metricLabel}>Forecast (6h)</Text>
+              <Text style={styles.metricLabel}>6h Cumulative Rain</Text>
               <Text style={styles.metricVal}>{w.total6hRain} mm</Text>
+            </View>
+          </View>
+
+          <View style={[styles.metricsRow, { marginTop: 12 }]}>
+            <View style={styles.metricBox}>
+              <Text style={styles.metricLabel}>Temperature</Text>
+              <Text style={styles.metricValSecondary}>{w.temp}°C</Text>
             </View>
 
             <View style={styles.metricBox}>
-              <Text style={styles.metricLabel}>Temperature</Text>
-              <Text style={styles.metricVal}>{w.temp}°C</Text>
+              <Text style={styles.metricLabel}>Humidity / Wind</Text>
+              <Text style={styles.metricValSecondary}>{w.humidity}% • {w.windSpeed} km/h</Text>
             </View>
           </View>
         </View>
 
-        {/* Card 2: Inflow Risk & AI Impact */}
-        <View style={[styles.card, styles.riskCard]}>
-          <View style={styles.riskHeaderRow}>
-            <Text style={styles.riskSectionLabel}>INFLOW RISK ASSESSMENT</Text>
-            <View style={[styles.riskBadge, { backgroundColor: `${w.impactColor}25`, borderColor: w.impactColor }]}>
-              <View style={[styles.riskDot, { backgroundColor: w.impactColor }]} />
-              <Text style={[styles.riskBadgeText, { color: w.impactColor }]}>{w.impactLevel} RISK</Text>
+        {/* Card 2: AI Inflow Coupling Risk */}
+        <View style={[styles.card, { borderColor: w.impactColor, borderWidth: 1.5 }]}>
+          <View style={styles.impactHeaderRow}>
+            <Text style={styles.cardSectionLabel}>HYDROLOGICAL INFLOW RISK</Text>
+            <View style={[styles.impactPill, { backgroundColor: w.impactColor }]}>
+              <Text style={styles.impactPillText}>{w.impactLevel} IMPACT</Text>
             </View>
           </View>
 
-          <View style={styles.aiImpactBox}>
-            <Text style={styles.aiImpactTitle}>🧠 AI Hydrological Impact:</Text>
-            <Text style={styles.aiImpactText}>
-              Water level is projected to increase by <Text style={{ color: '#38BDF8', fontWeight: '900' }}>+5.8%</Text> over the next 2 hours based on upstream runoff coupling.
-            </Text>
-          </View>
-
-          <View style={styles.reasonBox}>
-            <Text style={styles.reasonLabel}>Operational Context:</Text>
-            <Text style={styles.reasonText}>{w.impactReason}</Text>
-          </View>
+          <Text style={styles.impactDesc}>{w.impactReason}</Text>
+          <View style={styles.impactDivider} />
+          <Text style={styles.couplingStat}>
+            🔗 Catchment Runoff Coupling: <Text style={{ color: '#38BDF8', fontWeight: '900' }}>r = 0.883</Text> (45-min runoff lag)
+          </Text>
         </View>
 
-        {/* Card 3: Hourly Rainfall Forecast Timeline */}
+        {/* Card 3: 6-Hour Precipitation Probability Timeline */}
         <View style={styles.card}>
           <Text style={styles.cardSectionLabel}>6-HOUR PRECIPITATION TIMELINE</Text>
-
           <View style={styles.timelineRow}>
             {w.forecast6Hours.map((item, idx) => (
               <View key={idx} style={styles.timelineCol}>
-                <Text style={styles.timelineTime}>{item.time}</Text>
+                <Text style={styles.timelineHour}>{item.time}</Text>
                 <Text style={styles.timelineIcon}>{item.icon}</Text>
                 <Text style={styles.timelineProb}>{item.prob}%</Text>
                 <Text style={styles.timelineRain}>{item.rain}mm</Text>
               </View>
             ))}
-          </View>
-        </View>
-
-        {/* Card 4: Dam Inflow Correlation Insight */}
-        <View style={styles.card}>
-          <Text style={styles.cardSectionLabel}>HYDROLOGICAL INFLOW COUPLING</Text>
-          <View style={styles.couplingRow}>
-            <View style={styles.couplingItem}>
-              <Text style={styles.couplingLabel}>Correlation Coeff.</Text>
-              <Text style={styles.couplingVal}>r = 0.883</Text>
-            </View>
-            <View style={styles.couplingDivider} />
-            <View style={styles.couplingItem}>
-              <Text style={styles.couplingLabel}>Runoff Time Lag</Text>
-              <Text style={styles.couplingVal}>~45 Mins</Text>
-            </View>
-            <View style={styles.couplingDivider} />
-            <View style={styles.couplingItem}>
-              <Text style={styles.couplingLabel}>Action Rule</Text>
-              <Text style={[styles.couplingVal, { color: '#F59E0B' }]}>Hold Buffer</Text>
-            </View>
           </View>
         </View>
       </ScrollView>
@@ -189,17 +189,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#1E293B',
   },
+  backBtn: {
+    padding: 6,
+  },
+  backIcon: {
+    fontSize: 20,
+    color: '#94A3B8',
+    fontWeight: 'bold',
+  },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 0.5,
   },
   headerSub: {
-    fontSize: 11,
-    color: '#38BDF8',
-    fontWeight: '700',
-    marginTop: 2,
+    fontSize: 10.5,
+    color: '#94A3B8',
+    marginTop: 1,
   },
   refreshBtn: {
     padding: 6,
@@ -210,21 +216,49 @@ const styles = StyleSheet.create({
   scroll: {
     padding: 16,
     paddingBottom: 32,
-    gap: 14,
+    gap: 12,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  badgeLive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  badgeSim: {
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+  },
+  statusDot: {
+    fontSize: 14,
+  },
+  statusTitle: {
+    fontSize: 10.5,
+    fontWeight: '900',
+  },
+  statusSub: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 1,
   },
   card: {
     backgroundColor: '#1E293B',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 12,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   cardSectionLabel: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '900',
     color: '#94A3B8',
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
+    marginBottom: 12,
   },
   metricsRow: {
     flexDirection: 'row',
@@ -233,111 +267,73 @@ const styles = StyleSheet.create({
   metricBox: {
     flex: 1,
     backgroundColor: '#0F172A',
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
-    gap: 4,
   },
   metricLabel: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
     color: '#94A3B8',
+    marginBottom: 4,
   },
   metricVal: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '900',
+    color: '#38BDF8',
+  },
+  metricValSecondary: {
+    fontSize: 14,
+    fontWeight: '800',
     color: '#FFFFFF',
   },
-  riskCard: {
-    backgroundColor: 'rgba(245, 158, 11, 0.06)',
-    borderColor: 'rgba(245, 158, 11, 0.25)',
-  },
-  riskHeaderRow: {
+  impactHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
-  riskSectionLabel: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#F59E0B',
-    letterSpacing: 0.8,
+  impactPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  riskBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  riskDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  riskBadgeText: {
-    fontSize: 11,
-    fontWeight: '900',
-  },
-  aiImpactBox: {
-    backgroundColor: '#0F172A',
-    borderRadius: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
-    gap: 4,
-  },
-  aiImpactTitle: {
-    fontSize: 12,
-    fontWeight: '800',
+  impactPillText: {
     color: '#FFFFFF',
-  },
-  aiImpactText: {
-    fontSize: 12,
-    color: '#CBD5E1',
-    lineHeight: 18,
-  },
-  reasonBox: {
-    backgroundColor: '#0F172A',
-    borderRadius: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#334155',
-    gap: 2,
-  },
-  reasonLabel: {
     fontSize: 10,
-    fontWeight: '800',
-    color: '#94A3B8',
+    fontWeight: '900',
   },
-  reasonText: {
-    fontSize: 11,
+  impactDesc: {
+    fontSize: 12,
+    color: '#F8FAFC',
+    lineHeight: 17,
+    marginBottom: 8,
+  },
+  impactDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginVertical: 6,
+  },
+  couplingStat: {
+    fontSize: 10.5,
     color: '#94A3B8',
-    lineHeight: 16,
   },
   timelineRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
   },
   timelineCol: {
     alignItems: 'center',
-    gap: 4,
+    flex: 1,
   },
-  timelineTime: {
-    fontSize: 10,
-    fontWeight: '800',
+  timelineHour: {
+    fontSize: 10.5,
+    fontWeight: '700',
     color: '#94A3B8',
+    marginBottom: 4,
   },
   timelineIcon: {
-    fontSize: 20,
+    fontSize: 18,
+    marginBottom: 4,
   },
   timelineProb: {
     fontSize: 12,
@@ -346,36 +342,13 @@ const styles = StyleSheet.create({
   },
   timelineRain: {
     fontSize: 10,
-    fontWeight: '700',
     color: '#64748B',
+    marginTop: 2,
   },
-  couplingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
+  textGreen: {
+    color: '#10B981',
   },
-  couplingItem: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  couplingLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#94A3B8',
-  },
-  couplingVal: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  couplingDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#334155',
+  textAmber: {
+    color: '#F59E0B',
   },
 });

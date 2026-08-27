@@ -1,85 +1,119 @@
 // SDAS — Operator Settings & Profile Screen
-// Matches Prototype Design Screen 10: Operator Credentials, Dam Profile & Diagnostics
+// Cyber Dark Theme with Session Security & Console Lock
 
 import React from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert, SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
-import { supabase } from '../../services/supabase';
 import { useLanguage } from '../../services/i18n';
 import LanguageSelector from '../../components/LanguageSelector';
 
-export default function OperatorSettingsScreen({ navigation }) {
+export default function OperatorSettingsScreen({ navigation, onLogout, isDemoSession }) {
   const { lang } = useLanguage();
 
   const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out of the operator console?', [
+    Alert.alert('Lock Console', 'Are you sure you want to sign out and lock the operator console?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Log Out', style: 'destructive', onPress: () => supabase.auth.signOut() },
+      {
+        text: 'Sign Out & Lock',
+        style: 'destructive',
+        onPress: () => {
+          if (onLogout) {
+            onLogout();
+          } else {
+            navigation.navigate('Login');
+          }
+        },
+      },
     ]);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
+
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => navigation?.goBack && navigation.goBack()} activeOpacity={0.8}>
-            <Text style={styles.headerNavIcon}>☰</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Settings</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <TouchableOpacity
+          onPress={() => navigation?.goBack && navigation.goBack()}
+          activeOpacity={0.7}
+          style={styles.backBtn}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Operator Settings</Text>
+        <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Operator Profile Card (Screen 10) */}
-        <TouchableOpacity style={styles.profileCard} activeOpacity={0.8}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Operator Profile Card */}
+        <View style={styles.profileCard}>
           <View style={styles.profileAvatar}>
             <Text style={styles.avatarIcon}>👤</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.profileName}>Operator 01</Text>
-            <Text style={styles.profileRole}>Dam Operator</Text>
+            <Text style={styles.profileName}>
+              {isDemoSession ? 'Guest Evaluator (Simulation)' : 'Authorized Operator'}
+            </Text>
+            <Text style={styles.profileRole}>
+              {isDemoSession ? '🧪 Academic Demo Session' : 'ID: OP-TABBOWA-01 • Control Room'}
+            </Text>
           </View>
-          <Text style={styles.chevron}>›</Text>
-        </TouchableOpacity>
+        </View>
 
-        {/* Menu Items */}
+        {/* Navigation & Preferences Menu */}
         <View style={styles.menuCard}>
-          {/* Dam Profile */}
-          <View style={styles.menuRow}>
+          {/* Weather Impact Module */}
+          <TouchableOpacity
+            style={styles.menuRow}
+            onPress={() => navigation.navigate('Weather')}
+            activeOpacity={0.75}
+          >
             <View style={styles.menuRowLeft}>
-              <Text style={styles.menuEmoji}>🏛️</Text>
+              <Text style={styles.menuEmoji}>🌦️</Text>
               <View>
-                <Text style={styles.menuTitle}>Dam Profile</Text>
-                <Text style={styles.menuSub}>Tabbowa Prototype Dam</Text>
+                <Text style={styles.menuTitle}>Meteorological & Inflow Forecast</Text>
+                <Text style={styles.menuSub}>Tabbowa catchment precipitation coupling</Text>
               </View>
             </View>
             <Text style={styles.chevron}>›</Text>
-          </View>
+          </TouchableOpacity>
 
-          {/* Language Settings */}
-          <View style={styles.menuRow}>
-            <View style={styles.menuRowLeft}>
-              <Text style={styles.menuEmoji}>🌐</Text>
-              <View>
-                <Text style={styles.menuTitle}>Language Settings</Text>
-                <Text style={styles.menuSub}>{lang === 'si' ? 'සිංහල' : lang === 'ta' ? 'தமிழ்' : 'English'}</Text>
-              </View>
-            </View>
-            <LanguageSelector compact={true} />
-          </View>
-
-          {/* Notification Settings */}
+          {/* Audit Logs */}
           <TouchableOpacity
             style={styles.menuRow}
-            onPress={() => Alert.alert('Notifications', 'Operator siren and high-priority alarms are active.')}
-            activeOpacity={0.8}
+            onPress={() => navigation.navigate('AuditLogs')}
+            activeOpacity={0.75}
           >
             <View style={styles.menuRowLeft}>
-              <Text style={styles.menuEmoji}>🔔</Text>
-              <Text style={styles.menuTitle}>Notification Settings</Text>
+              <Text style={styles.menuEmoji}>📜</Text>
+              <View>
+                <Text style={styles.menuTitle}>Immutable Audit Logs</Text>
+                <Text style={styles.menuSub}>Permanent actuation & command records</Text>
+              </View>
+            </View>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+
+          {/* Simulation Suite */}
+          <TouchableOpacity
+            style={styles.menuRow}
+            onPress={() => navigation.navigate('Simulation')}
+            activeOpacity={0.75}
+          >
+            <View style={styles.menuRowLeft}>
+              <Text style={styles.menuEmoji}>🧪</Text>
+              <View>
+                <Text style={styles.menuTitle}>Hydrological Simulation Suite</Text>
+                <Text style={styles.menuSub}>Inject synthetic storm surge vectors</Text>
+              </View>
             </View>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
@@ -87,67 +121,47 @@ export default function OperatorSettingsScreen({ navigation }) {
           {/* Alert Contacts */}
           <TouchableOpacity
             style={styles.menuRow}
-            onPress={() => navigation?.navigate && navigation.navigate('Contacts')}
-            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Contacts')}
+            activeOpacity={0.75}
           >
             <View style={styles.menuRowLeft}>
-              <Text style={styles.menuEmoji}>📱</Text>
-              <Text style={styles.menuTitle}>Alert Contacts</Text>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-
-          {/* System Information */}
-          <TouchableOpacity
-            style={styles.menuRow}
-            onPress={() => navigation?.navigate && navigation.navigate('Health')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.menuRowLeft}>
-              <Text style={styles.menuEmoji}>ℹ️</Text>
-              <Text style={styles.menuTitle}>System Information</Text>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-
-          {/* Help & Documentation */}
-          <TouchableOpacity
-            style={styles.menuRow}
-            onPress={() => Alert.alert('Documentation', 'SDAS 4-Tier Automated Hydrological Safety System Manual v1.2.0')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.menuRowLeft}>
-              <Text style={styles.menuEmoji}>📖</Text>
-              <Text style={styles.menuTitle}>Help & Documentation</Text>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-
-          {/* Switch to Public View */}
-          <TouchableOpacity
-            style={styles.menuRow}
-            onPress={() => navigation?.navigate && navigation.navigate('PublicTabs')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.menuRowLeft}>
-              <Text style={styles.menuEmoji}>🏠</Text>
+              <Text style={styles.menuEmoji}>📞</Text>
               <View>
-                <Text style={[styles.menuTitle, { color: '#0284C7', fontWeight: '800' }]}>Switch to Public Portal</Text>
-                <Text style={styles.menuSub}>View citizen warnings & disaster map</Text>
+                <Text style={styles.menuTitle}>Emergency Speed-Dial Contacts</Text>
+                <Text style={styles.menuSub}>DMC 117, Irrigation Dept, Police, Hospital</Text>
               </View>
             </View>
-            <Text style={[styles.chevron, { color: '#0284C7' }]}>›</Text>
+            <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
 
-          {/* Log Out */}
+          {/* Language Settings */}
+          <View style={styles.menuRow}>
+            <View style={styles.menuRowLeft}>
+              <Text style={styles.menuEmoji}>🌐</Text>
+              <View>
+                <Text style={styles.menuTitle}>Language Settings</Text>
+                <Text style={styles.menuSub}>
+                  {lang === 'si' ? 'සිංහල' : lang === 'ta' ? 'தமிழ்' : 'English'}
+                </Text>
+              </View>
+            </View>
+            <LanguageSelector compact={true} />
+          </View>
+
+          {/* Sign Out / Lock Console */}
           <TouchableOpacity
             style={[styles.menuRow, { borderBottomWidth: 0 }]}
             onPress={handleLogout}
-            activeOpacity={0.8}
+            activeOpacity={0.75}
           >
             <View style={styles.menuRowLeft}>
-              <Text style={styles.menuEmoji}>🚪</Text>
-              <Text style={[styles.menuTitle, { color: '#EF4444', fontWeight: '800' }]}>Log Out</Text>
+              <Text style={styles.menuEmoji}>🔒</Text>
+              <View>
+                <Text style={[styles.menuTitle, { color: '#EF4444', fontWeight: '800' }]}>
+                  {isDemoSession ? 'Exit Simulation' : 'Sign Out & Lock Console'}
+                </Text>
+                <Text style={styles.menuSub}>Require authentication for next access</Text>
+              </View>
             </View>
             <Text style={[styles.chevron, { color: '#EF4444' }]}>›</Text>
           </TouchableOpacity>
@@ -158,22 +172,107 @@ export default function OperatorSettingsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  safeArea:     { flex: 1, backgroundColor: '#F8FAFC' },
-  header:       { backgroundColor: '#0F4C81', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 14 },
-  headerTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerNavIcon:{ fontSize: 22, color: '#FFF' },
-  headerTitle:  { fontSize: 20, fontWeight: '800', color: '#FFF' },
-  scroll:       { padding: 16, paddingBottom: 40 },
-  profileCard:  { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  profileAvatar:{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  avatarIcon:   { fontSize: 22 },
-  profileName:  { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  profileRole:  { fontSize: 12, color: '#64748B', marginTop: 1 },
-  menuCard:     { backgroundColor: '#FFF', borderRadius: 16, paddingVertical: 4, paddingHorizontal: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
-  menuRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderColor: '#F1F5F9' },
-  menuRowLeft:  { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  menuEmoji:    { fontSize: 20 },
-  menuTitle:    { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  menuSub:      { fontSize: 11, color: '#64748B', marginTop: 2 },
-  chevron:      { fontSize: 22, color: '#94A3B8', fontWeight: 'bold' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0B132B',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: '#0B132B',
+    borderBottomWidth: 1,
+    borderColor: '#1E293B',
+  },
+  backBtn: {
+    padding: 6,
+  },
+  backIcon: {
+    fontSize: 20,
+    color: '#94A3B8',
+    fontWeight: 'bold',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  scroll: {
+    padding: 16,
+    paddingBottom: 32,
+    gap: 14,
+  },
+  profileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  profileAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  avatarIcon: {
+    fontSize: 20,
+  },
+  profileName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  profileRole: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  menuCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  menuRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  menuRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  menuEmoji: {
+    fontSize: 18,
+  },
+  menuTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  menuSub: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  chevron: {
+    fontSize: 18,
+    color: '#64748B',
+    fontWeight: 'bold',
+  },
 });

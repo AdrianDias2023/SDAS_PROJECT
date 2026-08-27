@@ -1,5 +1,6 @@
 // SDAS — Operator Gate Control Screen (3. Gate Control)
 // Full Manual Override & Auto AI Sluice Actuator Control Cockpit
+// Strictly adheres to canonical 3-phase matrix: 0% (0°), 20% (36°), 50% (90°)
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -33,7 +34,7 @@ export default function GateControlScreen({ navigation }) {
 
   const handleApplyCommand = async (levelToApply) => {
     const targetLevel = levelToApply != null ? levelToApply : selectedLevel;
-    const angle = Math.round(targetLevel * 1.8);
+    const angle = targetLevel === 50 ? 90 : targetLevel === 20 ? 36 : 0;
     
     Alert.alert(
       '⚙️ Confirm Sluice Gate Command',
@@ -83,6 +84,8 @@ export default function GateControlScreen({ navigation }) {
     );
   };
 
+  const getAngle = (pct) => (pct === 50 ? 90 : pct === 20 ? 36 : 0);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
@@ -131,7 +134,7 @@ export default function GateControlScreen({ navigation }) {
         <View style={styles.positionCard}>
           <Text style={styles.posLabel}>Current Physical Sluice Aperture</Text>
           <Text style={styles.posVal}>
-            {currentPercentage}% {currentPercentage === 0 ? 'CLOSED' : currentPercentage === 20 ? 'BUFFER DRAIN' : currentPercentage === 50 ? 'EMERGENCY FLUSH' : 'OPEN'}
+            {currentPercentage}% ({getAngle(currentPercentage)}°) — {currentPercentage === 0 ? 'CLOSED' : currentPercentage === 20 ? 'CONTROLLED RELEASE' : 'EMERGENCY RELEASE'}
           </Text>
 
           {/* Dam Sluice Graphic Illustration */}
@@ -145,7 +148,7 @@ export default function GateControlScreen({ navigation }) {
                 x="85"
                 y={40}
                 width="70"
-                height={Math.max(4, 55 - (currentPercentage / 100) * 55)}
+                height={Math.max(4, 55 - (currentPercentage / 50) * 45)}
                 fill="#38BDF8"
                 rx={1}
               />
@@ -153,9 +156,9 @@ export default function GateControlScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Manual Sluice Command Selection Grid */}
+        {/* Canonical 3-Phase Sluice Gate Actuation Grid */}
         <View style={styles.controlCard}>
-          <Text style={styles.sectionHeader}>Select Manual Actuation Level</Text>
+          <Text style={styles.sectionHeader}>Select Canonical Actuation Phase</Text>
 
           <View style={styles.buttonGrid}>
             {/* 1. 0% Closed */}
@@ -169,7 +172,7 @@ export default function GateControlScreen({ navigation }) {
             >
               <Text style={styles.levelPercent}>0%</Text>
               <Text style={styles.levelDesc}>CLOSED (0°)</Text>
-              <Text style={styles.levelSub}>Store Water</Text>
+              <Text style={styles.levelSub}>Water Conservation</Text>
             </TouchableOpacity>
 
             {/* 2. 20% Controlled */}
@@ -182,11 +185,11 @@ export default function GateControlScreen({ navigation }) {
               activeOpacity={0.7}
             >
               <Text style={[styles.levelPercent, selectedLevel === 20 && { color: '#F59E0B' }]}>20%</Text>
-              <Text style={styles.levelDesc}>BUFFER (36°)</Text>
-              <Text style={styles.levelSub}>Pre-Drain</Text>
+              <Text style={styles.levelDesc}>CONTROLLED (36°)</Text>
+              <Text style={styles.levelSub}>Buffer Pre-Drain</Text>
             </TouchableOpacity>
 
-            {/* 3. 50% Flush */}
+            {/* 3. 50% Emergency */}
             <TouchableOpacity
               style={[
                 styles.levelButton,
@@ -196,22 +199,8 @@ export default function GateControlScreen({ navigation }) {
               activeOpacity={0.7}
             >
               <Text style={[styles.levelPercent, selectedLevel === 50 && { color: '#EF4444' }]}>50%</Text>
-              <Text style={styles.levelDesc}>FLUSH (90°)</Text>
-              <Text style={styles.levelSub}>Spillway Flow</Text>
-            </TouchableOpacity>
-
-            {/* 4. 100% Full Open */}
-            <TouchableOpacity
-              style={[
-                styles.levelButton,
-                selectedLevel === 100 && styles.levelButtonActiveRed,
-              ]}
-              onPress={() => setSelectedLevel(100)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.levelPercent, selectedLevel === 100 && { color: '#DC2626' }]}>100%</Text>
-              <Text style={styles.levelDesc}>MAX (180°)</Text>
-              <Text style={styles.levelSub}>Full Discharge</Text>
+              <Text style={styles.levelDesc}>EMERGENCY (90°)</Text>
+              <Text style={styles.levelSub}>Spillway Discharge</Text>
             </TouchableOpacity>
           </View>
 
@@ -223,7 +212,7 @@ export default function GateControlScreen({ navigation }) {
             activeOpacity={0.85}
           >
             <Text style={styles.applyButtonText}>
-              {sending ? 'Dispatching to Servo...' : `Command Servo to ${selectedLevel}% (${Math.round(selectedLevel * 1.8)}°)`}
+              {sending ? 'Dispatching to Servo...' : `Command Servo to ${selectedLevel}% (${getAngle(selectedLevel)}°)`}
             </Text>
           </TouchableOpacity>
         </View>
@@ -231,9 +220,9 @@ export default function GateControlScreen({ navigation }) {
         {/* Safety Protocol Card */}
         <View style={styles.safetyCard}>
           <Text style={styles.safetyTitle}>🛡️ Hardware Safety Interlock Rules</Text>
-          <Text style={styles.safetyBullet}>• Manual commands take immediate priority over autonomous AI schedules.</Text>
-          <Text style={styles.safetyBullet}>• If water level exceeds 85%, manual gate closure is software-interlocked for dam integrity.</Text>
-          <Text style={styles.safetyBullet}>• All operator gate commands are immutably signed and recorded in the audit log.</Text>
+          <Text style={styles.safetyBullet}>• <b>Canonical Matrix:</b> SDAS hardware operates exclusively at 0° (Closed), 36° (Buffer), and 90° (Spillway).</Text>
+          <Text style={styles.safetyBullet}>• <b>Overtopping Protection:</b> If water level exceeds 85%, manual gate closure commands are software-interlocked.</Text>
+          <Text style={styles.safetyBullet}>• <b>Audit Trail:</b> Every operator intervention and automated servo actuation is signed and permanently logged.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -355,11 +344,12 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   posVal: {
-    fontSize: 22,
+    fontSize: 16,
     fontWeight: '900',
     color: '#38BDF8',
     marginTop: 4,
     marginBottom: 12,
+    textAlign: 'center',
   },
   sluiceGraphicBox: {
     marginTop: 4,
@@ -379,16 +369,15 @@ const styles = StyleSheet.create({
   },
   buttonGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
     marginBottom: 16,
   },
   levelButton: {
     flex: 1,
-    minWidth: '45%',
     backgroundColor: '#0F172A',
     borderRadius: 12,
-    padding: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: '#334155',
@@ -406,21 +395,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
   },
   levelPercent: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '900',
     color: '#FFFFFF',
   },
   levelDesc: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
     color: '#94A3B8',
     marginTop: 2,
+    textAlign: 'center',
   },
   levelSub: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '700',
     color: '#64748B',
     marginTop: 2,
+    textAlign: 'center',
   },
   applyButton: {
     backgroundColor: '#38BDF8',

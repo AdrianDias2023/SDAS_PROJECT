@@ -6,8 +6,9 @@ import { LanguageProvider } from './services/i18n';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 export default function App() {
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession]             = useState(null);
+  const [isDemoSession, setIsDemoSession] = useState(false);
+  const [loading, setLoading]             = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -18,11 +19,22 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => setSession(session)
+      (_event, session) => {
+        setSession(session);
+        if (!session) setIsDemoSession(false);
+      }
     );
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (_) {}
+    setSession(null);
+    setIsDemoSession(false);
+  };
 
   if (loading) {
     return (
@@ -32,10 +44,17 @@ export default function App() {
     );
   }
 
+  const isAuthenticated = Boolean(session || isDemoSession);
+
   return (
     <LanguageProvider>
       <NavigationContainer>
-        <AppNavigator session={session} />
+        <AppNavigator
+          isAuthenticated={isAuthenticated}
+          isDemoSession={isDemoSession}
+          onEnterDemo={() => setIsDemoSession(true)}
+          onLogout={handleLogout}
+        />
       </NavigationContainer>
     </LanguageProvider>
   );

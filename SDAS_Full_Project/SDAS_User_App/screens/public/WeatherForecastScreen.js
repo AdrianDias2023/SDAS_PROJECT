@@ -1,5 +1,5 @@
 // SDAS — Public Weather Dashboard Screen (4. Weather)
-// Integrates Open-Meteo Meteorological Data with Dam Inflow Risk Assessment
+// Integrates Open-Meteo Meteorological Data with Dam Inflow Risk Assessment & Live Status Badge
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -36,11 +36,13 @@ export default function WeatherForecastScreen() {
   }, [loadWeather]);
 
   const w = weather || {
+    isLive: false,
+    dataSource: 'SIMULATION / CALIBRATED CACHE',
     temp: 28.0,
     humidity: 72,
     windSpeed: 15.0,
     rainfall: 18.0,
-    condition: 'Light Rain',
+    condition: 'Tropical Monsoon Rain',
     icon: '🌧️',
     forecast6Hours: [
       { time: '10 AM', prob: 20, rain: 2.0, icon: '🌦️' },
@@ -48,9 +50,10 @@ export default function WeatherForecastScreen() {
       { time: '2 PM', prob: 70, rain: 12.0, icon: '🌧️' },
       { time: '4 PM', prob: 85, rain: 26.0, icon: '⛈️' },
     ],
+    total6hRain: 45.0,
     impactLevel: 'MEDIUM',
     impactColor: '#F59E0B',
-    impactReason: 'Rainfall forecast may increase water inflow during next hours.',
+    impactReason: 'Rainfall forecast indicates moderate inflow increase over next 6 hours.',
   };
 
   return (
@@ -59,8 +62,16 @@ export default function WeatherForecastScreen() {
 
       {/* Top Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Weather Conditions</Text>
-        <Text style={styles.headerSub}>📍 Puttalam District</Text>
+        <View>
+          <Text style={styles.headerTitle}>Weather Conditions</Text>
+          <Text style={styles.headerSub}>📍 Tabbowa Catchment • Puttalam District</Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => { setRefreshing(true); loadWeather(); }}
+          style={styles.refreshBtn}
+        >
+          <Text style={styles.refreshIcon}>🔄</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -73,10 +84,23 @@ export default function WeatherForecastScreen() {
               setRefreshing(true);
               loadWeather();
             }}
-            tintColor="#007AFF"
+            tintColor="#0284C7"
           />
         }
       >
+        {/* Live vs Simulation Status Badge */}
+        <View style={[styles.statusBadge, w.isLive ? styles.badgeLive : styles.badgeSim]}>
+          <Text style={styles.statusDot}>{w.isLive ? '🟢' : '🟡'}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.statusTitle}>
+              {w.isLive ? 'LIVE METEOROLOGICAL TELEMETRY' : 'SIMULATION / CALIBRATED WEATHER'}
+            </Text>
+            <Text style={styles.statusSub}>
+              {w.isLive ? 'Open-Meteo Satellite Radar (Live Stream)' : 'Standard Tropical Monsoon Inflow Model'}
+            </Text>
+          </View>
+        </View>
+
         {/* Hero Weather Card */}
         <View style={styles.heroCard}>
           <Text style={styles.heroIcon}>{w.icon}</Text>
@@ -86,7 +110,7 @@ export default function WeatherForecastScreen() {
 
         {/* Current Weather 4-Grid Card */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>CURRENT WEATHER</Text>
+          <Text style={styles.sectionTitle}>CURRENT WEATHER TELEMETRY</Text>
           <View style={styles.metricsGrid}>
             <View style={styles.metricItem}>
               <Text style={styles.metricLabel}>🌡 Temperature</Text>
@@ -101,47 +125,38 @@ export default function WeatherForecastScreen() {
               <Text style={styles.metricVal}>{w.windSpeed} km/h</Text>
             </View>
             <View style={styles.metricItem}>
-              <Text style={styles.metricLabel}>🌧 Rainfall</Text>
-              <Text style={styles.metricVal}>{w.rainfall} mm</Text>
+              <Text style={styles.metricLabel}>🌧 Rainfall Rate</Text>
+              <Text style={styles.metricVal}>{w.rainfall} mm/h</Text>
             </View>
           </View>
         </View>
 
-        {/* Rain Forecast: Next 6 Hours */}
+        {/* 6-Hour Precipitation Probability Timeline */}
         <View style={styles.card}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>RAIN FORECAST</Text>
-            <Text style={styles.sectionSubBadge}>Next 6 Hours</Text>
-          </View>
-
-          <View style={styles.forecastRow}>
-            {w.forecast6Hours.map((f, idx) => (
-              <View key={idx} style={styles.forecastColumn}>
-                <Text style={styles.forecastTime}>{f.time}</Text>
-                <Text style={styles.forecastIcon}>{f.icon}</Text>
-                <Text style={styles.forecastProb}>{f.prob}%</Text>
+          <Text style={styles.sectionTitle}>6-HOUR RAIN PROBABILITY TIMELINE</Text>
+          <View style={styles.timelineRow}>
+            {w.forecast6Hours.map((item, idx) => (
+              <View key={idx} style={styles.timeCol}>
+                <Text style={styles.timeHour}>{item.time}</Text>
+                <Text style={styles.timeIcon}>{item.icon}</Text>
+                <Text style={styles.timeProb}>{item.prob}%</Text>
+                <Text style={styles.timeRain}>{item.rain}mm</Text>
               </View>
             ))}
           </View>
         </View>
 
-        {/* Dam Impact Assessment (Crucial SDAS Integration) */}
-        <View style={[styles.card, styles.impactCard]}>
-          <View style={styles.impactHeaderRow}>
-            <Text style={styles.impactTitle}>🌧 Heavy Rain Expected</Text>
-          </View>
-
-          <View style={styles.impactStatusRow}>
-            <Text style={styles.impactLabel}>Impact on Reservoir:</Text>
-            <View style={[styles.impactBadge, { backgroundColor: `${w.impactColor}20`, borderColor: w.impactColor }]}>
-              <View style={[styles.impactDot, { backgroundColor: w.impactColor }]} />
-              <Text style={[styles.impactBadgeText, { color: w.impactColor }]}>{w.impactLevel}</Text>
+        {/* Dam Inflow Impact Assessment Card */}
+        <View style={[styles.card, styles.impactCard, { borderColor: w.impactColor }]}>
+          <View style={styles.impactHeader}>
+            <Text style={styles.impactTitle}>RESERVOIR INFLOW IMPACT</Text>
+            <View style={[styles.impactPill, { backgroundColor: w.impactColor }]}>
+              <Text style={styles.impactPillText}>{w.impactLevel} RISK</Text>
             </View>
           </View>
-
-          <View style={styles.impactReasonBox}>
-            <Text style={styles.impactReasonLabel}>Reason:</Text>
-            <Text style={styles.impactReasonText}>{w.impactReason}</Text>
+          <Text style={styles.impactDesc}>{w.impactReason}</Text>
+          <View style={styles.impactFooter}>
+            <Text style={styles.impactStat}>🌧 Expected 6h Inflow: <Text style={{ fontWeight: '900', color: '#0F172A' }}>{w.total6hRain} mm</Text></Text>
           </View>
         </View>
       </ScrollView>
@@ -155,89 +170,105 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 10,
+    paddingVertical: 14,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderColor: '#E2E8F0',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '900',
     color: '#0F172A',
   },
   headerSub: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '600',
     color: '#64748B',
-    fontWeight: '700',
-    marginTop: 2,
+    marginTop: 1,
+  },
+  refreshBtn: {
+    padding: 6,
+  },
+  refreshIcon: {
+    fontSize: 18,
   },
   scroll: {
     padding: 16,
     paddingBottom: 32,
-    gap: 14,
+    gap: 12,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  badgeLive: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  badgeSim: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+  },
+  statusDot: {
+    fontSize: 14,
+  },
+  statusTitle: {
+    fontSize: 10.5,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  statusSub: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '600',
+    marginTop: 1,
   },
   heroCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingVertical: 24,
+    backgroundColor: '#0284C7',
+    borderRadius: 18,
+    padding: 24,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 4,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: '#0284C7',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 3,
   },
   heroIcon: {
     fontSize: 48,
     marginBottom: 4,
   },
   heroTemp: {
-    fontSize: 40,
+    fontSize: 36,
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#FFFFFF',
   },
   heroCondition: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#0284C7',
+    color: '#E0F2FE',
+    marginTop: 2,
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 16,
     padding: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    gap: 12,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 1 },
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: '900',
     color: '#64748B',
-    letterSpacing: 0.8,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionSubBadge: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#0284C7',
-    backgroundColor: '#E0F2FE',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    letterSpacing: 0.6,
+    marginBottom: 12,
   },
   metricsGrid: {
     flexDirection: 'row',
@@ -245,110 +276,89 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   metricItem: {
-    width: '48%',
+    flex: 1,
+    minWidth: '45%',
     backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 12,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    gap: 4,
   },
   metricLabel: {
     fontSize: 11,
     fontWeight: '700',
     color: '#64748B',
+    marginBottom: 4,
   },
   metricVal: {
     fontSize: 16,
     fontWeight: '900',
     color: '#0F172A',
   },
-  forecastRow: {
+  timelineRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
   },
-  forecastColumn: {
+  timeCol: {
     alignItems: 'center',
-    gap: 6,
+    flex: 1,
   },
-  forecastTime: {
+  timeHour: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#64748B',
+    marginBottom: 4,
   },
-  forecastIcon: {
-    fontSize: 22,
+  timeIcon: {
+    fontSize: 20,
+    marginBottom: 4,
   },
-  forecastProb: {
-    fontSize: 13,
+  timeProb: {
+    fontSize: 12,
     fontWeight: '900',
     color: '#0284C7',
   },
-  impactCard: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#FDE68A',
-    gap: 10,
+  timeRain: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 2,
   },
-  impactHeaderRow: {
+  impactCard: {
+    borderWidth: 1.5,
+  },
+  impactHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   impactTitle: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '900',
-    color: '#92400E',
+    color: '#64748B',
   },
-  impactStatusRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  impactPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  impactLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#78350F',
-  },
-  impactBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  impactDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  impactBadgeText: {
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  impactReasonBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#FEF3C7',
-    gap: 2,
-  },
-  impactReasonLabel: {
+  impactPillText: {
+    color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: '800',
-    color: '#92400E',
+    fontWeight: '900',
   },
-  impactReasonText: {
+  impactDesc: {
     fontSize: 12,
+    color: '#334155',
+    lineHeight: 17,
     fontWeight: '600',
-    color: '#78350F',
-    lineHeight: 16,
+    marginBottom: 10,
+  },
+  impactFooter: {
+    borderTopWidth: 1,
+    borderColor: '#F1F5F9',
+    paddingTop: 8,
+  },
+  impactStat: {
+    fontSize: 11,
+    color: '#64748B',
   },
 });

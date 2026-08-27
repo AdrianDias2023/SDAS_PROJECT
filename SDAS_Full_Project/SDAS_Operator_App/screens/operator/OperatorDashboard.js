@@ -1,5 +1,5 @@
 // SDAS — Operator Dashboard Screen (1. Dashboard)
-// Precision UI with Live Hardware Connection Tracking & Manual Override Mode Switcher
+// Precision UI with Live Hardware Tracking, Manual Override Switcher & Quick Control Cockpit
 
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -13,7 +13,7 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import { fetchLatestReading, sendGateCommand } from '../../services/alerts';
+import { fetchLatestReading } from '../../services/alerts';
 import { subscribeSensorReadings } from '../../services/realtime';
 import Svg, { Path } from 'react-native-svg';
 
@@ -38,7 +38,7 @@ function CyanSparkline() {
   );
 }
 
-export default function OperatorDashboard({ navigation }) {
+export default function OperatorDashboard({ navigation, isDemoSession, onLogout }) {
   const [reading, setReading]               = useState(null);
   const [refreshing, setRefreshing]         = useState(false);
   const [isAutoMode, setIsAutoMode]         = useState(true); // true = AUTO AI, false = MANUAL OVERRIDE
@@ -119,7 +119,10 @@ export default function OperatorDashboard({ navigation }) {
           <Text style={styles.headerIcon}>⚙️</Text>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Dashboard</Text>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={styles.headerTitle}>Control Dashboard</Text>
+          {isDemoSession && <Text style={styles.demoBadge}>🧪 SIMULATION SESSION</Text>}
+        </View>
 
         <TouchableOpacity
           onPress={() => { setRefreshing(true); loadData(); }}
@@ -194,7 +197,7 @@ export default function OperatorDashboard({ navigation }) {
             <Text style={styles.cardLabel}>Gate Position</Text>
             <Text style={styles.cardValueWhite}>{gatePercentage}%</Text>
             <View style={styles.gateRow}>
-              <Text style={styles.cardSubText}>{gatePercentage === 0 ? 'CLOSED' : `${gatePercentage}% OPEN`}</Text>
+              <Text style={styles.cardSubText}>{gatePercentage === 0 ? 'CLOSED (0°)' : `${gatePercentage}% OPEN`}</Text>
               <Text style={styles.lockIcon}>{isAutoMode ? '🤖' : '🖐️'}</Text>
             </View>
           </TouchableOpacity>
@@ -205,7 +208,7 @@ export default function OperatorDashboard({ navigation }) {
             onPress={() => navigation.navigate('AI')}
             activeOpacity={0.8}
           >
-            <Text style={styles.cardLabel}>AI Risk Level</Text>
+            <Text style={styles.cardLabel}>AI Risk Prediction</Text>
             <Text style={styles.cardValueGreen}>
               {pct >= 85 ? '🔴 DANGER' : pct >= 80 ? '🟠 WARNING' : pct >= 70 ? '🟡 PRE-WARN' : '🟢 NORMAL'}
             </Text>
@@ -222,12 +225,55 @@ export default function OperatorDashboard({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        {/* Quick Operations & Tools Grid */}
+        <View style={styles.quickOpsGrid}>
+          <TouchableOpacity
+            style={styles.quickOpCard}
+            onPress={() => navigation.navigate('Weather')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.quickOpIcon}>🌦️</Text>
+            <Text style={styles.quickOpTitle}>Weather & Inflow</Text>
+            <Text style={styles.quickOpSub}>Open-Meteo Radar ❯</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickOpCard}
+            onPress={() => navigation.navigate('AuditLogs')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.quickOpIcon}>📜</Text>
+            <Text style={styles.quickOpTitle}>Audit Logs</Text>
+            <Text style={styles.quickOpSub}>Action Trail ❯</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickOpCard}
+            onPress={() => navigation.navigate('Simulation')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.quickOpIcon}>🧪</Text>
+            <Text style={styles.quickOpTitle}>Simulation Suite</Text>
+            <Text style={styles.quickOpSub}>Storm Injection ❯</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickOpCard}
+            onPress={() => navigation.navigate('Contacts')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.quickOpIcon}>📞</Text>
+            <Text style={styles.quickOpTitle}>Emergency 117</Text>
+            <Text style={styles.quickOpSub}>Speed-Dials ❯</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Subsystem Health Live Matrix */}
         <View style={styles.healthSectionCard}>
           <View style={styles.healthHeaderRow}>
             <Text style={styles.sectionTitle}>Subsystem Health</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Health')}>
-              <Text style={styles.viewAllText}>Details ❯</Text>
+              <Text style={styles.viewAllText}>Full Diagnostics ❯</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.healthRow}>
@@ -293,6 +339,13 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '900',
     color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  demoBadge: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: '#F59E0B',
+    marginTop: 2,
     letterSpacing: 0.5,
   },
   scroll: {
@@ -458,6 +511,35 @@ const styles = StyleSheet.create({
   },
   lockIcon: {
     fontSize: 13,
+  },
+  quickOpsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  quickOpCard: {
+    flex: 1,
+    minWidth: '47%',
+    backgroundColor: '#1E293B',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  quickOpIcon: {
+    fontSize: 20,
+    marginBottom: 6,
+  },
+  quickOpTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  quickOpSub: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#38BDF8',
+    marginTop: 3,
   },
   healthSectionCard: {
     backgroundColor: '#1E293B',

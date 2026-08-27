@@ -1,5 +1,5 @@
 // SDAS — Operator Access & Login Screen
-// Matches Design Screen 7: Shield Logo, Operator Access Form, Remember Me Checkbox, Solid Blue Login & Demo Access buttons
+// Enforces official operator authentication with explicit offline simulation mode
 
 import React, { useState } from 'react';
 import {
@@ -13,19 +13,20 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { supabase } from '../../services/supabase';
 
-export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(true);
+export default function LoginScreen({ navigation, onEnterDemo }) {
+  const [email, setEmail]               = useState('');
+  const [password, setPassword]         = useState('');
+  const [rememberMe, setRememberMe]     = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]           = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Required', 'Please enter email and password.');
+    if (!email.trim() || !password) {
+      Alert.alert('Missing Credentials', 'Please enter your authorized operator email and password.');
       return;
     }
     setLoading(true);
@@ -35,127 +36,139 @@ export default function LoginScreen({ navigation }) {
         password: password,
       });
       if (error) {
-        Alert.alert('Login Failed', error.message);
+        Alert.alert('Access Denied', error.message || 'Invalid operator credentials.');
       } else {
-        navigation.navigate('OperatorTabs');
+        // App.js auth state listener handles redirect
       }
     } catch (err) {
-      Alert.alert('Login Error', err?.message || 'Authentication error');
+      Alert.alert('Authentication Error', err?.message || 'Unable to connect to authorization service.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDemoLogin = () => {
-    navigation.navigate('OperatorTabs');
+  const handleDemoAccess = () => {
+    Alert.alert(
+      '🧪 Academic Evaluation Simulation Mode',
+      'You are entering SDAS Operator Console in SIMULATION / DEMO MODE. This environment enables full telemetry review, LSTM lookahead forecasting, and simulated sluice gate actuation.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Enter Simulation',
+          onPress: () => {
+            if (onEnterDemo) {
+              onEnterDemo();
+            } else {
+              navigation.navigate('OperatorTabs');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#0B132B" />
 
-      {/* Header with Back Button */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation?.goBack && navigation.goBack()}
-          activeOpacity={0.7}
-          style={styles.backBtn}
-        >
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <View style={{ width: 32 }} />
-      </View>
-
-      <View style={styles.content}>
-        {/* Shield Logo */}
-        <View style={styles.logoWrapper}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-
-        <Text style={styles.title}>Operator Access</Text>
-        <Text style={styles.subtitle}>Please sign in to continue</Text>
-
-        {/* Input Fields */}
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Email"
-            placeholderTextColor="#64748B"
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-
-          <View style={styles.passwordWrapper}>
-            <TextInput
-              style={[styles.input, { flex: 1, marginBottom: 0 }]}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password"
-              placeholderTextColor="#64748B"
-              secureTextEntry={!showPassword}
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* Official Brand Shield Logo */}
+          <View style={styles.logoWrapper}>
+            <Image
+              source={require('../../assets/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
             />
+          </View>
+
+          <Text style={styles.title}>Operator Access</Text>
+          <Text style={styles.subtitle}>Authorized Dam Engineering Portal</Text>
+
+          {/* Input Fields */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Operator Email (e.g. op@sdas.lk)"
+              placeholderTextColor="#64748B"
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+
+            <View style={styles.passwordWrapper}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Password"
+                placeholderTextColor="#64748B"
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                style={styles.eyeBtn}
+                onPress={() => setShowPassword(!showPassword)}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 16 }}>{showPassword ? '👁️' : '🙈'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Remember Me & Admin Reset Row */}
+          <View style={styles.optionsRow}>
             <TouchableOpacity
-              style={styles.eyeBtn}
-              onPress={() => setShowPassword(!showPassword)}
-              activeOpacity={0.7}
+              style={styles.rememberMeRow}
+              onPress={() => setRememberMe(!rememberMe)}
+              activeOpacity={0.8}
             >
-              <Text style={{ fontSize: 16 }}>{showPassword ? '👁️' : '🙈'}</Text>
+              <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
+                {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <Text style={styles.rememberMeText}>Remember session</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => Alert.alert('Operator Support', 'Contact the Irrigation Department System Administrator for credential provisioning.')}>
+              <Text style={styles.forgotText}>Help / Reset</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Remember Me & Forgot Password Row */}
-        <View style={styles.optionsRow}>
+          {/* Solid Blue Login Button */}
           <TouchableOpacity
-            style={styles.rememberMeRow}
-            onPress={() => setRememberMe(!rememberMe)}
-            activeOpacity={0.8}
+            style={[styles.loginBtn, loading && styles.btnDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+            activeOpacity={0.85}
           >
-            <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
-              {rememberMe && <Text style={styles.checkmark}>✓</Text>}
-            </View>
-            <Text style={styles.rememberMeText}>Remember me</Text>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.loginBtnText}>Sign In to Control Room</Text>
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => alert('Please contact system administrator to reset operator credentials.')}>
-            <Text style={styles.forgotText}>Forgot Password?</Text>
+          {/* Evaluator Demo Mode Divider */}
+          <View style={styles.demoDivider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.demoDividerText}>OR EVALUATION / VIVA ACCESS</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Continue as Demo Button */}
+          <TouchableOpacity
+            style={styles.demoBtn}
+            onPress={handleDemoAccess}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.demoBtnText}>🧪 Enter Demo / Simulation Mode</Text>
           </TouchableOpacity>
+
+          <Text style={styles.simulationNotice}>
+            * For university examiners & project demonstration without production credentials.
+          </Text>
         </View>
-
-        {/* Solid Blue Login Button */}
-        <TouchableOpacity
-          style={[styles.loginBtn, loading && styles.btnDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-          activeOpacity={0.85}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.loginBtnText}>Login</Text>
-          )}
-        </TouchableOpacity>
-
-        {/* Presentation Demo Access Divider */}
-        <View style={styles.demoDivider}>
-          <Text style={styles.demoDividerText}>Demo Access (For Presentation)</Text>
-        </View>
-
-        {/* Continue as Operator (Demo) Button */}
-        <TouchableOpacity
-          style={styles.demoBtn}
-          onPress={handleDemoLogin}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.demoBtnText}>Continue as Operator (Demo)</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -165,66 +178,57 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0B132B',
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  backBtn: {
-    padding: 6,
-  },
-  backIcon: {
-    fontSize: 20,
-    color: '#94A3B8',
-    fontWeight: 'bold',
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-    paddingBottom: 40,
+    alignItems: 'center',
   },
   logoWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(30, 41, 59, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: 16,
+    width: 90,
+    height: 90,
+    borderRadius: 22,
+    backgroundColor: 'rgba(56, 189, 248, 0.08)',
     borderWidth: 1.5,
     borderColor: 'rgba(56, 189, 248, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 18,
   },
   logo: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '900',
     color: '#FFFFFF',
-    textAlign: 'center',
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#94A3B8',
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 28,
+    marginBottom: 24,
+    fontWeight: '600',
   },
   inputContainer: {
+    width: '100%',
     gap: 12,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   input: {
     backgroundColor: '#1E293B',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#334155',
     paddingHorizontal: 16,
     paddingVertical: 14,
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   passwordWrapper: {
     flexDirection: 'row',
@@ -232,7 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E293B',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   eyeBtn: {
     paddingHorizontal: 14,
@@ -241,7 +245,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    width: '100%',
+    marginBottom: 20,
+    paddingHorizontal: 4,
   },
   rememberMeRow: {
     flexDirection: 'row',
@@ -253,67 +259,85 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: '#475569',
+    borderColor: '#64748B',
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
   },
   checkmark: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: '900',
+    fontWeight: 'bold',
   },
   rememberMeText: {
+    fontSize: 11,
     color: '#94A3B8',
-    fontSize: 12,
     fontWeight: '600',
   },
   forgotText: {
+    fontSize: 11,
     color: '#38BDF8',
-    fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   loginBtn: {
-    backgroundColor: '#007AFF',
-    borderRadius: 14,
-    paddingVertical: 16,
+    width: '100%',
+    backgroundColor: '#0284C7',
+    borderRadius: 12,
+    paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: '#007AFF',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    marginBottom: 20,
   },
   btnDisabled: {
     opacity: 0.6,
   },
   loginBtnText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '800',
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   demoDivider: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 24,
+    width: '100%',
+    marginBottom: 16,
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   demoDividerText: {
+    fontSize: 9.5,
+    fontWeight: '800',
     color: '#64748B',
-    fontSize: 12,
-    fontWeight: '600',
+    letterSpacing: 0.8,
   },
   demoBtn: {
-    backgroundColor: '#1E293B',
-    borderRadius: 14,
-    paddingVertical: 16,
+    width: '100%',
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#334155',
+    borderColor: 'rgba(245, 158, 11, 0.4)',
+    marginBottom: 10,
   },
   demoBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
+    color: '#F59E0B',
+    fontSize: 12.5,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
+  simulationNotice: {
+    fontSize: 9.5,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 14,
+    paddingHorizontal: 12,
   },
 });
