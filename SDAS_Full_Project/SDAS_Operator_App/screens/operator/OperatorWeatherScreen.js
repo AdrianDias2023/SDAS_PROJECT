@@ -105,7 +105,7 @@ export default function OperatorWeatherScreen({ navigation }) {
               {w.isLive ? 'LIVE METEOROLOGICAL TELEMETRY' : 'SIMULATION / CALIBRATED WEATHER'}
             </Text>
             <Text style={styles.statusSub}>
-              {w.isLive ? 'Open-Meteo Satellite Radar (Active Stream)' : 'Standard Monsoon Runoff Model (Offline)'}
+              {w.isLive ? 'Open-Meteo Weather Forecast API (Active Stream)' : 'Standard Monsoon Runoff Model (Offline)'}
             </Text>
           </View>
         </View>

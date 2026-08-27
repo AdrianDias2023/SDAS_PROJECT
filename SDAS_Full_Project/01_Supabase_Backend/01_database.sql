@@ -1,91 +1,92 @@
 -- ============================================================
--- SDAS Smart Dam Alert System
--- Database Schema v2.0
+-- SDAS Smart Dam Alert System — Database Schema v2.0
+-- Target Model: Tabbowa Prototype Dam (Puttalam District)
 -- Run this FIRST in Supabase SQL Editor
 -- ============================================================
 
--- ─── PROFILES (Operators) ────────────────────────────────────
+-- ─── EXTENSIONS ──────────────────────────────────────────────
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ─── PROFILES (User & Operator Accounts) ─────────────────────
 CREATE TABLE IF NOT EXISTS profiles (
-  id         UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  name       TEXT NOT NULL,
-  role       TEXT NOT NULL DEFAULT 'OPERATOR' CHECK (role IN ('ADMIN','OPERATOR')),
-  phone      TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  name        TEXT NOT NULL,
+  role        TEXT NOT NULL DEFAULT 'OPERATOR' CHECK (role IN ('OPERATOR', 'ADMIN', 'PUBLIC')),
+  phone       TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ─── SENSOR READINGS ─────────────────────────────────────────
+-- ─── SENSOR READINGS (ESP32 Telemetry) ───────────────────────
 CREATE TABLE IF NOT EXISTS sensor_readings (
-  id             BIGSERIAL PRIMARY KEY,
-  device_id      TEXT NOT NULL DEFAULT 'ESP32_SDAS_01',
-  water_level    FLOAT NOT NULL CHECK (water_level >= 0 AND water_level <= 100),
-  temperature    FLOAT,
-  humidity       FLOAT,
-  rainfall       FLOAT DEFAULT 0,
-  sensor1_level  FLOAT,   -- Raw reading from JSN-SR04T #1
-  sensor2_level  FLOAT,   -- Raw reading from JSN-SR04T #2
-  sensor_health  TEXT NOT NULL DEFAULT 'NORMAL'
-                   CHECK (sensor_health IN ('NORMAL','SENSOR1_FAULT','SENSOR2_FAULT','SENSOR_MISMATCH','DUAL_FAULT')),
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id            BIGSERIAL PRIMARY KEY,
+  device_id     TEXT NOT NULL DEFAULT 'ESP32_PUTTALAM_01',
+  water_level   NUMERIC(5, 2) NOT NULL CHECK (water_level >= 0 AND water_level <= 100),
+  temperature   NUMERIC(4, 1) NOT NULL,
+  humidity      NUMERIC(4, 1) NOT NULL,
+  sensor_health TEXT NOT NULL DEFAULT 'NORMAL' CHECK (sensor_health IN ('NORMAL', 'DEGRADED', 'FAULT', 'FAILOVER')),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Index for fast latest-reading queries
 CREATE INDEX IF NOT EXISTS idx_sensor_readings_created ON sensor_readings (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sensor_readings_device  ON sensor_readings (device_id, created_at DESC);
 
--- ─── GATE CONTROL ────────────────────────────────────────────
+-- ─── GATE CONTROL (Actuator Commands) ─────────────────────────
+-- Allowed canonical operational positions: 0% (Closed), 20% (Controlled), 50% (Emergency)
 CREATE TABLE IF NOT EXISTS gate_control (
-  id             BIGSERIAL PRIMARY KEY,
-  gate_percentage FLOAT NOT NULL DEFAULT 0 CHECK (gate_percentage >= 0 AND gate_percentage <= 100),
-  mode           TEXT NOT NULL DEFAULT 'AUTO' CHECK (mode IN ('AUTO','MANUAL')),
-  command        TEXT NOT NULL DEFAULT 'CLOSE',
-  led_color      TEXT DEFAULT 'GREEN',
-  buzzer_active  BOOLEAN DEFAULT FALSE,
-  operator_id    UUID REFERENCES profiles(id),
-  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id              BIGSERIAL PRIMARY KEY,
+  gate_percentage INTEGER NOT NULL CHECK (gate_percentage >= 0 AND gate_percentage <= 100),
+  mode            TEXT NOT NULL DEFAULT 'AUTO' CHECK (mode IN ('AUTO', 'MANUAL', 'MANUAL_OVERRIDE', 'AUTO_AI')),
+  command         TEXT NOT NULL,
+  led_color       TEXT NOT NULL DEFAULT 'GREEN' CHECK (led_color IN ('GREEN', 'YELLOW', 'AMBER', 'RED')),
+  buzzer_active   BOOLEAN NOT NULL DEFAULT FALSE,
+  operator_id     UUID REFERENCES profiles(id),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ─── ALERTS ──────────────────────────────────────────────────
+CREATE INDEX IF NOT EXISTS idx_gate_control_created ON gate_control (created_at DESC);
+
+-- ─── ALERTS (System & Early Warnings) ─────────────────────────
 CREATE TABLE IF NOT EXISTS alerts (
   id          BIGSERIAL PRIMARY KEY,
-  alert_type  TEXT NOT NULL CHECK (alert_type IN ('NORMAL','PRE_WARNING','CONTROLLED_RELEASE','DANGER')),
-  severity    TEXT NOT NULL CHECK (severity IN ('INFO','WARNING','CRITICAL','EMERGENCY')),
+  alert_type  TEXT NOT NULL CHECK (alert_type IN ('NORMAL', 'PRE_WARNING', 'WARNING', 'DANGER')),
+  severity    TEXT NOT NULL CHECK (severity IN ('INFO', 'LOW', 'MEDIUM', 'WARNING', 'HIGH', 'CRITICAL', 'EMERGENCY')),
   message     TEXT NOT NULL,
-  water_level FLOAT,
-  acknowledged BOOLEAN DEFAULT FALSE,
+  water_level NUMERIC(5, 2) NOT NULL,
+  acknowledged BOOLEAN NOT NULL DEFAULT FALSE,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_alerts_created  ON alerts (created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_alerts_type     ON alerts (alert_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alerts_created ON alerts (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alerts_unack   ON alerts (acknowledged, created_at DESC);
 
--- ─── ML PREDICTIONS ──────────────────────────────────────────
+-- ─── ML PREDICTIONS (FastAPI AI Inference) ────────────────────
 CREATE TABLE IF NOT EXISTS ml_predictions (
-  id               BIGSERIAL PRIMARY KEY,
-  current_level    FLOAT NOT NULL,
-  predicted_level  FLOAT NOT NULL,   -- 1-hour ahead LSTM prediction
-  anomaly_score    FLOAT DEFAULT 0,  -- Autoencoder MSE
-  is_anomaly       BOOLEAN DEFAULT FALSE,
-  risk_level       TEXT DEFAULT 'LOW' CHECK (risk_level IN ('LOW','MEDIUM','HIGH','CRITICAL')),
-  prediction_time  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id                    BIGSERIAL PRIMARY KEY,
+  risk_level            TEXT NOT NULL CHECK (risk_level IN ('NORMAL', 'PRE_WARNING', 'WARNING', 'DANGER')),
+  predicted_level_1h    NUMERIC(5, 2),
+  predicted_level_3h    NUMERIC(5, 2),
+  predicted_level_6h    NUMERIC(5, 2),
+  confidence_score      NUMERIC(4, 3) NOT NULL CHECK (confidence_score >= 0 AND confidence_score <= 1),
+  anomaly_detected      BOOLEAN NOT NULL DEFAULT FALSE,
+  reconstruction_error  NUMERIC(7, 5),
+  model_version         TEXT NOT NULL DEFAULT 'v2.0-rf-lstm-autoenc',
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ─── EMERGENCY CONTACTS ──────────────────────────────────────
+CREATE INDEX IF NOT EXISTS idx_ml_predictions_created ON ml_predictions (created_at DESC);
+
+-- ─── EMERGENCY CONTACTS (SMS Alert List) ─────────────────────
 CREATE TABLE IF NOT EXISTS emergency_contacts (
-  id         BIGSERIAL PRIMARY KEY,
-  name       TEXT NOT NULL,
-  phone      TEXT NOT NULL UNIQUE,
-  role       TEXT NOT NULL DEFAULT 'PUBLIC' CHECK (role IN ('ADMIN','OPERATOR','PUBLIC')),
-  notify_sms  BOOLEAN DEFAULT TRUE,
-  active     BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id          BIGSERIAL PRIMARY KEY,
+  name        TEXT NOT NULL,
+  phone       TEXT NOT NULL,
+  role        TEXT NOT NULL DEFAULT 'OFFICER' CHECK (role IN ('OFFICER', 'COMMUNITY_LEADER', 'DMC_HOTLINE', 'POLICE', 'HOSPITAL')),
+  priority    INTEGER NOT NULL DEFAULT 1 CHECK (priority BETWEEN 1 AND 5),
+  active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
--- Insert sample contacts (replace with real numbers)
-INSERT INTO emergency_contacts (name, phone, role) VALUES
-  ('Dam Operator 1',        '+94XXXXXXXXX', 'OPERATOR'),
-  ('Dam Operator 2',        '+94XXXXXXXXX', 'OPERATOR'),
-  ('District Disaster DMC', '+94XXXXXXXXX', 'ADMIN')
-ON CONFLICT (phone) DO NOTHING;
 
 -- ─── TRIGGER: Auto-create profile on user signup ─────────────
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -106,7 +107,6 @@ BEGIN
         role = EXCLUDED.role;
   RETURN NEW;
 EXCEPTION WHEN OTHERS THEN
-  -- Fallback to ensure auth user creation never gets blocked
   RETURN NEW;
 END;
 $$;
@@ -120,10 +120,10 @@ CREATE TRIGGER on_auth_user_created
 CREATE TABLE IF NOT EXISTS community_reports (
   id                   BIGSERIAL PRIMARY KEY,
   user_id              UUID REFERENCES profiles(id),
-  latitude             FLOAT NOT NULL DEFAULT 8.0421,
-  longitude            FLOAT NOT NULL DEFAULT 79.8310,
+  latitude             FLOAT NOT NULL DEFAULT 8.0362,
+  longitude            FLOAT NOT NULL DEFAULT 79.8283,
   location_name        TEXT NOT NULL,
-  category             TEXT NOT NULL CHECK (category IN ('WATER_RISING', 'HEAVY_RAIN', 'ROAD_FLOODING', 'WATER_ENTERING', 'OTHER')),
+  category             TEXT NOT NULL CHECK (category IN ('WATER_RISING', 'HEAVY_RAIN', 'ROAD_FLOODED', 'ROAD_FLOODING', 'WATER_ENTERING', 'OTHER')),
   description          TEXT NOT NULL,
   image_url            TEXT,
   confirmation_count   INTEGER NOT NULL DEFAULT 1,
@@ -135,6 +135,17 @@ CREATE TABLE IF NOT EXISTS community_reports (
 
 CREATE INDEX IF NOT EXISTS idx_community_created ON community_reports (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_community_status  ON community_reports (status, created_at DESC);
+
+-- ─── COMMUNITY REPORT CONFIRMATIONS (Anti-Spam Persistence) ─
+CREATE TABLE IF NOT EXISTS community_report_confirmations (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_id        BIGINT NOT NULL REFERENCES community_reports(id) ON DELETE CASCADE,
+  user_identifier  TEXT NOT NULL,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(report_id, user_identifier)
+);
+
+CREATE INDEX IF NOT EXISTS idx_confirmations_report ON community_report_confirmations (report_id);
 
 -- ─── WEATHER METEOROLOGICAL TELEMETRY ─────────────────────────
 CREATE TABLE IF NOT EXISTS weather_data (
@@ -151,13 +162,3 @@ CREATE TABLE IF NOT EXISTS weather_data (
 );
 
 CREATE INDEX IF NOT EXISTS idx_weather_created ON weather_data (created_at DESC);
-
--- ─── ENABLE REALTIME ─────────────────────────────────────────
--- Run these in Supabase Dashboard → Database → Replication
--- Or uncomment and run:
--- ALTER PUBLICATION supabase_realtime ADD TABLE sensor_readings;
--- ALTER PUBLICATION supabase_realtime ADD TABLE alerts;
--- ALTER PUBLICATION supabase_realtime ADD TABLE gate_control;
--- ALTER PUBLICATION supabase_realtime ADD TABLE community_reports;
--- ALTER PUBLICATION supabase_realtime ADD TABLE weather_data;
-

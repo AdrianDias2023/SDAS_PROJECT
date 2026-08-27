@@ -1,5 +1,5 @@
 // SDAS — Public Community Screen (3. Community)
-// Real GPS Location Acquisition, Tabbowa Catchment Standardization, Backend Persistence & Verification
+// Real GPS Location Acquisition, Tabbowa Catchment Standardization, Backend Persistence & PENDING_REVIEW Flow
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -48,9 +48,9 @@ export default function CommunityReportsScreen({ navigation }) {
   const [description, setDescription]             = useState('');
   const [submitting, setSubmitting]               = useState(false);
   const [confirmedIds, setConfirmedIds]           = useState([]);
-  const [loadingFeed, setLoadingFeed]             = useState(false);
+  const [deviceUserId, setDeviceUserId]           = useState('');
 
-  // Initial standardized Tabbowa Catchment Community Reports
+  // Initial standardized Tabbowa Catchment Community Reports (clearly labeled as demonstration dataset)
   const [reports, setReports] = useState([
     {
       id: 'tabbowa-rep-01',
@@ -58,11 +58,13 @@ export default function CommunityReportsScreen({ navigation }) {
       categoryLabel: 'Water Rising Rapidly',
       color: '#EF4444',
       icon: '🔴',
-      location: 'Tabbowa Spillway & Causeway',
+      location: 'Tabbowa Dam Spillway & Causeway',
       time: '5 min ago',
       confirmations: 18,
       distance: '0.4 km away',
       photoIcon: '🌊',
+      status: 'APPROVED',
+      isDemoSeed: true,
     },
     {
       id: 'tabbowa-rep-02',
@@ -75,6 +77,8 @@ export default function CommunityReportsScreen({ navigation }) {
       confirmations: 12,
       distance: '1.8 km away',
       photoIcon: '🚧',
+      status: 'APPROVED',
+      isDemoSeed: true,
     },
     {
       id: 'tabbowa-rep-03',
@@ -87,11 +91,23 @@ export default function CommunityReportsScreen({ navigation }) {
       confirmations: 7,
       distance: '2.1 km away',
       photoIcon: '🌧️',
+      status: 'APPROVED',
+      isDemoSeed: true,
     },
   ]);
 
-  // Load saved local confirmations
+  // Initialize or load device identifier & local confirmations
   useEffect(() => {
+    AsyncStorage.getItem('@sdas_device_id').then((id) => {
+      if (id) {
+        setDeviceUserId(id);
+      } else {
+        const newId = 'dev-' + Math.random().toString(36).substring(2, 10);
+        AsyncStorage.setItem('@sdas_device_id', newId);
+        setDeviceUserId(newId);
+      }
+    });
+
     AsyncStorage.getItem('@sdas_confirmed_reports').then((val) => {
       if (val) {
         try {
@@ -147,7 +163,7 @@ export default function CommunityReportsScreen({ navigation }) {
     setManualAreaMode(false);
   };
 
-  // Backend-Persisted Confirmation with Anti-Spam Check
+  // Backend-Persisted Confirmation with Atomic Anti-Spam Check
   const handleConfirmReport = async (reportId) => {
     if (confirmedIds.includes(reportId)) {
       Alert.alert('Already Confirmed', 'You have already confirmed this incident report.');
@@ -168,12 +184,14 @@ export default function CommunityReportsScreen({ navigation }) {
     setConfirmedIds(newConfirmedList);
     AsyncStorage.setItem('@sdas_confirmed_reports', JSON.stringify(newConfirmedList));
 
-    // Persist to Supabase Database
+    // Persist to Supabase Database (calling RPC or table update)
     try {
-      await supabase
-        .from('community_reports')
-        .update({ confirmation_count: newCount })
-        .eq('id', reportId);
+      if (typeof reportId === 'number' || (typeof reportId === 'string' && !reportId.startsWith('tabbowa-rep'))) {
+        await supabase.rpc('increment_community_confirmation', {
+          p_report_id: reportId,
+          p_user_identifier: deviceUserId || 'anon-device',
+        });
+      }
     } catch (err) {
       console.log('Supabase sync confirmation note:', err?.message);
     }
@@ -181,7 +199,7 @@ export default function CommunityReportsScreen({ navigation }) {
     Alert.alert('✅ Report Confirmed', 'Thank you! Your verification improves community flood intelligence for downstream villagers.');
   };
 
-  // Database Report Submission with Strict Error Handling
+  // Database Report Submission with Strict PENDING_REVIEW Status
   const handleSubmitReport = async () => {
     if (!description.trim()) {
       Alert.alert('Missing Details', 'Please describe what you are observing on the ground.');
@@ -195,10 +213,10 @@ export default function CommunityReportsScreen({ navigation }) {
       latitude: gpsLat || 8.0362,
       longitude: gpsLng || 79.8283,
       location_name: locationName.trim() || 'Tabbowa Catchment Area',
-      category: selectedCategory,
+      category: selectedCategory, // 'ROAD_FLOODED', 'WATER_RISING', etc.
       description: description.trim(),
       confirmation_count: 1,
-      status: 'VERIFIED_PUBLIC',
+      status: 'PENDING_REVIEW', // Strict safety architecture requirement
       distance_from_dam_km: 1.5,
     };
 
@@ -223,8 +241,10 @@ export default function CommunityReportsScreen({ navigation }) {
         location: submissionPayload.location_name,
         time: 'Just now',
         confirmations: 1,
-        distance: 'Local Area',
+        distance: 'Local Catchment Area',
         photoIcon: '📷',
+        status: 'PENDING_REVIEW',
+        isDemoSeed: false,
       };
 
       setReports([newUiReport, ...reports]);
@@ -234,7 +254,10 @@ export default function CommunityReportsScreen({ navigation }) {
       setSubmitting(false);
       setModalVisible(false);
       setDescription('');
-      Alert.alert('✅ Report Published', 'Your situation report has been verified and posted to the community safety feed.');
+      Alert.alert(
+        '✅ Report Submitted for Review',
+        'Your situation report has been submitted to the Dam Control Room as PENDING_REVIEW. Operators will verify and approve it for public broadcast.'
+      );
     } catch (err) {
       setSubmitting(false);
       Alert.alert(
@@ -251,8 +274,8 @@ export default function CommunityReportsScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>Community Alerts</Text>
-          <Text style={styles.headerSub}>Tabbowa Catchment Crowdsourced Intel</Text>
+          <Text style={styles.headerTitle}>Community Situation Reports</Text>
+          <Text style={styles.headerSub}>Tabbowa Catchment • Puttalam District</Text>
         </View>
         <TouchableOpacity style={styles.filterBtn} onPress={acquireRealGps} activeOpacity={0.7}>
           <Text style={styles.filterIcon}>🔄</Text>
@@ -268,7 +291,7 @@ export default function CommunityReportsScreen({ navigation }) {
           <View style={{ flex: 1 }}>
             <Text style={styles.gpsTitle}>
               {gpsStatus === 'ACQUIRED'
-                ? 'REAL DEVICE GPS ACTIVE'
+                ? 'REAL DEVICE GPS ACQUIRED'
                 : gpsStatus === 'SEARCHING'
                 ? 'ACQUIRING DEVICE GPS...'
                 : 'LOCATION PERMISSION / PROXIMITY MODE'}
@@ -279,7 +302,7 @@ export default function CommunityReportsScreen({ navigation }) {
 
         {/* Subheader: Nearby Reports & Report Button */}
         <View style={styles.subHeaderRow}>
-          <Text style={styles.subHeaderTitle}>Verified Community Feed</Text>
+          <Text style={styles.subHeaderTitle}>Recent Ground Observations</Text>
           <TouchableOpacity
             style={styles.reportSituationBtn}
             onPress={handleOpenReportModal}
@@ -301,7 +324,15 @@ export default function CommunityReportsScreen({ navigation }) {
                     {item.categoryLabel}
                   </Text>
                 </View>
-                <Text style={styles.timeText}>{item.time}</Text>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={styles.timeText}>{item.time}</Text>
+                  {item.isDemoSeed && (
+                    <Text style={styles.seedBadge}>Demonstration Data</Text>
+                  )}
+                  {item.status === 'PENDING_REVIEW' && (
+                    <Text style={styles.pendingBadge}>⏳ Under Operator Review</Text>
+                  )}
+                </View>
               </View>
 
               <View style={styles.locationRow}>
@@ -311,7 +342,7 @@ export default function CommunityReportsScreen({ navigation }) {
 
               <View style={styles.metaRow}>
                 <Text style={styles.metaItem}>📏 {item.distance}</Text>
-                <Text style={styles.metaItem}>📷 Photo Attached</Text>
+                <Text style={styles.metaItem}>📷 Ground Observation</Text>
               </View>
 
               <View style={styles.footerRow}>
@@ -327,7 +358,7 @@ export default function CommunityReportsScreen({ navigation }) {
                 </TouchableOpacity>
 
                 <View style={styles.confirmPill}>
-                  <Text style={styles.confirmCountText}>{item.confirmations} Verified</Text>
+                  <Text style={styles.confirmCountText}>{item.confirmations} Confirmations</Text>
                 </View>
               </View>
             </View>
@@ -419,6 +450,11 @@ export default function CommunityReportsScreen({ navigation }) {
                 numberOfLines={3}
               />
 
+              {/* Safety notice on PENDING_REVIEW */}
+              <Text style={styles.reviewNotice}>
+                🛡️ Reports are submitted with status <Text style={{ fontWeight: 'bold' }}>PENDING_REVIEW</Text> and moderated by Dam Operators before final public broadcast.
+              </Text>
+
               {/* Submit Button */}
               <TouchableOpacity
                 style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
@@ -429,7 +465,7 @@ export default function CommunityReportsScreen({ navigation }) {
                 {submitting ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitBtnText}>Submit Verified Alert</Text>
+                  <Text style={styles.submitBtnText}>Submit for Operator Review</Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
@@ -534,7 +570,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   badgeRow: {
     flexDirection: 'row',
@@ -552,6 +588,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#94A3B8',
     fontWeight: '600',
+  },
+  seedBadge: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  pendingBadge: {
+    fontSize: 8.5,
+    fontWeight: '800',
+    color: '#F59E0B',
+    marginTop: 2,
   },
   locationRow: {
     flexDirection: 'row',
@@ -726,12 +774,19 @@ const styles = StyleSheet.create({
     height: 75,
     textAlignVertical: 'top',
   },
+  reviewNotice: {
+    fontSize: 10,
+    color: '#64748B',
+    lineHeight: 14,
+    marginTop: 8,
+    marginBottom: 4,
+  },
   submitBtn: {
     backgroundColor: '#0284C7',
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 14,
     marginBottom: 10,
   },
   submitBtnText: {

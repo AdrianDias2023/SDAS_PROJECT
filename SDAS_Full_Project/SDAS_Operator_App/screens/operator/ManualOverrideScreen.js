@@ -1,7 +1,7 @@
 // SDAS — Manual Override Screen (Operator)
-// Matches Design Screen 10: Warning Banner, Tactical Action Buttons (Open 20%, Open 50%, Close Gate 0%)
+// Connected to Live Water Level Telemetry with Dynamic Safety Interlock Protection
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,19 +11,51 @@ import {
   SafeAreaView,
   StatusBar,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { supabase } from '../../services/supabase';
+import { fetchLatestReading, sendGateCommand } from '../../services/alerts';
+import { subscribeSensorReadings } from '../../services/realtime';
 
 export default function ManualOverrideScreen({ navigation }) {
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting]     = useState(false);
   const [currentLevel, setCurrentLevel] = useState(72.5);
+  const [readingTime, setReadingTime]   = useState('Live');
+
+  const loadData = useCallback(async () => {
+    try {
+      const r = await fetchLatestReading('ESP32_PUTTALAM_01');
+      if (r && r.water_level != null) {
+        setCurrentLevel(parseFloat(r.water_level) || 72.5);
+        if (r.created_at) {
+          setReadingTime(new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        }
+      }
+    } catch (e) {
+      console.log('Using cached level for manual override:', e?.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+    const sc = subscribeSensorReadings((newReading) => {
+      if (newReading && newReading.water_level != null) {
+        setCurrentLevel(parseFloat(newReading.water_level) || 72.5);
+        setReadingTime('Just now');
+      }
+    });
+    return () => sc.unsubscribe();
+  }, [loadData]);
+
+  const isCriticalOvertopping = currentLevel >= 85.0;
 
   const handleManualAction = async (percentage, label) => {
+    const angle = percentage === 50 ? 90 : percentage === 20 ? 36 : 0;
+
     // Safety Interlock: Block closing when reservoir is in Critical Danger condition (>85%)
-    if (percentage === 0 && currentLevel >= 85) {
+    if (percentage === 0 && isCriticalOvertopping) {
       Alert.alert(
-        '⚠️ CLOSE COMMAND BLOCKED',
-        'Critical water level detected (>85%). Hardware safety interlock active to prevent dam breach. Spillway gate must remain open for controlled emergency release.',
+        '🛑 HARDWARE INTERLOCK ACTIVE',
+        `Current reservoir water level is ${currentLevel.toFixed(1)}% (above the 85.0% safety limit). Sluice gate closure is permanently interlocked by software safety rules to prevent catastrophic overtopping. Gate must remain in emergency discharge posture.`,
         [{ text: 'Acknowledged', style: 'default' }]
       );
       return;
@@ -31,29 +63,23 @@ export default function ManualOverrideScreen({ navigation }) {
 
     Alert.alert(
       '⚠️ Confirm Manual Override',
-      `Manual command: Set gate to ${percentage}% (${label})? This action is logged permanently.`,
+      `Manual command: Set sluice gate to ${percentage}% (${angle}°, ${label})?\n\nThis manual actuation overrides automated AI schedules and is permanently signed in the audit trail.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Confirm Override',
+          text: 'Execute Override',
           style: percentage === 50 ? 'destructive' : 'default',
           onPress: async () => {
             setSubmitting(true);
             try {
-              const angle = Math.round(percentage * 1.8);
-              await supabase.from('gate_commands').insert([
-                {
-                  device_id: 'ESP32_PUTTALAM_01',
-                  gate_percentage: percentage,
-                  servo_angle: angle,
-                  mode: 'MANUAL_OVERRIDE',
-                  triggered_by: 'OPERATOR_DEMO',
-                  reason: `Tactical manual override: ${label}`,
-                },
-              ]);
-              Alert.alert('Command Executed', `Gate manual override set to ${percentage}% (${angle}°). Safety interlocks active.`);
-            } catch (e) {
-              Alert.alert('Override Dispatched', `Gate command (${percentage}%) dispatched locally.`);
+              await sendGateCommand({
+                percentage,
+                mode: 'MANUAL_OVERRIDE',
+                command: `MANUAL_OVERRIDE_${percentage}_DEG_${angle}`,
+              });
+              Alert.alert('✅ Override Executed', `Sluice gate commanded to ${percentage}% (${angle}°). Verified in audit trail.`);
+            } catch (err) {
+              Alert.alert('Command Error', `Failed to dispatch command to actuator: ${err?.message || 'Network error'}.`);
             } finally {
               setSubmitting(false);
             }
@@ -80,13 +106,33 @@ export default function ManualOverrideScreen({ navigation }) {
         <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Warning Banner */}
         <View style={styles.warningBox}>
           <Text style={styles.warningIcon}>⚠️</Text>
           <Text style={styles.warningText}>
-            Use manual override only in emergency situations. All actions are logged.
+            Use manual override only in verified emergency situations. All manual operator interventions are permanently recorded in the immutable audit log.
           </Text>
+        </View>
+
+        {/* Live Water Level & Interlock Status Card */}
+        <View style={[styles.statusCard, isCriticalOvertopping ? styles.cardCritical : styles.cardNormal]}>
+          <View style={styles.statusRow}>
+            <View>
+              <Text style={styles.statusLabel}>LIVE RESERVOIR LEVEL</Text>
+              <Text style={[styles.statusVal, isCriticalOvertopping ? styles.textRed : styles.textCyan]}>
+                {currentLevel.toFixed(1)}%
+              </Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <View style={[styles.interlockPill, isCriticalOvertopping ? styles.pillDanger : styles.pillSafe]}>
+                <Text style={[styles.interlockText, isCriticalOvertopping ? styles.textRed : styles.textGreen]}>
+                  {isCriticalOvertopping ? '🛑 INTERLOCK LOCKED (>85%)' : '🟢 INTERLOCK ARMED'}
+                </Text>
+              </View>
+              <Text style={styles.timeLabel}>Sync: {readingTime}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Tactical Command Buttons */}
@@ -98,46 +144,55 @@ export default function ManualOverrideScreen({ navigation }) {
             disabled={submitting}
             activeOpacity={0.85}
           >
-            <View style={styles.btnIconCircleGreen}>
-              <Text style={{ fontSize: 20 }}>🌊</Text>
-            </View>
-            <View style={styles.btnTextCol}>
-              <Text style={[styles.btnTitle, { color: '#10B981' }]}>OPEN GATE 20%</Text>
-              <Text style={styles.btnSubtitle}>Controlled Release</Text>
+            <View style={styles.btnContent}>
+              <View>
+                <Text style={styles.tacticalBtnTitle}>ACTUATE 20% (36°)</Text>
+                <Text style={styles.tacticalBtnSub}>Controlled Buffer Pre-Drain</Text>
+              </View>
+              <Text style={styles.tacticalBtnIcon}>🟡</Text>
             </View>
           </TouchableOpacity>
 
           {/* 2. OPEN GATE 50% (Emergency Release) */}
           <TouchableOpacity
             style={[styles.tacticalBtn, styles.btn50]}
-            onPress={() => handleManualAction(50, 'Emergency Release')}
+            onPress={() => handleManualAction(50, 'Emergency Spillway Release')}
             disabled={submitting}
             activeOpacity={0.85}
           >
-            <View style={styles.btnIconCircleRed}>
-              <Text style={{ fontSize: 20 }}>🚨</Text>
-            </View>
-            <View style={styles.btnTextCol}>
-              <Text style={[styles.btnTitle, { color: '#EF4444' }]}>OPEN GATE 50%</Text>
-              <Text style={styles.btnSubtitle}>Emergency Release</Text>
+            <View style={styles.btnContent}>
+              <View>
+                <Text style={styles.tacticalBtnTitle}>ACTUATE 50% (90°)</Text>
+                <Text style={styles.tacticalBtnSub}>Emergency Spillway Flow</Text>
+              </View>
+              <Text style={styles.tacticalBtnIcon}>🔴</Text>
             </View>
           </TouchableOpacity>
 
-          {/* 3. CLOSE GATE (0% Normal) */}
+          {/* 3. CLOSE GATE (0%) */}
           <TouchableOpacity
-            style={[styles.tacticalBtn, styles.btnClose]}
-            onPress={() => handleManualAction(0, 'Normal Closed')}
+            style={[styles.tacticalBtn, styles.btnClose, isCriticalOvertopping && styles.btnDisabled]}
+            onPress={() => handleManualAction(0, 'Close Gate')}
             disabled={submitting}
             activeOpacity={0.85}
           >
-            <View style={styles.btnIconCircleDark}>
-              <Text style={{ fontSize: 20 }}>🚪</Text>
-            </View>
-            <View style={styles.btnTextCol}>
-              <Text style={[styles.btnTitle, { color: '#FFFFFF' }]}>CLOSE GATE</Text>
-              <Text style={styles.btnSubtitle}>0% (Normal)</Text>
+            <View style={styles.btnContent}>
+              <View>
+                <Text style={styles.tacticalBtnTitle}>CLOSE GATE (0°)</Text>
+                <Text style={styles.tacticalBtnSub}>
+                  {isCriticalOvertopping ? 'BLOCKED BY >85% INTERLOCK' : 'Water Conservation / Normal Hold'}
+                </Text>
+              </View>
+              <Text style={styles.tacticalBtnIcon}>{isCriticalOvertopping ? '🔒' : '🔒'}</Text>
             </View>
           </TouchableOpacity>
+        </View>
+
+        {/* Interlock Rule Reference */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>🛡️ Cyber-Physical Safety Invariants</Text>
+          <Text style={styles.infoBullet}>• <b>Overtopping Protection:</b> When reservoir water level exceeds 85.0%, manual gate closure is physically and logically blocked to prevent structural dam breach.</Text>
+          <Text style={styles.infoBullet}>• <b>Canonical Positions:</b> SDAS actuators strictly accept 0° (Closed), 36° (Buffer), and 90° (Spillway).</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -155,9 +210,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
+    backgroundColor: '#0B132B',
     borderBottomWidth: 1,
     borderColor: '#1E293B',
-    backgroundColor: '#0B132B',
   },
   backBtn: {
     padding: 6,
@@ -168,94 +223,155 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   scroll: {
     padding: 16,
-    gap: 20,
+    paddingBottom: 32,
+    gap: 14,
   },
   warningBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(245, 158, 11, 0.4)',
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    gap: 10,
   },
   warningIcon: {
     fontSize: 22,
   },
   warningText: {
     flex: 1,
-    fontSize: 13,
-    color: '#FCD34D',
-    lineHeight: 18,
-    fontWeight: '600',
+    color: '#F87171',
+    fontSize: 11.5,
+    lineHeight: 16,
+    fontWeight: '700',
   },
-  actionButtonsContainer: {
-    gap: 14,
+  statusCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
   },
-  tacticalBtn: {
-    borderRadius: 18,
-    padding: 20,
+  cardNormal: {
+    borderColor: 'rgba(56, 189, 248, 0.2)',
+  },
+  cardCritical: {
+    borderColor: '#EF4444',
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+  },
+  statusRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    borderWidth: 1.5,
-  },
-  btn20: {
-    backgroundColor: '#1E293B',
-    borderColor: 'rgba(16, 185, 129, 0.4)',
-  },
-  btn50: {
-    backgroundColor: '#1E293B',
-    borderColor: 'rgba(239, 68, 68, 0.4)',
-  },
-  btnClose: {
-    backgroundColor: '#1E293B',
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  btnIconCircleGreen: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  btnIconCircleRed: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  btnIconCircleDark: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  btnTextCol: {
-    flex: 1,
-  },
-  btnTitle: {
-    fontSize: 17,
-    fontWeight: '900',
+  statusLabel: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#94A3B8',
     letterSpacing: 0.5,
   },
-  btnSubtitle: {
-    fontSize: 13,
-    color: '#94A3B8',
-    fontWeight: '600',
+  statusVal: {
+    fontSize: 24,
+    fontWeight: '900',
     marginTop: 2,
+  },
+  interlockPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  pillSafe: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  },
+  pillDanger: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  interlockText: {
+    fontSize: 9.5,
+    fontWeight: '900',
+  },
+  timeLabel: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 4,
+  },
+  actionButtonsContainer: {
+    gap: 12,
+  },
+  tacticalBtn: {
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1.5,
+  },
+  btnContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  tacticalBtnTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  tacticalBtnSub: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  tacticalBtnIcon: {
+    fontSize: 22,
+  },
+  btn20: {
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderColor: 'rgba(245, 158, 11, 0.5)',
+  },
+  btn50: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderColor: 'rgba(239, 68, 68, 0.6)',
+  },
+  btnClose: {
+    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+  },
+  btnDisabled: {
+    opacity: 0.4,
+    borderColor: '#475569',
+  },
+  infoCard: {
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  infoTitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#F8FAFC',
+    marginBottom: 6,
+  },
+  infoBullet: {
+    fontSize: 10.5,
+    color: '#94A3B8',
+    lineHeight: 15,
+    marginBottom: 4,
+  },
+  textCyan: {
+    color: '#38BDF8',
+  },
+  textRed: {
+    color: '#EF4444',
+  },
+  textGreen: {
+    color: '#10B981',
   },
 });

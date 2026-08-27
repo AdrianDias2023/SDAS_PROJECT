@@ -96,7 +96,7 @@ export default function WeatherForecastScreen() {
               {w.isLive ? 'LIVE METEOROLOGICAL TELEMETRY' : 'SIMULATION / CALIBRATED WEATHER'}
             </Text>
             <Text style={styles.statusSub}>
-              {w.isLive ? 'Open-Meteo Satellite Radar (Live Stream)' : 'Standard Tropical Monsoon Inflow Model'}
+              {w.isLive ? 'Open-Meteo Weather Forecast API (Live Stream)' : 'Standard Tropical Monsoon Inflow Model'}
             </Text>
           </View>
         </View>
