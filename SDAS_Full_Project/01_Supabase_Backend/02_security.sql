@@ -28,29 +28,59 @@ ALTER TABLE community_reports                 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE community_report_confirmations    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE weather_data                      ENABLE ROW LEVEL SECURITY;
 
--- ─── SENSOR READINGS ─────────────────────────────────────────
+-- ─── PROFILES (Strict Anti-Privilege Escalation) ──────────────
+-- Public/Authenticated users can read their own profile
+CREATE POLICY "Users can read own profile"
+  ON profiles FOR SELECT TO authenticated
+  USING (auth.uid() = id);
+
+-- Admins and operators can inspect profiles
+CREATE POLICY "Admins can read all profiles"
+  ON profiles FOR SELECT TO authenticated
+  USING (public.is_operator_or_admin());
+
+-- Users can update only their non-privileged fields (name, phone) — CANNOT alter role
+CREATE POLICY "Users can update own non-privileged details"
+  ON profiles FOR UPDATE TO authenticated
+  USING (auth.uid() = id)
+  WITH CHECK (
+    auth.uid() = id AND
+    role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid())
+  );
+
+-- Admins/Supervisors can manage user roles
+CREATE POLICY "Admins can update user roles"
+  ON profiles FOR UPDATE TO authenticated
+  USING (public.is_operator_or_admin())
+  WITH CHECK (public.is_operator_or_admin());
+
+-- ─── SENSOR READINGS (IoT Telemetry Protection) ──────────────
+-- Public can read real-time and historical sensor telemetry
 CREATE POLICY "Public can read sensor readings"
   ON sensor_readings FOR SELECT TO anon, authenticated USING (TRUE);
 
-CREATE POLICY "ESP32 device can insert readings"
-  ON sensor_readings FOR INSERT TO anon, authenticated
+-- Direct ingestion restricted to authenticated hardware / system accounts
+CREATE POLICY "Authorized hardware can insert readings"
+  ON sensor_readings FOR INSERT TO authenticated
   WITH CHECK (TRUE);
 
--- ─── ALERTS ──────────────────────────────────────────────────
+-- ─── ALERTS (Safety Broadcast Protection) ────────────────────
+-- Public can read all active and historical flood warnings
 CREATE POLICY "Public can read alerts"
   ON alerts FOR SELECT TO anon, authenticated USING (TRUE);
 
-CREATE POLICY "System can insert alerts"
-  ON alerts FOR INSERT TO anon, authenticated
-  WITH CHECK (TRUE);
+-- System triggers (SECURITY DEFINER) and authenticated operators can insert alerts
+CREATE POLICY "Authorized operators can insert alerts"
+  ON alerts FOR INSERT TO authenticated
+  WITH CHECK (public.is_operator_or_admin());
 
--- Operators only: can acknowledge alerts
+-- Operators can acknowledge alerts
 CREATE POLICY "Operators can acknowledge alerts"
   ON alerts FOR UPDATE TO authenticated
   USING (public.is_operator_or_admin())
   WITH CHECK (public.is_operator_or_admin());
 
--- ─── ML PREDICTIONS ──────────────────────────────────────────
+-- ─── ML PREDICTIONS (AI Inference Feed) ──────────────────────
 CREATE POLICY "Public can read ML predictions"
   ON ml_predictions FOR SELECT TO anon, authenticated USING (TRUE);
 
@@ -58,7 +88,8 @@ CREATE POLICY "System can insert predictions"
   ON ml_predictions FOR INSERT TO authenticated
   WITH CHECK (TRUE);
 
--- ─── GATE CONTROL ────────────────────────────────────────────
+-- ─── GATE CONTROL (Actuator Interlock Protection) ─────────────
+-- Public can read current gate aperture and operational mode
 CREATE POLICY "Public can read gate status"
   ON gate_control FOR SELECT TO anon, authenticated USING (TRUE);
 
@@ -67,8 +98,8 @@ CREATE POLICY "Operators can insert gate commands"
   ON gate_control FOR INSERT TO authenticated
   WITH CHECK (public.is_operator_or_admin());
 
--- ─── COMMUNITY REPORTS ───────────────────────────────────────
--- 1. Public can read approved and community reports
+-- ─── COMMUNITY REPORTS (Moderated Crowdsourcing) ─────────────
+-- 1. Public can read approved community reports
 CREATE POLICY "Public can read community reports"
   ON community_reports FOR SELECT TO anon, authenticated
   USING (TRUE);
@@ -98,32 +129,15 @@ CREATE POLICY "Public can submit report confirmation"
   ON community_report_confirmations FOR INSERT TO anon, authenticated
   WITH CHECK (TRUE);
 
--- ─── WEATHER DATA ────────────────────────────────────────────
+-- ─── WEATHER DATA (Meteorological Protection) ────────────────
 CREATE POLICY "Public can read weather data"
   ON weather_data FOR SELECT TO anon, authenticated USING (TRUE);
 
-CREATE POLICY "System can insert weather data"
-  ON weather_data FOR INSERT TO anon, authenticated WITH CHECK (TRUE);
-
--- ─── PROFILES ────────────────────────────────────────────────
-CREATE POLICY "Allow profile insert"
-  ON profiles FOR INSERT TO anon, authenticated
+CREATE POLICY "Authorized system can insert weather data"
+  ON weather_data FOR INSERT TO authenticated
   WITH CHECK (TRUE);
 
-CREATE POLICY "Users can read own profile"
-  ON profiles FOR SELECT TO authenticated
-  USING (auth.uid() = id);
-
-CREATE POLICY "Users can update own profile"
-  ON profiles FOR UPDATE TO authenticated
-  USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
-
-CREATE POLICY "Admins can read all profiles"
-  ON profiles FOR SELECT TO authenticated
-  USING (public.is_operator_or_admin());
-
--- ─── EMERGENCY CONTACTS ──────────────────────────────────────
+-- ─── EMERGENCY CONTACTS (SMS Directory Protection) ───────────
 CREATE POLICY "Public can read contacts"
   ON emergency_contacts FOR SELECT TO anon, authenticated USING (TRUE);
 

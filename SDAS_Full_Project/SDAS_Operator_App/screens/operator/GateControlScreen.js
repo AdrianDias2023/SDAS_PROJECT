@@ -85,7 +85,10 @@ export default function GateControlScreen({ navigation }) {
               });
               Alert.alert('🚨 Emergency Stop Dispatched', `Actuator halted at current position (${currentPercentage}%). Hardware lock engaged and AI automation paused.`);
             } catch (err) {
-              Alert.alert('Emergency Stop Dispatched', `Hardware emergency lock applied locally (${currentPercentage}%).`);
+              Alert.alert(
+                '❌ Emergency Stop Dispatch Failed',
+                `Unable to dispatch cloud halt command (${err?.message || 'Network offline'}).\n\n🚨 ACTION REQUIRED: Immediately activate the physical red Emergency Stop push-button on the dam control enclosure (GPIO 23 hardware halt).`
+              );
             }
           },
         },

@@ -4,34 +4,67 @@
 -- Run this THIRD (after 02_security.sql)
 -- ============================================================
 
--- ─── ALERT EVALUATION FUNCTION ───────────────────────────────
--- Automatically evaluates water level and creates alert records
--- Adheres to canonical SDAS 3-Phase matrix: 0% (0°), 20% (36°), 50% (90°)
+-- ─── ALERT & GATE EVALUATION FUNCTION ────────────────────────
+-- Automatically calculates rate-of-rise (cm/min or %/min) from consecutive readings
+-- Strictly adheres to the canonical SDAS 4-Tier Safety Matrix:
+-- Tier 1: <= 70.0%          -> NORMAL       -> Gate 0% (0° Closed, LED GREEN)
+-- Tier 2: 70.1-85.0% Stable -> PRE-WARNING  -> Gate 0% (0° Closed, LED YELLOW)
+-- Tier 3: 70.1-85.0% Rapid  -> WARNING      -> Gate 20% (36° Buffer, LED AMBER)
+-- Tier 4: > 85.0%           -> DANGER       -> Gate 50% (90° Spillway, LED RED, BUZZER ON)
 
 CREATE OR REPLACE FUNCTION evaluate_water_level()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 DECLARE
-  v_alert_type TEXT;
-  v_severity   TEXT;
-  v_message    TEXT;
-  v_last_type  TEXT;
+  v_prev_level    NUMERIC(5, 2);
+  v_prev_time     TIMESTAMPTZ;
+  v_time_diff_min NUMERIC;
+  v_rate_of_rise  NUMERIC(5, 2) := 0.0;
+  v_alert_type    TEXT;
+  v_severity      TEXT;
+  v_message       TEXT;
+  v_last_type     TEXT;
 BEGIN
-  -- Get the last alert type (for hysteresis — avoid duplicate alerts)
+  -- 1. Retrieve previous chronological reading for this device to calculate rate of rise
+  SELECT water_level, created_at INTO v_prev_level, v_prev_time
+  FROM sensor_readings
+  WHERE device_id = NEW.device_id AND id != NEW.id
+  ORDER BY created_at DESC
+  LIMIT 1;
+
+  -- 2. Compute rate-of-rise in %/min (if consecutive readings within 15 minutes)
+  IF v_prev_level IS NOT NULL AND v_prev_time IS NOT NULL THEN
+    v_time_diff_min := EXTRACT(EPOCH FROM (NEW.created_at - v_prev_time)) / 60.0;
+    IF v_time_diff_min > 0.05 AND v_time_diff_min <= 15.0 THEN
+      v_rate_of_rise := (NEW.water_level - v_prev_level) / v_time_diff_min;
+    END IF;
+  END IF;
+
+  -- 3. Retrieve last alert type for hysteresis deduplication
   SELECT alert_type INTO v_last_type
   FROM alerts
   ORDER BY created_at DESC
   LIMIT 1;
 
-  -- Determine alert level per proposal thresholds
-  IF NEW.water_level >= 85 THEN
+  -- 4. Evaluate Canonical 4-Tier SDAS Matrix
+  IF NEW.water_level > 85.0 THEN
     v_alert_type := 'DANGER';
     v_severity   := 'EMERGENCY';
-    v_message    := format('DANGER: Water level at %.1f%%. Sluice gate actuated to 50%% (90° Emergency Spillway). Immediate evacuation required.', NEW.water_level);
+    v_message    := format('DANGER: Water level at %.1f%% (>85.0%% critical). Sluice gate actuated to 50%% (90° Emergency Spillway). Immediate evacuation.', NEW.water_level);
 
-  ELSIF NEW.water_level >= 70 THEN
-    v_alert_type := 'PRE_WARNING';
-    v_severity   := 'WARNING';
-    v_message    := format('PRE-WARNING: Water level at %.1f%%. Sluice gate actuated to 20%% (36° Buffer Pre-Drain). Monitor closely.', NEW.water_level);
+  ELSIF NEW.water_level > 70.0 THEN
+    -- Rate-of-rise threshold: > 0.50%/min corresponds to rapid flash inflow (>5 cm/min)
+    IF v_rate_of_rise > 0.50 THEN
+      v_alert_type := 'WARNING';
+      v_severity   := 'HIGH';
+      v_message    := format('WARNING: Water level at %.1f%% with rapid surge (+%.2f%%/min). Sluice gate actuated to 20%% (36° Buffer Pre-Drain).', NEW.water_level, v_rate_of_rise);
+    ELSE
+      v_alert_type := 'PRE_WARNING';
+      v_severity   := 'WARNING';
+      v_message    := format('PRE-WARNING: Water level at %.1f%% (stable inflow, rate: +%.2f%%/min). Sluice gate held CLOSED at 0° (Water Conservation).', NEW.water_level, v_rate_of_rise);
+    END IF;
 
   ELSE
     v_alert_type := 'NORMAL';
@@ -39,19 +72,23 @@ BEGIN
     v_message    := format('NORMAL: Water level at %.1f%%. Sluice gate closed (0° Water Conservation).', NEW.water_level);
   END IF;
 
-  -- Only insert alert if level changed (basic hysteresis)
-  IF v_alert_type IS DISTINCT FROM v_last_type THEN
+  -- 5. Insert alert record if alert type changed or if in active emergency
+  IF v_alert_type IS DISTINCT FROM v_last_type OR v_alert_type = 'DANGER' THEN
     INSERT INTO alerts (alert_type, severity, message, water_level)
     VALUES (v_alert_type, v_severity, v_message, NEW.water_level);
   END IF;
 
-  -- Always insert a gate_control record for AUTO mode
+  -- 6. Insert automated gate actuation command per SDAS 4-Tier Policy
   IF v_alert_type = 'DANGER' THEN
     INSERT INTO gate_control (gate_percentage, mode, command, led_color, buzzer_active)
     VALUES (50, 'AUTO', 'EMERGENCY_50', 'RED', TRUE);
-  ELSIF v_alert_type = 'PRE_WARNING' THEN
+  ELSIF v_alert_type = 'WARNING' THEN
     INSERT INTO gate_control (gate_percentage, mode, command, led_color, buzzer_active)
-    VALUES (20, 'AUTO', 'BUFFER_20', 'YELLOW', FALSE);
+    VALUES (20, 'AUTO', 'BUFFER_20', 'AMBER', FALSE);
+  ELSIF v_alert_type = 'PRE_WARNING' THEN
+    -- In PRE_WARNING, gate is strictly CLOSED (0%) to conserve water while alerting downstream officers
+    INSERT INTO gate_control (gate_percentage, mode, command, led_color, buzzer_active)
+    VALUES (0, 'AUTO', 'PRE_WARNING_HOLD_0', 'YELLOW', FALSE);
   ELSE
     INSERT INTO gate_control (gate_percentage, mode, command, led_color, buzzer_active)
     VALUES (0, 'AUTO', 'NORMAL_CLOSED_0', 'GREEN', FALSE);

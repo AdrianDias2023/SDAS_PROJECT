@@ -12,7 +12,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE IF NOT EXISTS profiles (
   id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   name        TEXT NOT NULL,
-  role        TEXT NOT NULL DEFAULT 'OPERATOR' CHECK (role IN ('OPERATOR', 'ADMIN', 'PUBLIC')),
+  role        TEXT NOT NULL DEFAULT 'PUBLIC' CHECK (role IN ('OPERATOR', 'ADMIN', 'PUBLIC')),
   phone       TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS emergency_contacts (
 );
 
 -- ─── TRIGGER: Auto-create profile on user signup ─────────────
+-- Defaults all signups to 'PUBLIC' to prevent unauthorized role escalation.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -99,12 +100,12 @@ BEGIN
   INSERT INTO public.profiles (id, name, role)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'name', split_part(COALESCE(NEW.email, 'Operator'), '@', 1)),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'OPERATOR')
+    COALESCE(NEW.raw_user_meta_data->>'name', split_part(COALESCE(NEW.email, 'Citizen'), '@', 1)),
+    COALESCE(NEW.raw_user_meta_data->>'role', 'PUBLIC')
   )
   ON CONFLICT (id) DO UPDATE
     SET name = EXCLUDED.name,
-        role = EXCLUDED.role;
+        updated_at = NOW();
   RETURN NEW;
 EXCEPTION WHEN OTHERS THEN
   RETURN NEW;
