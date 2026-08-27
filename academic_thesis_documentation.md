@@ -59,7 +59,7 @@ SDAS introduces an end-to-end multi-tier architecture solving these deficiencies
 | **Response Latency** | 30–60 minutes | 5–10 minutes | 1–3 minutes | **< 1.8 seconds (Edge PWM Actuation)** |
 | **Fail-Safe Operation** | Human dependent | Generator dependent | Fails on WiFi loss | **Quad-Redundant: WiFi + GSM SMS + Physical Buttons + Li-ion UPS** |
 | **AI Predictive Lookahead** | None | Statistical Regression | None / Basic Linear | **Hybrid 2-Layer LSTM + Random Forest + Autoencoder** |
-| **Satellite Weather Link** | None | Expensive Radar feeds | None | **Live 6h Inflow Forecast API** |
+| **Weather Forecast API Integration** | None | Expensive Radar feeds | None | **Live 6h Inflow Forecast API (Open-Meteo)** |
 | **Public Alerting** | TV/Radio (Hours delay) | Siren only | Generic Web Page | **App Push + SMS Broadcast + GPS Evacuation Routes (3 Languages)** |
 
 ---
@@ -69,7 +69,7 @@ SDAS introduces an end-to-end multi-tier architecture solving these deficiencies
 ### 3.1 5-Layer End-to-End Architecture
 
 ```
-Layer 1: SENSING & HARVESTING (Dual JSN-SR04T + DHT22 + Open-Meteo Satellite API)
+Layer 1: SENSING & HARVESTING (Dual JSN-SR04T + DHT22 + Open-Meteo Weather Forecast API)
                           │
 Layer 2: EDGE COMPUTING & FAIL-SAFE ACTUATION (ESP32 @ 240MHz + SIM800L + MG996R Servo + Physical Buttons)
                           │

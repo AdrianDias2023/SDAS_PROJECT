@@ -55,8 +55,8 @@ BEGIN
     v_message    := format('DANGER: Water level at %.1f%% (>85.0%% critical). Sluice gate actuated to 50%% (90° Emergency Spillway). Immediate evacuation.', NEW.water_level);
 
   ELSIF NEW.water_level > 70.0 THEN
-    -- Rate-of-rise threshold: > 0.50%/min corresponds to rapid flash inflow (>5 cm/min)
-    IF v_rate_of_rise > 0.50 THEN
+    -- Rate-of-rise threshold: > 9.00%/min strictly matches firmware RISE_RATE_THRESHOLD (0.30% per 2 seconds)
+    IF v_rate_of_rise > 9.00 THEN
       v_alert_type := 'WARNING';
       v_severity   := 'HIGH';
       v_message    := format('WARNING: Water level at %.1f%% with rapid surge (+%.2f%%/min). Sluice gate actuated to 20%% (36° Buffer Pre-Drain).', NEW.water_level, v_rate_of_rise);

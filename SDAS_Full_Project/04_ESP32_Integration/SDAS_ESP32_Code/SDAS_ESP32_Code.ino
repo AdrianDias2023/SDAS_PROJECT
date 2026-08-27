@@ -73,8 +73,8 @@ const char* SMS_CONTACTS[] = {
 const int SMS_CONTACT_COUNT = 3;
 
 // Rate-of-rise threshold to trigger WARNING / CONTROLLED RELEASE (% per 2-second reading)
-// If water rises faster than this, upgrade PRE-WARNING → WARNING / CONTROLLED RELEASE
-#define RISE_RATE_THRESHOLD  0.3f   // 0.3% per 2 seconds = ~9%/min
+// 0.30% per 2 seconds = 9.00%/min (mathematically identical to Supabase cloud evaluate_water_level trigger)
+#define RISE_RATE_THRESHOLD  0.30f   // 0.30% per 2 seconds = 9.00%/min
 
 // ════════════════════════════════════════════════════════════════════════════════
 
@@ -322,11 +322,11 @@ void setGate(int targetAngle) {
   while (currentAngle != targetAngle) {
     currentAngle += step;
     gateServo.write(currentAngle);
-    delay(15);   // 15 ms per degree → ~2.7 s for full 0→180° sweep
+    delay(15);   // 15 ms per degree (smooth servo motion; prototype operational range strictly calibrated 0–90°)
   }
   currentGateAngle = targetAngle;
-  Serial.printf("[GATE] Position → %d° (%.0f%% open)\n",
-                targetAngle, (targetAngle / 180.0f) * 100.0f);
+  int percentage = (targetAngle == GATE_DANGER) ? 50 : (targetAngle == GATE_WARNING) ? 20 : 0;
+  Serial.printf("[GATE] Sluice Aperture -> %d° (%d%% calibrated flow)\n", targetAngle, percentage);
 }
 
 void applyGate(AlertLevel level) {

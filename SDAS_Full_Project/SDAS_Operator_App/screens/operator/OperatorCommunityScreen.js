@@ -69,7 +69,7 @@ export default function OperatorCommunityScreen({ navigation }) {
       if (data && data.length > 0) {
         const formatted = data.map((d) => ({
           id: String(d.id),
-          category: d.category === 'ROAD_FLOODED' || d.category === 'ROAD_FLOODING' ? 'Road Flooded' : d.category === 'HEAVY_RAIN' ? 'Heavy Rain' : d.category === 'WATER_ENTERING' ? 'Water Entering' : 'Water Rising',
+          category: d.category === 'ROAD_FLOODED' ? 'Road Flooded' : d.category === 'HEAVY_RAIN' ? 'Heavy Rain' : d.category === 'WATER_ENTERING' ? 'Water Entering' : 'Water Rising',
           color: d.category === 'WATER_RISING' || d.category === 'WATER_ENTERING' ? '#EF4444' : d.category === 'HEAVY_RAIN' ? '#F59E0B' : '#F97316',
           time: new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           location: `${d.location_name} (${d.latitude?.toFixed(4)}, ${d.longitude?.toFixed(4)})`,
