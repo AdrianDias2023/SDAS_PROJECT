@@ -99,12 +99,17 @@ CREATE POLICY "Operators can insert gate commands"
   WITH CHECK (public.is_operator_or_admin());
 
 -- ─── COMMUNITY REPORTS (Moderated Crowdsourcing) ─────────────
--- 1. Public can read approved community reports
-CREATE POLICY "Public can read community reports"
+-- 1. Public can read ONLY approved community reports
+CREATE POLICY "Public can read approved community reports"
   ON community_reports FOR SELECT TO anon, authenticated
-  USING (TRUE);
+  USING (status = 'APPROVED');
 
--- 2. Public can submit new reports (must have PENDING_REVIEW status)
+-- 2. Operators and Admins can read ALL reports (including PENDING_REVIEW for moderation)
+CREATE POLICY "Operators can read all community reports"
+  ON community_reports FOR SELECT TO authenticated
+  USING (public.is_operator_or_admin());
+
+-- 3. Public can submit new reports (must have PENDING_REVIEW status)
 CREATE POLICY "Public can submit community reports"
   ON community_reports FOR INSERT TO anon, authenticated
   WITH CHECK (status = 'PENDING_REVIEW');

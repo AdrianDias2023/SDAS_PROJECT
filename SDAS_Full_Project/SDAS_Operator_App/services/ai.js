@@ -1,6 +1,6 @@
 // SDAS AI Cloud Inference Service
 // Connects directly to Render.com Cloud AI Engine (https://sdas-ai-engine.onrender.com)
-// Built with automatic offline failover for 100% uptime and zero crashes
+// Built with automatic offline fallback for continued prototype operation during temporary cloud connectivity loss
 
 const AI_CLOUD_URL = 'https://sdas-ai-engine.onrender.com';
 
@@ -28,7 +28,7 @@ export async function fetchAiPrediction(sensorSequence) {
       isCloud: true,
     };
   } catch (err) {
-    // Resilient local mathematical fallback (100% offline uptime)
+    // Resilient local mathematical fallback for offline operational resilience
     const latestWater = sensorSequence?.water_levels?.[sensorSequence.water_levels.length - 1] ?? 72.5;
     const projected = Math.min(100, Math.max(0, latestWater + 3.3));
     return {

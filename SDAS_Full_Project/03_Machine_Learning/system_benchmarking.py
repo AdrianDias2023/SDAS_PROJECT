@@ -202,8 +202,11 @@ def test_offline_emergency_and_interlock():
             else:
                 gate_pct = 0.0
                 interlock_rejected = False
-        elif manual_cmd == "OPEN_50_PCT" or manual_cmd == "OPEN_100_PCT":
+        elif manual_cmd == "OPEN_50_PCT":
             gate_pct = 50.0
+            interlock_rejected = False
+        elif manual_cmd == "OPEN_20_PCT":
+            gate_pct = 20.0
             interlock_rejected = False
         else: # Automatic / Offline Emergency
             if water_level >= 85.0:

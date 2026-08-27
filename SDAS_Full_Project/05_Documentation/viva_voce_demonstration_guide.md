@@ -69,7 +69,7 @@ This guide outlines the **5-Stage Live Demonstration Protocol** to perform in fr
     - Moves MG996R gate to **$50\%$ (Safe Emergency Opening)**.
     - Fires SIM800L direct GSM SMS over 2G cellular towers without internet.
   - **Operator Console:** Shows `🔴 OFFLINE` | `Mode: 🚨 OFFLINE EMERGENCY` | `Controller: ESP32 Local Edge Engine`.
-* **Examiner Talking Point:** *"This eliminates single-point-of-failure vulnerability. The dam remains 100% autonomous and protected even during electrical grid or internet collapse."*
+* **Examiner Talking Point:** *"This eliminates single-point-of-failure vulnerability. The prototype can continue local safety operation during supported network and power interruptions."*
 
 ---
 

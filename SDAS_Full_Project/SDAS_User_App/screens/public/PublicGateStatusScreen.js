@@ -11,27 +11,34 @@ import { subscribeGateControl } from '../../services/realtime';
 import { useLanguage } from '../../services/i18n';
 import LanguageSelector from '../../components/LanguageSelector';
 
+const GATE_ANGLES = { 0: 0, 20: 36, 50: 90 };
+
 export default function PublicGateStatusScreen() {
   const { t } = useLanguage();
-  const [percentage, setPercentage] = useState(20);
+  const [percentage, setPercentage] = useState(null);
   const [mode, setMode] = useState('AUTO');
+  const [isLoaded, setIsLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadStatus = async () => {
     try {
       const { data } = await supabase
-        .from('gate_commands')
+        .from('gate_control')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (data) {
-        setPercentage(data.gate_percentage ?? 20);
+        setPercentage(data.gate_percentage ?? 0);
         setMode(data.mode ?? 'AUTO');
+      } else {
+        setPercentage(0);
       }
+      setIsLoaded(true);
     } catch (e) {
       console.error(e);
+      setIsLoaded(true);
     } finally {
       setRefreshing(false);
     }
@@ -40,11 +47,16 @@ export default function PublicGateStatusScreen() {
   useEffect(() => {
     loadStatus();
     const ch = subscribeGateControl((cmd) => {
-      setPercentage(cmd.gate_percentage);
-      setMode(cmd.mode);
+      if (cmd && cmd.gate_percentage !== undefined) {
+        setPercentage(cmd.gate_percentage);
+        setMode(cmd.mode || 'AUTO');
+        setIsLoaded(true);
+      }
     });
     return () => ch.unsubscribe();
   }, []);
+
+  const currentAngle = percentage !== null ? (GATE_ANGLES[percentage] ?? Math.round(percentage * 1.8)) : null;
 
   return (
     <View style={styles.container}>
@@ -65,10 +77,18 @@ export default function PublicGateStatusScreen() {
         <View style={styles.card}>
           <Text style={styles.cardSectionTitle}>Current Gate Status</Text>
           <View style={styles.gateHeroRow}>
-            <Text style={[styles.gateHeroVal, { color: percentage >= 50 ? '#EF4444' : percentage >= 20 ? '#F59E0B' : '#10B981' }]}>
-              {percentage === 0 ? '0% CLOSED' : `${percentage}% OPEN`}
-            </Text>
-            <Text style={styles.servoAngleText}>({Math.round(percentage * 1.8)}°)</Text>
+            {!isLoaded || percentage === null ? (
+              <Text style={[styles.gateHeroVal, { color: '#64748B', fontSize: 20 }]}>
+                Connecting to telemetry...
+              </Text>
+            ) : (
+              <>
+                <Text style={[styles.gateHeroVal, { color: percentage >= 50 ? '#EF4444' : percentage >= 20 ? '#F59E0B' : '#10B981' }]}>
+                  {percentage === 0 ? '0% CLOSED' : `${percentage}% OPEN`}
+                </Text>
+                <Text style={styles.servoAngleText}>({currentAngle}°)</Text>
+              </>
+            )}
           </View>
 
           {/* Dam Sluice Physical Cross Section */}
@@ -78,11 +98,11 @@ export default function PublicGateStatusScreen() {
                 <Text style={styles.reservoirSideText}>🌊 RESERVOIR</Text>
               </View>
               {/* Gate Leaf */}
-              <View style={[styles.gateSluiceLeaf, { height: `${Math.max(15, 100 - percentage)}%` }]}>
+              <View style={[styles.gateSluiceLeaf, { height: `${Math.max(15, 100 - (percentage ?? 0))}%` }]}>
                 <Text style={styles.gateLeafLabel}>GATE</Text>
               </View>
               {/* Flow Stream */}
-              {percentage > 0 && (
+              {percentage !== null && percentage > 0 && (
                 <View style={[styles.dischargeStream, { height: `${percentage}%` }]}>
                   <Text style={styles.dischargeText}>⬇️ FLOW</Text>
                 </View>
@@ -96,7 +116,7 @@ export default function PublicGateStatusScreen() {
           <View style={styles.operatingModeRow}>
             <View>
               <Text style={styles.operatingModeLabel}>Operating Mode</Text>
-              <Text style={styles.operatingModeValue}>AUTO (Prototype)</Text>
+              <Text style={styles.operatingModeValue}>{mode || 'AUTO'} (Prototype)</Text>
             </View>
             <View style={styles.modeCloudBadge}>
               <Text style={styles.cloudBadgeIcon}>☁️</Text>
@@ -107,10 +127,9 @@ export default function PublicGateStatusScreen() {
           <Text style={styles.guideTitle}>Gate Opening Guide</Text>
           <View style={styles.guideStepsRow}>
             {[
-              { pct: '0%', label: 'Closed', color: '#10B981' },
-              { pct: '20%', label: 'Warning\nRelease', color: '#F59E0B' },
-              { pct: '50%', label: 'Emergency\nRelease', color: '#EF4444' },
-              { pct: '100%', label: 'Full\nOpen', color: '#DC2626' },
+              { pct: '0%', label: 'Closed\n(0°)', color: '#10B981' },
+              { pct: '20%', label: 'Controlled\nRelease (36°)', color: '#F59E0B' },
+              { pct: '50%', label: 'Emergency\nRelease (90°)', color: '#EF4444' },
             ].map((step, idx) => (
               <View key={idx} style={styles.stepCol}>
                 <View style={[styles.stepDot, { backgroundColor: step.color }]} />
