@@ -4,6 +4,19 @@
 -- Run this SECOND (after 01_database.sql)
 -- ============================================================
 
+-- ─── HELPER FUNCTION: ROLE-BASED ACCESS CONTROL (RBAC) ───────
+CREATE OR REPLACE FUNCTION public.is_operator_or_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('OPERATOR', 'ADMIN')
+  );
+$$;
+
 -- ─── ENABLE RLS ON ALL TABLES ────────────────────────────────
 ALTER TABLE profiles                          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sensor_readings                   ENABLE ROW LEVEL SECURITY;
@@ -31,29 +44,31 @@ CREATE POLICY "System can insert alerts"
   ON alerts FOR INSERT TO anon, authenticated
   WITH CHECK (TRUE);
 
+-- Operators only: can acknowledge alerts
 CREATE POLICY "Operators can acknowledge alerts"
   ON alerts FOR UPDATE TO authenticated
-  USING (TRUE)
-  WITH CHECK (TRUE);
+  USING (public.is_operator_or_admin())
+  WITH CHECK (public.is_operator_or_admin());
 
 -- ─── ML PREDICTIONS ──────────────────────────────────────────
 CREATE POLICY "Public can read ML predictions"
   ON ml_predictions FOR SELECT TO anon, authenticated USING (TRUE);
 
 CREATE POLICY "System can insert predictions"
-  ON ml_predictions FOR INSERT TO anon, authenticated
+  ON ml_predictions FOR INSERT TO authenticated
   WITH CHECK (TRUE);
 
 -- ─── GATE CONTROL ────────────────────────────────────────────
 CREATE POLICY "Public can read gate status"
   ON gate_control FOR SELECT TO anon, authenticated USING (TRUE);
 
+-- Strict RBAC: Only certified operators and admins can insert actuator commands
 CREATE POLICY "Operators can insert gate commands"
   ON gate_control FOR INSERT TO authenticated
-  WITH CHECK (TRUE);
+  WITH CHECK (public.is_operator_or_admin());
 
 -- ─── COMMUNITY REPORTS ───────────────────────────────────────
--- 1. Public can read community reports
+-- 1. Public can read approved and community reports
 CREATE POLICY "Public can read community reports"
   ON community_reports FOR SELECT TO anon, authenticated
   USING (TRUE);
@@ -63,16 +78,16 @@ CREATE POLICY "Public can submit community reports"
   ON community_reports FOR INSERT TO anon, authenticated
   WITH CHECK (status = 'PENDING_REVIEW');
 
--- 3. Operators can update reports (moderation / approve / reject)
+-- 3. Strict RBAC: Only verified operators can update/moderate reports
 CREATE POLICY "Operators can moderate community reports"
   ON community_reports FOR UPDATE TO authenticated
-  USING (TRUE)
-  WITH CHECK (TRUE);
+  USING (public.is_operator_or_admin())
+  WITH CHECK (public.is_operator_or_admin());
 
--- 4. Operators can delete fraudulent community reports
+-- 4. Strict RBAC: Only operators/admins can delete fraudulent reports
 CREATE POLICY "Operators can delete community reports"
   ON community_reports FOR DELETE TO authenticated
-  USING (TRUE);
+  USING (public.is_operator_or_admin());
 
 -- ─── COMMUNITY CONFIRMATIONS ─────────────────────────────────
 CREATE POLICY "Public can read confirmations"
@@ -106,25 +121,21 @@ CREATE POLICY "Users can update own profile"
 
 CREATE POLICY "Admins can read all profiles"
   ON profiles FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles p
-      WHERE p.id = auth.uid() AND p.role = 'ADMIN'
-    )
-  );
+  USING (public.is_operator_or_admin());
 
 -- ─── EMERGENCY CONTACTS ──────────────────────────────────────
-CREATE POLICY "Operators can read contacts"
-  ON emergency_contacts FOR SELECT TO authenticated USING (TRUE);
+CREATE POLICY "Public can read contacts"
+  ON emergency_contacts FOR SELECT TO anon, authenticated USING (TRUE);
 
+-- Operators only: can manage contacts
 CREATE POLICY "Operators can insert contacts"
   ON emergency_contacts FOR INSERT TO authenticated
-  WITH CHECK (TRUE);
+  WITH CHECK (public.is_operator_or_admin());
 
 CREATE POLICY "Operators can update contacts"
   ON emergency_contacts FOR UPDATE TO authenticated
-  USING (TRUE) WITH CHECK (TRUE);
+  USING (public.is_operator_or_admin()) WITH CHECK (public.is_operator_or_admin());
 
 CREATE POLICY "Operators can delete contacts"
   ON emergency_contacts FOR DELETE TO authenticated
-  USING (TRUE);
+  USING (public.is_operator_or_admin());

@@ -46,7 +46,7 @@ export default function ManualOverrideScreen({ navigation }) {
     return () => sc.unsubscribe();
   }, [loadData]);
 
-  const isCriticalOvertopping = currentLevel >= 85.0;
+  const isCriticalOvertopping = currentLevel > 85.0;
 
   const handleManualAction = async (percentage, label) => {
     const angle = percentage === 50 ? 90 : percentage === 20 ? 36 : 0;

@@ -9,7 +9,7 @@ import { View, Text } from 'react-native';
 // Operator Screens
 import LoginScreen             from '../screens/operator/LoginScreen';
 import OperatorDashboard       from '../screens/operator/OperatorDashboard';
-import PredictionScreen       from '../screens/public/PredictionScreen';
+import PredictionScreen       from '../screens/operator/PredictionScreen';
 import GateControlScreen       from '../screens/operator/GateControlScreen';
 import OperatorCommunityScreen from '../screens/operator/OperatorCommunityScreen';
 import SystemHealthScreen      from '../screens/operator/SystemHealthScreen';

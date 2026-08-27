@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS community_reports (
   latitude             FLOAT NOT NULL DEFAULT 8.0362,
   longitude            FLOAT NOT NULL DEFAULT 79.8283,
   location_name        TEXT NOT NULL,
-  category             TEXT NOT NULL CHECK (category IN ('WATER_RISING', 'HEAVY_RAIN', 'ROAD_FLOODED', 'ROAD_FLOODING', 'WATER_ENTERING', 'OTHER')),
+  category             TEXT NOT NULL CHECK (category IN ('WATER_RISING', 'HEAVY_RAIN', 'ROAD_FLOODED', 'WATER_ENTERING', 'OTHER')),
   description          TEXT NOT NULL,
   image_url            TEXT,
   confirmation_count   INTEGER NOT NULL DEFAULT 1,

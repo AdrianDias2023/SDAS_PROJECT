@@ -1,5 +1,5 @@
 // SDAS — Public Community Screen (3. Community)
-// Real GPS Location Acquisition, Tabbowa Catchment Standardization, Backend Persistence & PENDING_REVIEW Flow
+// Real GPS Acquisition, Haversine Distance Calculation, Server-Verified Confirmations & Strict PENDING_REVIEW Workflow
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -17,6 +17,21 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../services/supabase';
+
+const TABBOWA_DAM_COORDS = { lat: 8.0362, lng: 79.8283 };
+
+function calculateHaversineDistance(lat1, lon1, lat2 = TABBOWA_DAM_COORDS.lat, lon2 = TABBOWA_DAM_COORDS.lng) {
+  if (lat1 == null || lon1 == null) return 2.0;
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return parseFloat((R * c).toFixed(1));
+}
 
 const TABBOWA_AREAS = [
   { name: 'Tabbowa Dam Spillway & Causeway', lat: 8.0362, lng: 79.8283, dist: '0.4 km' },
@@ -61,7 +76,7 @@ export default function CommunityReportsScreen({ navigation }) {
       location: 'Tabbowa Dam Spillway & Causeway',
       time: '5 min ago',
       confirmations: 18,
-      distance: '0.4 km away',
+      distance: '0.4 km from dam',
       photoIcon: '🌊',
       status: 'APPROVED',
       isDemoSeed: true,
@@ -75,7 +90,7 @@ export default function CommunityReportsScreen({ navigation }) {
       location: 'Puttalam-Anuradhapura Highway (A12)',
       time: '20 min ago',
       confirmations: 12,
-      distance: '1.8 km away',
+      distance: '1.8 km from dam',
       photoIcon: '🚧',
       status: 'APPROVED',
       isDemoSeed: true,
@@ -89,14 +104,14 @@ export default function CommunityReportsScreen({ navigation }) {
       location: 'Karuwalagaswewa Village Sector',
       time: '35 min ago',
       confirmations: 7,
-      distance: '2.1 km away',
+      distance: '2.1 km from dam',
       photoIcon: '🌧️',
       status: 'APPROVED',
       isDemoSeed: true,
     },
   ]);
 
-  // Initialize or load device identifier & local confirmations
+  // Initialize device identifier & load local confirmations
   useEffect(() => {
     AsyncStorage.getItem('@sdas_device_id').then((id) => {
       if (id) {
@@ -127,23 +142,24 @@ export default function CommunityReportsScreen({ navigation }) {
           const lng = position.coords.longitude;
           setGpsLat(lat);
           setGpsLng(lng);
-          setLocationName(`GPS: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E (Near Tabbowa)`);
+          const dist = calculateHaversineDistance(lat, lng);
+          setLocationName(`GPS: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E (${dist} km from Dam)`);
           setGpsStatus('ACQUIRED');
         },
         (error) => {
-          console.log('GPS error/permission denied:', error?.message);
+          console.log('GPS permission denied or unavailable:', error?.message);
           setGpsStatus('UNAVAILABLE');
-          setGpsLat(8.0362);
-          setGpsLng(79.8283);
-          setLocationName('Tabbowa Dam Spillway Area');
+          setGpsLat(null);
+          setGpsLng(null);
+          setLocationName('');
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
     } else {
       setGpsStatus('UNAVAILABLE');
-      setGpsLat(8.0362);
-      setGpsLng(79.8283);
-      setLocationName('Tabbowa Dam Spillway Area');
+      setGpsLat(null);
+      setGpsLng(null);
+      setLocationName('');
     }
   }, []);
 
@@ -163,7 +179,7 @@ export default function CommunityReportsScreen({ navigation }) {
     setManualAreaMode(false);
   };
 
-  // Backend-Persisted Confirmation with Atomic Anti-Spam Check
+  // Server-First Backend Confirmation Verification
   const handleConfirmReport = async (reportId) => {
     if (confirmedIds.includes(reportId)) {
       Alert.alert('Already Confirmed', 'You have already confirmed this incident report.');
@@ -173,34 +189,37 @@ export default function CommunityReportsScreen({ navigation }) {
     const targetReport = reports.find((r) => r.id === reportId);
     if (!targetReport) return;
 
-    const newCount = targetReport.confirmations + 1;
-
-    // Optimistic UI Update
-    setReports((prev) =>
-      prev.map((r) => (r.id === reportId ? { ...r, confirmations: newCount } : r))
-    );
-
-    const newConfirmedList = [...confirmedIds, reportId];
-    setConfirmedIds(newConfirmedList);
-    AsyncStorage.setItem('@sdas_confirmed_reports', JSON.stringify(newConfirmedList));
-
-    // Persist to Supabase Database (calling RPC or table update)
     try {
       if (typeof reportId === 'number' || (typeof reportId === 'string' && !reportId.startsWith('tabbowa-rep'))) {
-        await supabase.rpc('increment_community_confirmation', {
+        const { error } = await supabase.rpc('increment_community_confirmation', {
           p_report_id: reportId,
           p_user_identifier: deviceUserId || 'anon-device',
         });
+        if (error) throw error;
       }
-    } catch (err) {
-      console.log('Supabase sync confirmation note:', err?.message);
-    }
 
-    Alert.alert('✅ Report Confirmed', 'Thank you! Your verification improves community flood intelligence for downstream villagers.');
+      // Update UI only after server acceptance
+      const newCount = targetReport.confirmations + 1;
+      setReports((prev) =>
+        prev.map((r) => (r.id === reportId ? { ...r, confirmations: newCount } : r))
+      );
+      const newConfirmedList = [...confirmedIds, reportId];
+      setConfirmedIds(newConfirmedList);
+      AsyncStorage.setItem('@sdas_confirmed_reports', JSON.stringify(newConfirmedList));
+
+      Alert.alert('✅ Report Confirmed', 'Thank you! Your verification improves community flood intelligence for downstream villagers.');
+    } catch (err) {
+      Alert.alert('Confirmation Failed', `Could not register confirmation with the server: ${err?.message || 'Network offline'}.`);
+    }
   };
 
-  // Database Report Submission with Strict PENDING_REVIEW Status
+  // Database Report Submission with Haversine Calculation & Strict PENDING_REVIEW Status
   const handleSubmitReport = async () => {
+    if (!locationName.trim()) {
+      Alert.alert('Location Required', 'Please select an area from the Tabbowa Catchment list or enter a landmark.');
+      return;
+    }
+
     if (!description.trim()) {
       Alert.alert('Missing Details', 'Please describe what you are observing on the ground.');
       return;
@@ -208,16 +227,17 @@ export default function CommunityReportsScreen({ navigation }) {
 
     setSubmitting(true);
     const chosen = CATEGORIES.find((c) => c.id === selectedCategory);
+    const calculatedDistance = calculateHaversineDistance(gpsLat, gpsLng);
 
     const submissionPayload = {
-      latitude: gpsLat || 8.0362,
-      longitude: gpsLng || 79.8283,
-      location_name: locationName.trim() || 'Tabbowa Catchment Area',
+      latitude: gpsLat || TABBOWA_DAM_COORDS.lat,
+      longitude: gpsLng || TABBOWA_DAM_COORDS.lng,
+      location_name: locationName.trim(),
       category: selectedCategory, // 'ROAD_FLOODED', 'WATER_RISING', etc.
       description: description.trim(),
       confirmation_count: 1,
       status: 'PENDING_REVIEW', // Strict safety architecture requirement
-      distance_from_dam_km: 1.5,
+      distance_from_dam_km: calculatedDistance,
     };
 
     try {
@@ -241,7 +261,7 @@ export default function CommunityReportsScreen({ navigation }) {
         location: submissionPayload.location_name,
         time: 'Just now',
         confirmations: 1,
-        distance: 'Local Catchment Area',
+        distance: `${calculatedDistance} km from dam`,
         photoIcon: '📷',
         status: 'PENDING_REVIEW',
         isDemoSeed: false,
@@ -256,7 +276,7 @@ export default function CommunityReportsScreen({ navigation }) {
       setDescription('');
       Alert.alert(
         '✅ Report Submitted for Review',
-        'Your situation report has been submitted to the Dam Control Room as PENDING_REVIEW. Operators will verify and approve it for public broadcast.'
+        `Your report (${calculatedDistance} km from dam) has been submitted as PENDING_REVIEW. Operators will verify it before public broadcast.`
       );
     } catch (err) {
       setSubmitting(false);
@@ -283,7 +303,7 @@ export default function CommunityReportsScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* GPS Liveness Pill */}
+        {/* GPS Liveness Banner */}
         <View style={styles.gpsBanner}>
           <Text style={styles.gpsIcon}>
             {gpsStatus === 'ACQUIRED' ? '🛰️' : gpsStatus === 'SEARCHING' ? '⏳' : '📍'}
@@ -294,9 +314,11 @@ export default function CommunityReportsScreen({ navigation }) {
                 ? 'REAL DEVICE GPS ACQUIRED'
                 : gpsStatus === 'SEARCHING'
                 ? 'ACQUIRING DEVICE GPS...'
-                : 'LOCATION PERMISSION / PROXIMITY MODE'}
+                : 'LOCATION PERMISSION / MANUAL AREA MODE'}
             </Text>
-            <Text style={styles.gpsSub}>{locationName || 'Tabbowa Catchment Basin'}</Text>
+            <Text style={styles.gpsSub}>
+              {locationName ? locationName : 'GPS not detected. Please select your area manually.'}
+            </Text>
           </View>
         </View>
 
@@ -404,15 +426,15 @@ export default function CommunityReportsScreen({ navigation }) {
 
               {/* Location Selector */}
               <View style={styles.locHeaderRow}>
-                <Text style={styles.inputLabel}>Location</Text>
+                <Text style={styles.inputLabel}>Location Area</Text>
                 <TouchableOpacity onPress={() => setManualAreaMode(!manualAreaMode)}>
                   <Text style={styles.toggleLocText}>
-                    {manualAreaMode ? 'Use Device GPS ❯' : 'Select Tabbowa Area ❯'}
+                    {manualAreaMode ? 'Use Device GPS ❯' : 'Select Tabbowa Catchment Area ❯'}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {manualAreaMode ? (
+              {manualAreaMode || !locationName ? (
                 <View style={styles.areaList}>
                   {TABBOWA_AREAS.map((area, idx) => (
                     <TouchableOpacity
@@ -433,7 +455,7 @@ export default function CommunityReportsScreen({ navigation }) {
                   style={styles.input}
                   value={locationName}
                   onChangeText={setLocationName}
-                  placeholder="Acquiring GPS or enter landmark..."
+                  placeholder="Enter landmark or village location..."
                   placeholderTextColor="#94A3B8"
                 />
               )}
@@ -452,7 +474,7 @@ export default function CommunityReportsScreen({ navigation }) {
 
               {/* Safety notice on PENDING_REVIEW */}
               <Text style={styles.reviewNotice}>
-                🛡️ Reports are submitted with status <Text style={{ fontWeight: 'bold' }}>PENDING_REVIEW</Text> and moderated by Dam Operators before final public broadcast.
+                🛡️ Reports are submitted with status <Text style={{ fontWeight: 'bold' }}>PENDING_REVIEW</Text> and moderated by Dam Operators before public broadcast.
               </Text>
 
               {/* Submit Button */}

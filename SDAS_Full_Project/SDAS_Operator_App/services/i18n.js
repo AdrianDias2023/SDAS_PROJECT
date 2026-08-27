@@ -107,7 +107,7 @@ export const translations = {
     aboutObj2: "• 4-tier safety threshold controller (Normal <70%, Pre-Warning 70-85%, Clear Area 70-85% rising, Danger >85%).",
     aboutObj3: "• Automated MG996R servo gate control and SIM800L emergency GSM SMS broadcast.",
     aboutObj4: "• Real-time cloud synchronization via Supabase PostgreSQL & Row-Level Security.",
-    aboutObj5: "• Real-time Satellite Weather API + Hybrid AI pipeline (LSTM + Random Forest Ensemble).",
+    aboutObj5: "• Open-Meteo Weather Forecast API + Hybrid AI pipeline (LSTM + Random Forest Ensemble).",
     aboutObj6: "• Single Dam Simulation Environment: Implemented a configurable simulated dam profile based on the Tabbowa Dam environment to demonstrate water-level monitoring, AI prediction, automated gate control, and emergency alert workflows.",
     aboutTeam: "Project Team",
     teamRole1: "Dias Adrian — Cyber Security",

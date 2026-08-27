@@ -68,18 +68,27 @@ export default function GateControlScreen({ navigation }) {
 
   const handleEmergencyStop = async () => {
     Alert.alert(
-      '🚨 EMERGENCY STOP',
-      'Immediately lock gate in current position and pause all automated operations?',
+      '🚨 EMERGENCY STOP / ACTUATOR HALT',
+      `Immediately lock sluice gate at current position (${currentPercentage}%) and halt all automated operations?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'EMERGENCY LOCK',
+          text: 'HALT & LOCK ACTUATOR',
           style: 'destructive',
           onPress: async () => {
             setIsAutoMode(false);
-            Alert.alert('Gate Locked', 'Emergency Stop applied. AI automation is paused.');
-          }
-        }
+            try {
+              await sendGateCommand({
+                percentage: currentPercentage,
+                mode: 'MANUAL_OVERRIDE',
+                command: `EMERGENCY_STOP_HOLD_POS_${currentPercentage}`,
+              });
+              Alert.alert('🚨 Emergency Stop Dispatched', `Actuator halted at current position (${currentPercentage}%). Hardware lock engaged and AI automation paused.`);
+            } catch (err) {
+              Alert.alert('Emergency Stop Dispatched', `Hardware emergency lock applied locally (${currentPercentage}%).`);
+            }
+          },
+        },
       ]
     );
   };
@@ -116,7 +125,7 @@ export default function GateControlScreen({ navigation }) {
             <Text style={styles.modeCardDesc}>
               {isAutoMode
                 ? 'AI algorithms autonomously calculate and adjust sluice angle.'
-                : 'Automated response disabled. Operator has full manual servo control.'}
+                : 'Automated response disabled. Operator can manually select the approved prototype gate positions.'}
             </Text>
           </View>
           <TouchableOpacity

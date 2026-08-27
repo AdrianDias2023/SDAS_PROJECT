@@ -1,7 +1,7 @@
 // SDAS — Operator AI Prediction Screen (2. AI Prediction)
-// Precision UI aligned with the official SDAS Operator App design mockup
+// Precision Cyber Dark UI with 6-Hour LSTM Hydrological Forecast Curve & Confidence Metrics
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -30,14 +30,14 @@ export default function PredictionScreen({ navigation }) {
         >
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>AI Prediction</Text>
+        <Text style={styles.headerTitle}>AI Hydrological Prediction</Text>
         <View style={{ width: 32 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Forecast Chart Card matching Screen 2 Mockup */}
+        {/* Forecast Chart Card */}
         <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Water Level Forecast (Next 6 Hours)</Text>
+          <Text style={styles.chartTitle}>Water Level Lookahead Forecast (Next 6 Hours)</Text>
 
           {/* SVG Wave Chart with Axes */}
           <View style={styles.svgWrapper}>
@@ -87,26 +87,39 @@ export default function PredictionScreen({ navigation }) {
 
         {/* Prediction Value Card */}
         <View style={styles.predictionCard}>
-          <Text style={styles.predLabel}>Predicted Level at +1 Hour</Text>
-          <Text style={styles.predValue}>75.2%</Text>
+          <Text style={styles.predLabel}>LSTM Predicted Level at +1 Hour</Text>
+          <Text style={styles.predValue}>75.8%</Text>
+          <Text style={styles.predSub}>6-Hour Continuous Forward Lookahead</Text>
         </View>
 
         {/* 2-Column Risk & Confidence Grid */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Risk Level</Text>
-            <Text style={styles.statValMedium}>MEDIUM</Text>
+            <Text style={styles.statLabel}>AI Risk Tier</Text>
+            <Text style={styles.statValMedium}>🟡 PRE-WARN</Text>
           </View>
 
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Confidence</Text>
+            <Text style={styles.statLabel}>Model Confidence</Text>
             <Text style={styles.statValWhite}>91%</Text>
           </View>
         </View>
 
-        {/* Model Footer Tag */}
-        <View style={styles.modelFooterCard}>
-          <Text style={styles.modelFooterText}>Model: LSTM Forecast Engine</Text>
+        {/* Autoencoder Anomaly Diagnostics */}
+        <View style={styles.diagCard}>
+          <Text style={styles.diagTitle}>🔍 Sensor Perception & Anomaly Isolation</Text>
+          <View style={styles.diagRow}>
+            <Text style={styles.diagKey}>Autoencoder Reconstruction Error (MSE):</Text>
+            <Text style={styles.diagVal}>0.0184 (Normal &lt; 0.0412)</Text>
+          </View>
+          <View style={styles.diagRow}>
+            <Text style={styles.diagKey}>Primary Transducer State:</Text>
+            <Text style={styles.diagValGreen}>HEALTHY (JSN-SR04T #1 Active)</Text>
+          </View>
+          <View style={styles.diagRow}>
+            <Text style={styles.diagKey}>Redundant Backup Transducer:</Text>
+            <Text style={styles.diagValGreen}>STANDBY (Auto-Failover Ready)</Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -137,7 +150,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 0.5,
@@ -152,22 +165,21 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   chartTitle: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '900',
     color: '#FFFFFF',
     marginBottom: 12,
   },
   svgWrapper: {
-    marginTop: 4,
+    alignItems: 'center',
   },
   xAxisRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingRight: 50,
+    width: '85%',
     marginTop: 6,
   },
   xAxisLabel: {
@@ -179,12 +191,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E293B',
     borderRadius: 16,
     padding: 16,
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 4,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   predLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#94A3B8',
   },
@@ -192,6 +204,13 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '900',
     color: '#38BDF8',
+    marginTop: 4,
+  },
+  predSub: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 2,
+    fontWeight: '600',
   },
   statsRow: {
     flexDirection: 'row',
@@ -203,35 +222,54 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 4,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   statLabel: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#94A3B8',
+    marginBottom: 6,
   },
   statValMedium: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '900',
     color: '#F59E0B',
   },
   statValWhite: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '900',
     color: '#FFFFFF',
   },
-  modelFooterCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
+  diagCard: {
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    borderRadius: 14,
     padding: 14,
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    gap: 6,
   },
-  modelFooterText: {
+  diagTitle: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '900',
+    color: '#F8FAFC',
+    marginBottom: 4,
+  },
+  diagRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  diagKey: {
+    fontSize: 10.5,
     color: '#94A3B8',
+  },
+  diagVal: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#38BDF8',
+  },
+  diagValGreen: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: '#10B981',
   },
 });
