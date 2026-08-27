@@ -90,5 +90,5 @@ This guide outlines the **5-Stage Live Demonstration Protocol** to perform in fr
 
 ## 🎬 Stage 6 (Bonus) — Disaster Event Replay Demonstration
 * **Examiner Action:** Scroll to **"📼 Disaster Event Replay Mode"** in the Digital Twin screen.
-* **Execution:** Select `Event #001: Severe Monsoon Influx (Puttalam 2026)`. Click through steps `08:00 (58%)` $\to$ `09:00 (72.5%)` $\to$ `10:00 (81%)` $\to$ `11:00 (92.4%)`.
+* **Execution:** Select `Prototype Scenario 01: Severe Monsoon Inflow Simulation`. Click through steps `08:00 (58%)` $\to$ `09:00 (72.5%)` $\to$ `10:00 (81%)` $\to$ `11:00 (92.4%)`.
 * **Result:** Replays the entire 4-hour flood curve in 30 seconds for the evaluation panel.
