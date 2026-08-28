@@ -159,3 +159,44 @@ CREATE POLICY "Operators can update contacts"
 CREATE POLICY "Operators can delete contacts"
   ON emergency_contacts FOR DELETE TO authenticated
   USING (public.is_operator_or_admin());
+
+-- ─── PUBLIC ALERT SUBSCRIBERS (Citizen Registration Protection) ──
+ALTER TABLE public_alert_subscribers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can submit subscriber registration"
+  ON public_alert_subscribers FOR INSERT TO anon, authenticated
+  WITH CHECK (status = 'PENDING_VERIFICATION' AND active = FALSE);
+
+CREATE POLICY "Operators can read all subscribers"
+  ON public_alert_subscribers FOR SELECT TO authenticated
+  USING (public.is_operator_or_admin());
+
+CREATE POLICY "Operators can update subscribers"
+  ON public_alert_subscribers FOR UPDATE TO authenticated
+  USING (public.is_operator_or_admin())
+  WITH CHECK (public.is_operator_or_admin());
+
+CREATE POLICY "Operators can delete subscribers"
+  ON public_alert_subscribers FOR DELETE TO authenticated
+  USING (public.is_operator_or_admin());
+
+-- ─── FLOOD NOTIFICATION ZONES (Zone Management Protection) ─────
+ALTER TABLE alert_zones ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can read alert_zones"
+  ON alert_zones FOR SELECT TO anon, authenticated USING (TRUE);
+
+CREATE POLICY "Operators manage alert_zones"
+  ON alert_zones FOR ALL TO authenticated
+  USING (public.is_operator_or_admin())
+  WITH CHECK (public.is_operator_or_admin());
+
+-- ─── SMS DISPATCH & AUDIT LOGS (Immutable Audit Trail) ────────
+ALTER TABLE sms_dispatch_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read sms_dispatch_logs"
+  ON sms_dispatch_logs FOR SELECT TO anon, authenticated USING (TRUE);
+
+CREATE POLICY "Operators insert sms_dispatch_logs"
+  ON sms_dispatch_logs FOR INSERT TO authenticated
+  WITH CHECK (public.is_operator_or_admin());

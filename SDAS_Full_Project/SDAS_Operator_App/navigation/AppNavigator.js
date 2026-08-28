@@ -20,6 +20,9 @@ import AuditLogsScreen         from '../screens/operator/AuditLogsScreen';
 import ManualOverrideScreen    from '../screens/operator/ManualOverrideScreen';
 import SimulationScreen        from '../screens/operator/SimulationScreen';
 import ContactsScreen          from '../screens/operator/ContactsScreen';
+import EmergencyContactsScreen from '../screens/operator/EmergencyContactsScreen';
+import PublicSubscribersScreen from '../screens/operator/PublicSubscribersScreen';
+import AlertZonesScreen        from '../screens/operator/AlertZonesScreen';
 import OperatorSettingsScreen  from '../screens/operator/OperatorSettingsScreen';
 
 const Tab   = createBottomTabNavigator();
@@ -63,7 +66,8 @@ function OperatorTabs({ onLogout, isDemoSession }) {
         name="AI"
         component={PredictionScreen}
         options={{ tabBarIcon: ({ focused }) => <TabIcon emoji="🤖" focused={focused} />, tabBarLabel: 'AI Engine' }}
-      />
+      >
+      </Tab.Screen>
       <Tab.Screen
         name="Gate"
         component={GateControlScreen}
@@ -99,7 +103,10 @@ export default function AppNavigator({ isAuthenticated, isDemoSession, onEnterDe
           <Stack.Screen name="AuditLogs" component={AuditLogsScreen} />
           <Stack.Screen name="ManualOverride" component={ManualOverrideScreen} />
           <Stack.Screen name="Simulation" component={SimulationScreen} />
-          <Stack.Screen name="Contacts" component={ContactsScreen} />
+          <Stack.Screen name="Contacts" component={EmergencyContactsScreen} />
+          <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
+          <Stack.Screen name="PublicSubscribers" component={PublicSubscribersScreen} />
+          <Stack.Screen name="AlertZones" component={AlertZonesScreen} />
           <Stack.Screen name="Settings">
             {(props) => <OperatorSettingsScreen {...props} onLogout={onLogout} isDemoSession={isDemoSession} />}
           </Stack.Screen>

@@ -234,7 +234,7 @@ export default function OperatorDashboard({ navigation, isDemoSession, onLogout 
           >
             <Text style={styles.quickOpIcon}>🌦️</Text>
             <Text style={styles.quickOpTitle}>Weather & Inflow</Text>
-            <Text style={styles.quickOpSub}>Open-Meteo Radar ❯</Text>
+            <Text style={styles.quickOpSub}>Forecast API ❯</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -264,8 +264,47 @@ export default function OperatorDashboard({ navigation, isDemoSession, onLogout 
           >
             <Text style={styles.quickOpIcon}>📞</Text>
             <Text style={styles.quickOpTitle}>Emergency 117</Text>
-            <Text style={styles.quickOpSub}>Speed-Dials ❯</Text>
+            <Text style={styles.quickOpSub}>Directory ❯</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Emergency SMS & Public Alert Management */}
+        <View style={styles.smsSectionCard}>
+          <View style={styles.healthHeaderRow}>
+            <Text style={styles.sectionTitle}>Emergency SMS & Evacuation Alerts</Text>
+            <Text style={styles.smsLiveBadge}>GSM SIM800L Ready</Text>
+          </View>
+          <View style={styles.smsGridRow}>
+            <TouchableOpacity
+              style={styles.smsOpCard}
+              onPress={() => navigation.navigate('EmergencyContacts')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.smsOpIcon}>📱</Text>
+              <Text style={styles.smsOpTitle}>Emergency Officers</Text>
+              <Text style={styles.smsOpSub}>Official Contacts ❯</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.smsOpCard}
+              onPress={() => navigation.navigate('PublicSubscribers')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.smsOpIcon}>👥</Text>
+              <Text style={styles.smsOpTitle}>Public Subscribers</Text>
+              <Text style={styles.smsOpSub}>Citizen Alerts ❯</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.smsOpCard}
+              onPress={() => navigation.navigate('AlertZones')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.smsOpIcon}>🌐</Text>
+              <Text style={styles.smsOpTitle}>Alert Zones</Text>
+              <Text style={styles.smsOpSub}>3 Risk Radii ❯</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Subsystem Health Live Matrix */}
@@ -547,6 +586,49 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  smsSectionCard: {
+    backgroundColor: '#0F172A',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  smsLiveBadge: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#34D399',
+    backgroundColor: '#064E3B',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  smsGridRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  smsOpCard: {
+    flex: 1,
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  smsOpIcon: {
+    fontSize: 18,
+    marginBottom: 4,
+  },
+  smsOpTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  smsOpSub: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#38BDF8',
+    marginTop: 2,
   },
   healthHeaderRow: {
     flexDirection: 'row',

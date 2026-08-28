@@ -78,6 +78,24 @@ export default function SafetyInfoScreen({ navigation }) {
           </View>
         </View>
 
+        {/* Card 4: Register for Emergency SMS */}
+        <TouchableOpacity
+          style={[styles.guideCard, styles.smsRegisterCard]}
+          onPress={() => navigation.navigate('AlertRegistration')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardIcon}>📲</Text>
+            <Text style={[styles.cardTitle, { color: '#0F4C81' }]}>Register for SMS Alerts</Text>
+          </View>
+          <Text style={styles.smsCardDesc}>
+            Voluntary citizen registration to receive automated GSM SMS broadcasts during WARNING & DANGER releases based on your GPS risk zone.
+          </Text>
+          <View style={styles.smsActionRow}>
+            <Text style={styles.smsActionText}>Get Started →</Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Bottom Full-Width Action Button */}
         <TouchableOpacity
           style={styles.hotlineBtn}
@@ -160,5 +178,24 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '900',
+  },
+  smsRegisterCard: {
+    backgroundColor: '#F0F9FF',
+    borderColor: '#BAE6FD',
+  },
+  smsCardDesc: {
+    fontSize: 12,
+    color: '#0369A1',
+    lineHeight: 18,
+    marginTop: -2,
+  },
+  smsActionRow: {
+    alignItems: 'flex-end',
+    marginTop: 4,
+  },
+  smsActionText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0284C7',
   },
 });

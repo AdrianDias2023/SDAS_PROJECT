@@ -77,16 +77,67 @@ CREATE TABLE IF NOT EXISTS ml_predictions (
 
 CREATE INDEX IF NOT EXISTS idx_ml_predictions_created ON ml_predictions (created_at DESC);
 
--- ─── EMERGENCY CONTACTS (SMS Alert List) ─────────────────────
+-- ─── EMERGENCY CONTACTS (SMS Alert Directory) ─────────────────
 CREATE TABLE IF NOT EXISTS emergency_contacts (
-  id          BIGSERIAL PRIMARY KEY,
-  name        TEXT NOT NULL,
-  phone       TEXT NOT NULL,
-  role        TEXT NOT NULL DEFAULT 'OFFICER' CHECK (role IN ('OFFICER', 'COMMUNITY_LEADER', 'DMC_HOTLINE', 'POLICE', 'HOSPITAL')),
-  priority    INTEGER NOT NULL DEFAULT 1 CHECK (priority BETWEEN 1 AND 5),
-  active      BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id              BIGSERIAL PRIMARY KEY,
+  name            TEXT NOT NULL,
+  phone_number    TEXT NOT NULL UNIQUE,
+  role            TEXT NOT NULL DEFAULT 'OPERATOR' CHECK (role IN ('OPERATOR', 'MAINTENANCE', 'EMERGENCY_RESPONSE', 'ADMIN')),
+  warning_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  danger_enabled  BOOLEAN NOT NULL DEFAULT TRUE,
+  active          BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_by      UUID REFERENCES profiles(id)
 );
+
+-- ─── PUBLIC ALERT SUBSCRIBERS (Citizen Registration) ──────────
+CREATE TABLE IF NOT EXISTS public_alert_subscribers (
+  id                   BIGSERIAL PRIMARY KEY,
+  full_name            TEXT NOT NULL,
+  phone_number         TEXT NOT NULL UNIQUE,
+  latitude             FLOAT,
+  longitude            FLOAT,
+  area_name            TEXT,
+  risk_zone            TEXT NOT NULL DEFAULT 'ZONE_2_MODERATE' CHECK (risk_zone IN ('ZONE_1_HIGH', 'ZONE_2_MODERATE', 'ZONE_3_LOW')),
+  distance_from_dam_km FLOAT,
+  receive_sms          BOOLEAN NOT NULL DEFAULT TRUE,
+  status               TEXT NOT NULL DEFAULT 'PENDING_VERIFICATION' CHECK (status IN ('PENDING_VERIFICATION', 'VERIFIED', 'BLOCKED')),
+  verification_status  TEXT NOT NULL DEFAULT 'PENDING' CHECK (verification_status IN ('PENDING', 'VERIFIED', 'BLOCKED')),
+  active               BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscribers_zone ON public_alert_subscribers (risk_zone, active);
+CREATE INDEX IF NOT EXISTS idx_subscribers_status ON public_alert_subscribers (status);
+
+-- ─── FLOOD NOTIFICATION ZONES (Prototype Simulation) ───────────
+CREATE TABLE IF NOT EXISTS alert_zones (
+  id               BIGSERIAL PRIMARY KEY,
+  zone_name        TEXT NOT NULL UNIQUE,
+  center_latitude  FLOAT NOT NULL DEFAULT 8.0450,
+  center_longitude FLOAT NOT NULL DEFAULT 79.8850,
+  radius_km        FLOAT NOT NULL,
+  alert_level      TEXT NOT NULL CHECK (alert_level IN ('WARNING', 'DANGER')),
+  active           BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ─── SMS DISPATCH & AUDIT LOGS ────────────────────────────────
+CREATE TABLE IF NOT EXISTS sms_dispatch_logs (
+  id              BIGSERIAL PRIMARY KEY,
+  action          TEXT NOT NULL,
+  alert_type      TEXT NOT NULL CHECK (alert_type IN ('TEST', 'PRE_WARNING', 'WARNING', 'DANGER')),
+  priority        TEXT NOT NULL DEFAULT 'INFO' CHECK (priority IN ('INFO', 'HIGH', 'CRITICAL')),
+  target_zone     TEXT,
+  recipient_count INT NOT NULL DEFAULT 0,
+  performed_by    TEXT NOT NULL DEFAULT 'SYSTEM',
+  message_body    TEXT NOT NULL,
+  status          TEXT NOT NULL DEFAULT 'SENT' CHECK (status IN ('PENDING', 'SENT', 'FAILED')),
+  details         JSONB,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sms_logs_created ON sms_dispatch_logs (created_at DESC);
 
 -- ─── TRIGGER: Auto-create profile on user signup ─────────────
 -- Defaults all signups to 'PUBLIC' to prevent unauthorized role escalation.

@@ -172,3 +172,143 @@ SELECT *
 FROM alerts
 WHERE acknowledged = FALSE
 ORDER BY created_at DESC;
+
+-- ─── HAVERSINE DISTANCE & PUBLIC SUBSCRIBER REGISTRATION ──────
+CREATE OR REPLACE FUNCTION public.calculate_distance_km(
+    lat1 FLOAT, lon1 FLOAT,
+    lat2 FLOAT, lon2 FLOAT
+) RETURNS FLOAT
+LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE
+    r FLOAT := 6371.0; -- Earth radius in km
+    dlat FLOAT;
+    dlon FLOAT;
+    a FLOAT;
+    c FLOAT;
+BEGIN
+    dlat := radians(lat2 - lat1);
+    dlon := radians(lon2 - lon1);
+    a := sin(dlat / 2.0)^2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2.0)^2;
+    c := 2.0 * asin(sqrt(a));
+    RETURN ROUND((r * c)::numeric, 2);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.register_public_subscriber(
+    p_full_name TEXT,
+    p_phone_number TEXT,
+    p_latitude FLOAT,
+    p_longitude FLOAT,
+    p_area_name TEXT,
+    p_receive_sms BOOLEAN DEFAULT TRUE
+) RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+    v_dam_lat FLOAT := 8.0450;
+    v_dam_lon FLOAT := 79.8850;
+    v_dist_km FLOAT;
+    v_risk_zone TEXT;
+    v_new_id BIGINT;
+BEGIN
+    -- 1. Compute Haversine distance from Tabbowa Dam
+    IF p_latitude IS NOT NULL AND p_longitude IS NOT NULL THEN
+        v_dist_km := public.calculate_distance_km(v_dam_lat, v_dam_lon, p_latitude, p_longitude);
+    ELSE
+        v_dist_km := 4.5;
+    END IF;
+
+    -- 2. Assign Prototype Simulation Risk Zone
+    IF v_dist_km <= 3.0 THEN
+        v_risk_zone := 'ZONE_1_HIGH';
+    ELSIF v_dist_km <= 8.0 THEN
+        v_risk_zone := 'ZONE_2_MODERATE';
+    ELSE
+        v_risk_zone := 'ZONE_3_LOW';
+    END IF;
+
+    -- 3. Insert or Update Subscriber (Initial state: PENDING_VERIFICATION, active=false)
+    INSERT INTO public.public_alert_subscribers (
+        full_name, phone_number, latitude, longitude, area_name,
+        risk_zone, distance_from_dam_km, receive_sms,
+        status, verification_status, active
+    ) VALUES (
+        p_full_name, p_phone_number, p_latitude, p_longitude, p_area_name,
+        v_risk_zone, v_dist_km, p_receive_sms,
+        'PENDING_VERIFICATION', 'PENDING', FALSE
+    )
+    ON CONFLICT (phone_number) DO UPDATE SET
+        full_name = EXCLUDED.full_name,
+        latitude = EXCLUDED.latitude,
+        longitude = EXCLUDED.longitude,
+        area_name = EXCLUDED.area_name,
+        risk_zone = EXCLUDED.risk_zone,
+        distance_from_dam_km = EXCLUDED.distance_from_dam_km,
+        receive_sms = EXCLUDED.receive_sms
+    RETURNING id INTO v_new_id;
+
+    -- 4. Record Audit Log
+    INSERT INTO public.sms_dispatch_logs (
+        action, alert_type, priority, target_zone, recipient_count, performed_by, message_body, status, details
+    ) VALUES (
+        'SUBSCRIBER_REGISTERED', 'PRE_WARNING', 'INFO', v_risk_zone, 1, 'CITIZEN',
+        format('Citizen %s registered for %s (dist: %.1f km). Pending verification.', p_full_name, v_risk_zone, v_dist_km),
+        'SENT',
+        jsonb_build_object('phone', p_phone_number, 'distance_km', v_dist_km, 'zone', v_risk_zone)
+    );
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'subscriber_id', v_new_id,
+        'risk_zone', v_risk_zone,
+        'distance_km', v_dist_km,
+        'status', 'PENDING_VERIFICATION',
+        'message', 'Registration submitted successfully. Pending operator verification.'
+    );
+END;
+$$;
+
+-- ─── AUTOMATIC ZONE-BASED SMS RECIPIENTS SELECTOR ─────────────
+CREATE OR REPLACE FUNCTION public.get_alert_sms_recipients(
+    p_alert_tier TEXT
+) RETURNS TABLE (
+    recipient_type TEXT,
+    name TEXT,
+    phone TEXT,
+    risk_zone TEXT,
+    distance_km FLOAT
+) LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$
+BEGIN
+    IF p_alert_tier = 'DANGER' THEN
+        -- DANGER: All emergency contacts + all verified subscribers (Zone 1, 2, 3)
+        RETURN QUERY
+        SELECT 'OPERATOR'::TEXT, ec.name, ec.phone_number, 'OFFICIAL'::TEXT, 0.0::FLOAT
+        FROM public.emergency_contacts ec
+        WHERE ec.active = TRUE AND ec.danger_enabled = TRUE
+        UNION ALL
+        SELECT 'PUBLIC'::TEXT, pas.full_name, pas.phone_number, pas.risk_zone, pas.distance_from_dam_km
+        FROM public.public_alert_subscribers pas
+        WHERE pas.active = TRUE AND pas.receive_sms = TRUE AND pas.status = 'VERIFIED';
+
+    ELSIF p_alert_tier = 'WARNING' THEN
+        -- WARNING: Warning-enabled operators + Zone 1 & Zone 2 verified subscribers
+        RETURN QUERY
+        SELECT 'OPERATOR'::TEXT, ec.name, ec.phone_number, 'OFFICIAL'::TEXT, 0.0::FLOAT
+        FROM public.emergency_contacts ec
+        WHERE ec.active = TRUE AND ec.warning_enabled = TRUE
+        UNION ALL
+        SELECT 'PUBLIC'::TEXT, pas.full_name, pas.phone_number, pas.risk_zone, pas.distance_from_dam_km
+        FROM public.public_alert_subscribers pas
+        WHERE pas.active = TRUE AND pas.receive_sms = TRUE AND pas.status = 'VERIFIED'
+          AND pas.risk_zone IN ('ZONE_1_HIGH', 'ZONE_2_MODERATE');
+
+    ELSIF p_alert_tier = 'PRE_WARNING' THEN
+        -- PRE-WARNING: Operator monitoring only
+        RETURN QUERY
+        SELECT 'OPERATOR'::TEXT, ec.name, ec.phone_number, 'OFFICIAL'::TEXT, 0.0::FLOAT
+        FROM public.emergency_contacts ec
+        WHERE ec.active = TRUE AND ec.warning_enabled = TRUE;
+
+    END IF;
+END;
+$$;
+

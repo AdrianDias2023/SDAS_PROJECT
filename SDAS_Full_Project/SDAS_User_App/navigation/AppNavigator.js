@@ -13,6 +13,7 @@ import WeatherForecastScreen  from '../screens/public/WeatherForecastScreen';
 import SafetyInfoScreen       from '../screens/public/SafetyInfoScreen';
 import AboutScreen            from '../screens/public/AboutScreen';
 import PublicGateStatusScreen from '../screens/public/PublicGateStatusScreen';
+import AlertRegistrationScreen from '../screens/public/AlertRegistrationScreen';
 import { useLanguage }        from '../services/i18n';
 
 const Tab   = createBottomTabNavigator();
@@ -88,6 +89,7 @@ export default function AppNavigator() {
       <Stack.Screen name="PublicTabs" component={PublicTabs} />
       <Stack.Screen name="Weather" component={WeatherForecastScreen} />
       <Stack.Screen name="GateStatus" component={PublicGateStatusScreen} />
+      <Stack.Screen name="AlertRegistration" component={AlertRegistrationScreen} />
     </Stack.Navigator>
   );
 }
