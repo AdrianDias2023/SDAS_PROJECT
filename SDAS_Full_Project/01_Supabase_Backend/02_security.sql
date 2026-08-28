@@ -125,14 +125,15 @@ CREATE POLICY "Operators can delete community reports"
   ON community_reports FOR DELETE TO authenticated
   USING (public.is_operator_or_admin());
 
--- ─── COMMUNITY CONFIRMATIONS ─────────────────────────────────
+-- ─── COMMUNITY CONFIRMATIONS (Unique Authenticated Endorsement) ──
 CREATE POLICY "Public can read confirmations"
   ON community_report_confirmations FOR SELECT TO anon, authenticated
   USING (TRUE);
 
-CREATE POLICY "Public can submit report confirmation"
-  ON community_report_confirmations FOR INSERT TO anon, authenticated
-  WITH CHECK (TRUE);
+-- Authenticated users only can submit confirmation (prevents automated anonymous confirmation spam)
+CREATE POLICY "Authenticated users can submit confirmation"
+  ON community_report_confirmations FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 -- ─── WEATHER DATA (Meteorological Protection) ────────────────
 CREATE POLICY "Public can read weather data"
