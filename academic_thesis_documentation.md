@@ -136,7 +136,7 @@ $$\text{Drift Anomaly Flag} = \begin{cases} 1, & \mathcal{L}_{\text{MSE}} > \tau
 
 ### 4.2 Cloud Brokerage, Ingestion & Role-Based Access Control (RBAC)
 
-1. **Telemetry Ingestion:** Authenticated system-side ingestion is utilized for prototype telemetry via Supabase JWT credentials and Row-Level Security (RLS). Direct public anonymous table manipulation is strictly prevented.
+1. **Telemetry Ingestion:** Protected authenticated system accounts are required for telemetry ingestion via Supabase JWT credentials and Row-Level Security (RLS). Direct public anonymous table manipulation is strictly prevented.
 2. **Anti-Privilege Escalation:** Public user registrations default strictly to `PUBLIC`. Role changes cannot be executed by client requests and require administrative authorization.
 3. **Actuation Safety Boundaries:** Only authenticated `OPERATOR` or `ADMIN` roles can dispatch gate control commands.
 

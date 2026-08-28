@@ -12,6 +12,7 @@ import { useLanguage } from '../../services/i18n';
 import LanguageSelector from '../../components/LanguageSelector';
 
 const GATE_ANGLES = { 0: 0, 20: 36, 50: 90 };
+const VALID_GATES = [0, 20, 50];
 
 export default function PublicGateStatusScreen() {
   const { t } = useLanguage();
@@ -56,7 +57,8 @@ export default function PublicGateStatusScreen() {
     return () => ch.unsubscribe();
   }, []);
 
-  const currentAngle = percentage !== null ? (GATE_ANGLES[percentage] ?? Math.round(percentage * 1.8)) : null;
+  const isValidGate = percentage !== null && VALID_GATES.includes(percentage);
+  const currentAngle = isValidGate ? GATE_ANGLES[percentage] : null;
 
   return (
     <View style={styles.container}>
@@ -81,6 +83,10 @@ export default function PublicGateStatusScreen() {
               <Text style={[styles.gateHeroVal, { color: '#64748B', fontSize: 20 }]}>
                 Connecting to telemetry...
               </Text>
+            ) : !isValidGate ? (
+              <Text style={[styles.gateHeroVal, { color: '#64748B', fontSize: 20 }]}>
+                Gate status unavailable
+              </Text>
             ) : (
               <>
                 <Text style={[styles.gateHeroVal, { color: percentage >= 50 ? '#EF4444' : percentage >= 20 ? '#F59E0B' : '#10B981' }]}>
@@ -98,11 +104,11 @@ export default function PublicGateStatusScreen() {
                 <Text style={styles.reservoirSideText}>🌊 RESERVOIR</Text>
               </View>
               {/* Gate Leaf */}
-              <View style={[styles.gateSluiceLeaf, { height: `${Math.max(15, 100 - (percentage ?? 0))}%` }]}>
+              <View style={[styles.gateSluiceLeaf, { height: `${Math.max(15, 100 - (isValidGate ? percentage : 0))}%` }]}>
                 <Text style={styles.gateLeafLabel}>GATE</Text>
               </View>
               {/* Flow Stream */}
-              {percentage !== null && percentage > 0 && (
+              {isValidGate && percentage > 0 && (
                 <View style={[styles.dischargeStream, { height: `${percentage}%` }]}>
                   <Text style={styles.dischargeText}>⬇️ FLOW</Text>
                 </View>
