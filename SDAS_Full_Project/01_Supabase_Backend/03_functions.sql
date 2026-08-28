@@ -217,13 +217,13 @@ BEGIN
         v_dist_km := 4.5;
     END IF;
 
-    -- 2. Assign Prototype Simulation Risk Zone
+    -- 2. Assign Prototype Distance-Based Notification Zone
     IF v_dist_km <= 3.0 THEN
-        v_risk_zone := 'ZONE_1_HIGH';
+        v_risk_zone := 'ZONE_1_NEAR_DAM';
     ELSIF v_dist_km <= 8.0 THEN
-        v_risk_zone := 'ZONE_2_MODERATE';
+        v_risk_zone := 'ZONE_2_INTERMEDIATE';
     ELSE
-        v_risk_zone := 'ZONE_3_LOW';
+        v_risk_zone := 'ZONE_3_EXTENDED';
     END IF;
 
     -- 3. Insert or Update Subscriber (Initial state: PENDING_VERIFICATION, active=false)
@@ -299,7 +299,7 @@ BEGIN
         SELECT 'PUBLIC'::TEXT, pas.full_name, pas.phone_number, pas.risk_zone, pas.distance_from_dam_km
         FROM public.public_alert_subscribers pas
         WHERE pas.active = TRUE AND pas.receive_sms = TRUE AND pas.status = 'VERIFIED'
-          AND pas.risk_zone IN ('ZONE_1_HIGH', 'ZONE_2_MODERATE');
+          AND pas.risk_zone IN ('ZONE_1_NEAR_DAM', 'ZONE_2_INTERMEDIATE');
 
     ELSIF p_alert_tier = 'PRE_WARNING' THEN
         -- PRE-WARNING: Operator monitoring only

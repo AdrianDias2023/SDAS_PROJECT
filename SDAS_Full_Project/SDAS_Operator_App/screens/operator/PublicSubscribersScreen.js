@@ -24,9 +24,9 @@ import {
 } from '../../services/alerts';
 
 const ZONE_COLORS = {
-  ZONE_1_HIGH: { label: 'ZONE 1 (HIGH RISK)', color: '#EF4444', bg: '#450A0A', border: '#7F1D1D' },
-  ZONE_2_MODERATE: { label: 'ZONE 2 (MODERATE)', color: '#F59E0B', bg: '#451A03', border: '#78350F' },
-  ZONE_3_LOW: { label: 'ZONE 3 (LOW RISK)', color: '#38BDF8', bg: '#082F49', border: '#0369A1' },
+  ZONE_1_NEAR_DAM: { label: 'ZONE 1 (NEAR DAM)', color: '#EF4444', bg: '#450A0A', border: '#7F1D1D' },
+  ZONE_2_INTERMEDIATE: { label: 'ZONE 2 (INTERMEDIATE)', color: '#F59E0B', bg: '#451A03', border: '#78350F' },
+  ZONE_3_EXTENDED: { label: 'ZONE 3 (EXTENDED)', color: '#38BDF8', bg: '#082F49', border: '#0369A1' },
 };
 
 export default function PublicSubscribersScreen({ navigation }) {
@@ -102,25 +102,37 @@ export default function PublicSubscribersScreen({ navigation }) {
     ]);
   };
 
-  const handleSendSimulatedBroadcast = async () => {
-    setSendingBroadcast(true);
-    try {
-      const verifiedCount = subscribers.filter((s) => s.active && s.status === 'VERIFIED').length;
-      const targetCount = targetBroadcastZone === 'ALL_ZONES'
-        ? verifiedCount
-        : subscribers.filter((s) => s.active && s.status === 'VERIFIED' && s.risk_zone === targetBroadcastZone).length;
+  const handleSendSimulatedBroadcast = () => {
+    const verifiedCount = subscribers.filter((s) => s.active && s.status === 'VERIFIED').length;
+    const targetCount = targetBroadcastZone === 'ALL_ZONES'
+      ? verifiedCount
+      : subscribers.filter((s) => s.active && s.status === 'VERIFIED' && s.risk_zone === targetBroadcastZone).length;
 
-      await dispatchSimulatedTestSMS(targetBroadcastZone, targetCount || 1, customTestMessage);
-      setBroadcastModal(false);
-      Alert.alert(
-        '📡 Simulated Broadcast Completed',
-        `Dispatched test SMS broadcast to ${targetCount} verified subscribers in ${targetBroadcastZone}.\n\nLogged to immutable audit history.`
-      );
-    } catch (e) {
-      Alert.alert('Broadcast Error', e.message);
-    } finally {
-      setSendingBroadcast(false);
-    }
+    Alert.alert(
+      'Are you sure?',
+      `Simulation Mode Only\n\nRecipients: ${targetCount || 1} users\n\nNo real emergency will be triggered.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send Test',
+          onPress: async () => {
+            setSendingBroadcast(true);
+            try {
+              await dispatchSimulatedTestSMS(targetBroadcastZone, targetCount || 1, customTestMessage);
+              setBroadcastModal(false);
+              Alert.alert(
+                '📡 Simulated Broadcast Completed',
+                `Dispatched test SMS broadcast to ${targetCount || 1} verified subscribers in ${targetBroadcastZone}.\n\nLogged to immutable audit history.`
+              );
+            } catch (e) {
+              Alert.alert('Broadcast Error', e.message);
+            } finally {
+              setSendingBroadcast(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Filter & Search Logic
@@ -134,14 +146,14 @@ export default function PublicSubscribersScreen({ navigation }) {
 
     if (selectedFilter === 'PENDING') return s.status === 'PENDING_VERIFICATION';
     if (selectedFilter === 'VERIFIED') return s.status === 'VERIFIED';
-    if (selectedFilter === 'ZONE_1') return s.risk_zone === 'ZONE_1_HIGH';
-    if (selectedFilter === 'ZONE_2') return s.risk_zone === 'ZONE_2_MODERATE';
-    if (selectedFilter === 'ZONE_3') return s.risk_zone === 'ZONE_3_LOW';
+    if (selectedFilter === 'ZONE_1') return s.risk_zone === 'ZONE_1_NEAR_DAM';
+    if (selectedFilter === 'ZONE_2') return s.risk_zone === 'ZONE_2_INTERMEDIATE';
+    if (selectedFilter === 'ZONE_3') return s.risk_zone === 'ZONE_3_EXTENDED';
     return true;
   });
 
   const renderItem = ({ item }) => {
-    const zoneMeta = ZONE_COLORS[item.risk_zone] || ZONE_COLORS.ZONE_2_MODERATE;
+    const zoneMeta = ZONE_COLORS[item.risk_zone] || ZONE_COLORS.ZONE_2_INTERMEDIATE;
     const isPending = item.status === 'PENDING_VERIFICATION';
     const isVerified = item.status === 'VERIFIED';
 
@@ -202,7 +214,7 @@ export default function PublicSubscribersScreen({ navigation }) {
         </View>
         <Text style={styles.headerTitle}>Public Alert Subscribers</Text>
         <Text style={styles.headerSub}>
-          {subscribers.filter((s) => s.active).length} Active Residents across 3 Prototype Flood Risk Zones
+          {subscribers.filter((s) => s.active).length} Active Residents across 3 Distance-Based Prototype Notification Zones
         </Text>
       </View>
 
@@ -223,9 +235,9 @@ export default function PublicSubscribersScreen({ navigation }) {
           { id: 'ALL', label: 'All' },
           { id: 'PENDING', label: '⏳ Pending' },
           { id: 'VERIFIED', label: '✓ Active' },
-          { id: 'ZONE_1', label: 'Zone 1' },
-          { id: 'ZONE_2', label: 'Zone 2' },
-          { id: 'ZONE_3', label: 'Zone 3' },
+          { id: 'ZONE_1', label: 'Zone 1 (≤3km)' },
+          { id: 'ZONE_2', label: 'Zone 2 (3-8km)' },
+          { id: 'ZONE_3', label: 'Zone 3 (>8km)' },
         ].map((f) => (
           <TouchableOpacity
             key={f.id}
@@ -278,8 +290,8 @@ export default function PublicSubscribersScreen({ navigation }) {
             <View style={styles.zonePickerRow}>
               {[
                 { id: 'ALL_ZONES', label: 'All Zones' },
-                { id: 'ZONE_1_HIGH', label: 'Zone 1 (≤3km)' },
-                { id: 'ZONE_2_MODERATE', label: 'Zone 2 (3-8km)' },
+                { id: 'ZONE_1_NEAR_DAM', label: 'Zone 1 (≤3km)' },
+                { id: 'ZONE_2_INTERMEDIATE', label: 'Zone 2 (3-8km)' },
               ].map((z) => (
                 <TouchableOpacity
                   key={z.id}

@@ -52,8 +52,13 @@ export default function AlertZonesScreen({ navigation }) {
     return (
       <View style={[styles.card, !item.active && styles.cardInactive]}>
         <View style={styles.cardHeader}>
-          <View style={[styles.levelBadge, isDanger ? styles.levelDanger : styles.levelWarning]}>
-            <Text style={styles.levelBadgeText}>{item.alert_level} NOTIFICATION ZONE</Text>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            <View style={[styles.levelBadge, isDanger ? styles.levelDanger : styles.levelWarning]}>
+              <Text style={styles.levelBadgeText}>{item.alert_level} NOTIFICATION ZONE</Text>
+            </View>
+            <View style={styles.priorityBadge}>
+              <Text style={styles.priorityBadgeText}>Priority {item.zone_priority || 1}</Text>
+            </View>
           </View>
           <Switch
             value={item.active}
@@ -100,7 +105,7 @@ export default function AlertZonesScreen({ navigation }) {
 
       <View style={styles.disclaimerBox}>
         <Text style={styles.disclaimerText}>
-          ℹ️ <Text style={{ fontWeight: '700' }}>Prototype Simulation Notice:</Text> These zones simulate radial distance-based flood inundation boundaries centered on the Tabbowa Dam reservoir.
+          ℹ️ <Text style={{ fontWeight: '700' }}>Academic Simulation Notice:</Text> Zones are distance-based prototype notification zones, not hydraulic flood inundation models.
         </Text>
       </View>
 
@@ -172,6 +177,8 @@ const styles = StyleSheet.create({
   levelDanger: { backgroundColor: '#450A0A', borderWidth: 1, borderColor: '#EF4444' },
   levelWarning: { backgroundColor: '#451A03', borderWidth: 1, borderColor: '#F59E0B' },
   levelBadgeText: { fontSize: 10, fontWeight: '800', color: '#F8FAFC' },
+  priorityBadge: { backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#475569', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
+  priorityBadgeText: { fontSize: 9, fontWeight: '700', color: '#94A3B8' },
   zoneName: { fontSize: 16, fontWeight: '800', color: '#F8FAFC', marginBottom: 6 },
   detailText: { fontSize: 12, color: '#94A3B8', marginBottom: 4 },
   cardFooter: {

@@ -1,5 +1,5 @@
 // SDAS — Public Emergency Alert Registration Screen
-// Voluntary Citizen SMS Registration with GPS Risk Zone Assignment & Moderation Status
+// Voluntary Citizen SMS Registration with Distance-Based Prototype Alert Zone Assignment
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -46,30 +46,33 @@ function calculateDistance(lat1, lon1, lat2 = TABBOWA_DAM_COORDS.lat, lon2 = TAB
 function getZoneInfo(distanceKm) {
   if (distanceKm <= 3.0) {
     return {
-      code: 'ZONE_1_HIGH',
-      title: 'ZONE 1 — HIGH FLOOD RISK',
+      code: 'ZONE_1_NEAR_DAM',
+      title: 'PROTOTYPE ALERT ZONE 1 — NEAR DAM SECTOR',
+      shortTitle: 'Zone 1 (Near Dam Sector)',
       color: '#EF4444',
       bgColor: '#FEF2F2',
       borderColor: '#FECACA',
-      description: 'Immediate dam downstream zone (≤3 km). Receives priority WARNING and DANGER emergency SMS broadcasts.',
+      description: 'Immediate dam downstream zone (≤3 km). Distance-based prototype notification sector for priority WARNING and DANGER emergency SMS broadcasts.',
     };
   } else if (distanceKm <= 8.0) {
     return {
-      code: 'ZONE_2_MODERATE',
-      title: 'ZONE 2 — MODERATE RISK',
+      code: 'ZONE_2_INTERMEDIATE',
+      title: 'PROTOTYPE ALERT ZONE 2 — INTERMEDIATE SECTOR',
+      shortTitle: 'Zone 2 (Intermediate Sector)',
       color: '#F59E0B',
       bgColor: '#FFFBEB',
       borderColor: '#FDE68A',
-      description: 'Secondary river basin buffer (3.1–8 km). Receives WARNING and DANGER emergency SMS broadcasts.',
+      description: 'Secondary river basin buffer (3.1–8 km). Distance-based prototype notification sector for WARNING and DANGER emergency SMS broadcasts.',
     };
   } else {
     return {
-      code: 'ZONE_3_LOW',
-      title: 'ZONE 3 — LOW RISK (PERIPHERAL)',
+      code: 'ZONE_3_EXTENDED',
+      title: 'PROTOTYPE ALERT ZONE 3 — EXTENDED PERIMETER',
+      shortTitle: 'Zone 3 (Extended Perimeter)',
       color: '#3B82F6',
       bgColor: '#EFF6FF',
       borderColor: '#BFDBFE',
-      description: 'Peripheral catchment area (>8 km). Receives critical DANGER emergency evacuation alerts.',
+      description: 'Peripheral catchment area (>8 km). Distance-based prototype notification sector for critical DANGER evacuation alerts.',
     };
   }
 }
@@ -209,7 +212,7 @@ export default function AlertRegistrationScreen({ navigation }) {
 
       Alert.alert(
         '✅ Registration Submitted',
-        `Thank you, ${fullName}. Your registration for ${zoneInfo.title} has been submitted.\n\nStatus: Pending Operator Verification.\nPrototype simulation: In production, SMS OTP verification will be required before activation.`
+        `Thank you, ${fullName}. Your registration for ${zoneInfo.shortTitle} has been submitted.\n\nStatus: Pending Operator Verification.\nPrototype simulation: In production, SMS OTP verification will be required before activation.`
       );
     } catch (err) {
       console.error(err);
@@ -299,7 +302,7 @@ export default function AlertRegistrationScreen({ navigation }) {
               </Text>
               <View style={styles.disclaimerBox}>
                 <Text style={styles.disclaimerText}>
-                  ℹ️ <Text style={{ fontWeight: '700' }}>Prototype Simulation Notice:</Text> Risk zones are calculated using distance-based simulation from Tabbowa Dam. Registrations enter Pending Verification for operator moderation.
+                  ℹ️ <Text style={{ fontWeight: '700' }}>Prototype Simulation Notice:</Text> Zones are distance-based prototype notification zones, not hydraulic flood inundation models. Registrations enter Pending Verification for operator moderation.
                 </Text>
               </View>
             </View>
@@ -391,6 +394,31 @@ export default function AlertRegistrationScreen({ navigation }) {
                 />
               </View>
 
+              {/* Summary Card Before Submission */}
+              <View style={styles.summaryCard}>
+                <Text style={styles.summaryCardTitle}>📋 Your Information Summary</Text>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Area / Village:</Text>
+                  <Text style={styles.summaryVal}>{areaName || 'Tabbowa Downstream'}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Distance from Dam:</Text>
+                  <Text style={styles.summaryVal}>{distanceKm} km</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Prototype Alert Zone:</Text>
+                  <Text style={[styles.summaryVal, { color: zone.color, fontWeight: '800' }]}>
+                    {zone.shortTitle}
+                  </Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabel}>Emergency SMS:</Text>
+                  <Text style={[styles.summaryVal, { color: receiveSms ? '#059669' : '#DC2626' }]}>
+                    {receiveSms ? 'Enabled (SIM800L Broadcast)' : 'Disabled'}
+                  </Text>
+                </View>
+              </View>
+
               {/* Submit Button */}
               <TouchableOpacity
                 style={[styles.submitBtn, submitting && { opacity: 0.7 }]}
@@ -400,7 +428,7 @@ export default function AlertRegistrationScreen({ navigation }) {
                 {submitting ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitBtnText}>📲 Register for Emergency Alerts</Text>
+                  <Text style={styles.submitBtnText}>📲 Confirm Registration</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -505,6 +533,19 @@ const styles = StyleSheet.create({
   },
   switchTitle: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
   switchSubtitle: { fontSize: 11, color: '#64748B', marginTop: 2 },
+  summaryCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    padding: 14,
+    marginBottom: 16,
+    gap: 6,
+  },
+  summaryCardTitle: { fontSize: 12, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  summaryLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
+  summaryVal: { fontSize: 12, color: '#0F172A', fontWeight: '700' },
   submitBtn: {
     backgroundColor: '#0F4C81',
     borderRadius: 12,

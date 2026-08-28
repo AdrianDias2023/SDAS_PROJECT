@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS public.emergency_contacts (
     created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
--- 2. Public Alert Subscribers (Citizen Voluntary Registration)
+-- 2. Public Alert Subscribers (Voluntary Citizen Registration)
+-- Note: Zones are distance-based prototype notification zones, not hydraulic flood inundation models.
 CREATE TABLE IF NOT EXISTS public.public_alert_subscribers (
     id BIGSERIAL PRIMARY KEY,
     full_name TEXT NOT NULL,
@@ -23,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.public_alert_subscribers (
     latitude FLOAT,
     longitude FLOAT,
     area_name TEXT,
-    risk_zone TEXT NOT NULL DEFAULT 'ZONE_2_MODERATE' CHECK (risk_zone IN ('ZONE_1_HIGH', 'ZONE_2_MODERATE', 'ZONE_3_LOW')),
+    risk_zone TEXT NOT NULL DEFAULT 'ZONE_2_INTERMEDIATE' CHECK (risk_zone IN ('ZONE_1_NEAR_DAM', 'ZONE_2_INTERMEDIATE', 'ZONE_3_EXTENDED')),
     distance_from_dam_km FLOAT,
     receive_sms BOOLEAN DEFAULT TRUE,
     status TEXT NOT NULL DEFAULT 'PENDING_VERIFICATION' CHECK (status IN ('PENDING_VERIFICATION', 'VERIFIED', 'BLOCKED')),
@@ -39,6 +40,7 @@ CREATE INDEX IF NOT EXISTS idx_subscribers_status ON public.public_alert_subscri
 CREATE TABLE IF NOT EXISTS public.alert_zones (
     id BIGSERIAL PRIMARY KEY,
     zone_name TEXT NOT NULL UNIQUE,
+    zone_priority INT NOT NULL DEFAULT 1,
     center_latitude FLOAT NOT NULL DEFAULT 8.0450,
     center_longitude FLOAT NOT NULL DEFAULT 79.8850,
     radius_km FLOAT NOT NULL,
@@ -73,19 +75,19 @@ INSERT INTO public.emergency_contacts (name, phone_number, role, warning_enabled
   ('System Administrator',        '+94783456789', 'ADMIN', true, true, true)
 ON CONFLICT (phone_number) DO NOTHING;
 
-INSERT INTO public.alert_zones (zone_name, center_latitude, center_longitude, radius_km, alert_level, active) VALUES
-  ('Tabbowa Immediate Inundation Area (Zone 1)', 8.0450, 79.8850, 3.0, 'DANGER', true),
-  ('Kala Oya Downstream Basin (Zone 2)',         8.0450, 79.8850, 8.0, 'WARNING', true),
-  ('Puttalam Catchment Buffer (Zone 3)',         8.0450, 79.8850, 15.0, 'WARNING', true)
+INSERT INTO public.alert_zones (zone_name, zone_priority, center_latitude, center_longitude, radius_km, alert_level, active) VALUES
+  ('Tabbowa Immediate Inundation Area (Zone 1)', 1, 8.0450, 79.8850, 3.0, 'DANGER', true),
+  ('Kala Oya Downstream Basin (Zone 2)',         2, 8.0450, 79.8850, 8.0, 'WARNING', true),
+  ('Puttalam Catchment Buffer (Zone 3)',         3, 8.0450, 79.8850, 15.0, 'WARNING', true)
 ON CONFLICT (zone_name) DO NOTHING;
 
 -- Seed Sample Subscribers for Demonstration
 INSERT INTO public.public_alert_subscribers (full_name, phone_number, latitude, longitude, area_name, risk_zone, distance_from_dam_km, receive_sms, status, verification_status, active) VALUES
-  ('Sunil Perera',      '+94772221111', 8.0410, 79.8820, 'Tabbowa Colony #1', 'ZONE_1_HIGH', 0.6, true, 'VERIFIED', 'VERIFIED', true),
-  ('Kamal Fernando',    '+94773332222', 8.0320, 79.8750, 'Karambawewa Village', 'ZONE_1_HIGH', 1.8, true, 'VERIFIED', 'VERIFIED', true),
-  ('Anura Jayasinghe',  '+94774443333', 8.0680, 79.8610, 'Wanathawilluwa Road', 'ZONE_2_MODERATE', 3.6, true, 'VERIFIED', 'VERIFIED', true),
-  ('Nimal Bandara',     '+94775554444', 8.0850, 79.8450, 'Puttalam Town North', 'ZONE_2_MODERATE', 6.2, true, 'VERIFIED', 'VERIFIED', true),
-  ('Ranjith Wickrema',  '+94776665555', 8.1200, 79.8300, 'Palaviya Junction', 'ZONE_3_LOW', 10.4, true, 'PENDING_VERIFICATION', 'PENDING', false)
+  ('Sunil Perera',      '+94772221111', 8.0410, 79.8820, 'Tabbowa Colony #1', 'ZONE_1_NEAR_DAM', 0.6, true, 'VERIFIED', 'VERIFIED', true),
+  ('Kamal Fernando',    '+94773332222', 8.0320, 79.8750, 'Karambawewa Village', 'ZONE_1_NEAR_DAM', 1.8, true, 'VERIFIED', 'VERIFIED', true),
+  ('Anura Jayasinghe',  '+94774443333', 8.0680, 79.8610, 'Wanathawilluwa Road', 'ZONE_2_INTERMEDIATE', 3.6, true, 'VERIFIED', 'VERIFIED', true),
+  ('Nimal Bandara',     '+94775554444', 8.0850, 79.8450, 'Puttalam Town North', 'ZONE_2_INTERMEDIATE', 6.2, true, 'VERIFIED', 'VERIFIED', true),
+  ('Ranjith Wickrema',  '+94776665555', 8.1200, 79.8300, 'Palaviya Junction', 'ZONE_3_EXTENDED', 10.4, true, 'PENDING_VERIFICATION', 'PENDING', false)
 ON CONFLICT (phone_number) DO NOTHING;
 
 -- ─── HAVERSINE DISTANCE & REGISTRATION RPC ──────────────────
@@ -132,13 +134,13 @@ BEGIN
         v_dist_km := 4.5; -- Default prototype fallback
     END IF;
 
-    -- 2. Assign Prototype Simulation Risk Zone
+    -- 2. Assign Prototype Distance-Based Notification Zone
     IF v_dist_km <= 3.0 THEN
-        v_risk_zone := 'ZONE_1_HIGH';
+        v_risk_zone := 'ZONE_1_NEAR_DAM';
     ELSIF v_dist_km <= 8.0 THEN
-        v_risk_zone := 'ZONE_2_MODERATE';
+        v_risk_zone := 'ZONE_2_INTERMEDIATE';
     ELSE
-        v_risk_zone := 'ZONE_3_LOW';
+        v_risk_zone := 'ZONE_3_EXTENDED';
     END IF;
 
     -- 3. Insert or Update Subscriber (Initial state: PENDING_VERIFICATION, active=false)

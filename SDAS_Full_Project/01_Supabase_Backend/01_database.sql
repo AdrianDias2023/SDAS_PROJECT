@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS emergency_contacts (
 );
 
 -- ─── PUBLIC ALERT SUBSCRIBERS (Citizen Registration) ──────────
+-- Note: Zones are distance-based prototype notification zones, not hydraulic flood inundation models.
 CREATE TABLE IF NOT EXISTS public_alert_subscribers (
   id                   BIGSERIAL PRIMARY KEY,
   full_name            TEXT NOT NULL,
@@ -98,7 +99,7 @@ CREATE TABLE IF NOT EXISTS public_alert_subscribers (
   latitude             FLOAT,
   longitude            FLOAT,
   area_name            TEXT,
-  risk_zone            TEXT NOT NULL DEFAULT 'ZONE_2_MODERATE' CHECK (risk_zone IN ('ZONE_1_HIGH', 'ZONE_2_MODERATE', 'ZONE_3_LOW')),
+  risk_zone            TEXT NOT NULL DEFAULT 'ZONE_2_INTERMEDIATE' CHECK (risk_zone IN ('ZONE_1_NEAR_DAM', 'ZONE_2_INTERMEDIATE', 'ZONE_3_EXTENDED')),
   distance_from_dam_km FLOAT,
   receive_sms          BOOLEAN NOT NULL DEFAULT TRUE,
   status               TEXT NOT NULL DEFAULT 'PENDING_VERIFICATION' CHECK (status IN ('PENDING_VERIFICATION', 'VERIFIED', 'BLOCKED')),
@@ -114,6 +115,7 @@ CREATE INDEX IF NOT EXISTS idx_subscribers_status ON public_alert_subscribers (s
 CREATE TABLE IF NOT EXISTS alert_zones (
   id               BIGSERIAL PRIMARY KEY,
   zone_name        TEXT NOT NULL UNIQUE,
+  zone_priority    INT NOT NULL DEFAULT 1,
   center_latitude  FLOAT NOT NULL DEFAULT 8.0450,
   center_longitude FLOAT NOT NULL DEFAULT 79.8850,
   radius_km        FLOAT NOT NULL,
