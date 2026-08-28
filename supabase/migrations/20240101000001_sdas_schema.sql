@@ -1,5 +1,5 @@
 -- ============================================================
--- SDAS Migration 001 — Full Schema
+-- SDAS Migration 001 — Full Schema v2.0
 -- Run via: supabase db push  OR paste into Supabase SQL Editor
 -- ============================================================
 
@@ -7,7 +7,7 @@
 CREATE TABLE IF NOT EXISTS profiles (
   id         UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   name       TEXT NOT NULL,
-  role       TEXT NOT NULL DEFAULT 'OPERATOR' CHECK (role IN ('ADMIN','OPERATOR')),
+  role       TEXT NOT NULL DEFAULT 'PUBLIC' CHECK (role IN ('ADMIN','OPERATOR','PUBLIC')),
   phone      TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS gate_control (
 -- ─── ALERTS ──────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS alerts (
   id           BIGSERIAL PRIMARY KEY,
-  alert_type   TEXT NOT NULL CHECK (alert_type IN ('NORMAL','PRE_WARNING','CONTROLLED_RELEASE','DANGER')),
-  severity     TEXT NOT NULL CHECK (severity IN ('INFO','WARNING','CRITICAL','EMERGENCY')),
+  alert_type   TEXT NOT NULL CHECK (alert_type IN ('NORMAL','PRE_WARNING','WARNING','DANGER')),
+  severity     TEXT NOT NULL CHECK (severity IN ('INFO','WARNING','HIGH','EMERGENCY')),
   message      TEXT NOT NULL,
   water_level  FLOAT,
   acknowledged BOOLEAN DEFAULT FALSE,
@@ -78,6 +78,19 @@ CREATE TABLE IF NOT EXISTS emergency_contacts (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- ─── HELPER FUNCTION: ROLE-BASED ACCESS CONTROL (RBAC) ───────
+CREATE OR REPLACE FUNCTION public.is_operator_or_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('OPERATOR', 'ADMIN')
+  );
+$$;
+
 -- ─── RLS ─────────────────────────────────────────────────────
 ALTER TABLE profiles           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sensor_readings    ENABLE ROW LEVEL SECURITY;
@@ -86,32 +99,32 @@ ALTER TABLE alerts             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ml_predictions     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE emergency_contacts ENABLE ROW LEVEL SECURITY;
 
--- sensor_readings: public read, anon insert (ESP32)
+-- sensor_readings: public read, authorized operator/admin insert
 CREATE POLICY "Public read sensor" ON sensor_readings FOR SELECT TO anon, authenticated USING (TRUE);
-CREATE POLICY "ESP32 insert sensor" ON sensor_readings FOR INSERT TO anon WITH CHECK (TRUE);
+CREATE POLICY "ESP32 insert sensor" ON sensor_readings FOR INSERT TO authenticated WITH CHECK (public.is_operator_or_admin());
 
--- alerts: public read, system insert, operator ack
+-- alerts: public read, system/operator insert, operator ack
 CREATE POLICY "Public read alerts"   ON alerts FOR SELECT TO anon, authenticated USING (TRUE);
-CREATE POLICY "System insert alerts" ON alerts FOR INSERT TO anon, authenticated WITH CHECK (TRUE);
-CREATE POLICY "Operator ack alerts"  ON alerts FOR UPDATE TO authenticated USING (TRUE) WITH CHECK (TRUE);
+CREATE POLICY "System insert alerts" ON alerts FOR INSERT TO authenticated WITH CHECK (public.is_operator_or_admin());
+CREATE POLICY "Operator ack alerts"  ON alerts FOR UPDATE TO authenticated USING (public.is_operator_or_admin()) WITH CHECK (public.is_operator_or_admin());
 
--- ml_predictions: public read, system insert
+-- ml_predictions: public read, authorized insert
 CREATE POLICY "Public read predictions"  ON ml_predictions FOR SELECT TO anon, authenticated USING (TRUE);
-CREATE POLICY "System insert prediction" ON ml_predictions FOR INSERT TO authenticated WITH CHECK (TRUE);
+CREATE POLICY "System insert prediction" ON ml_predictions FOR INSERT TO authenticated WITH CHECK (public.is_operator_or_admin());
 
 -- gate_control: operator only
-CREATE POLICY "Operator read gate"   ON gate_control FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY "Operator insert gate" ON gate_control FOR INSERT TO authenticated WITH CHECK (TRUE);
+CREATE POLICY "Operator read gate"   ON gate_control FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY "Operator insert gate" ON gate_control FOR INSERT TO authenticated WITH CHECK (public.is_operator_or_admin());
 
--- profiles: own row
+-- profiles: own row (anti-privilege escalation)
 CREATE POLICY "Users read own profile"   ON profiles FOR SELECT TO authenticated USING (auth.uid() = id);
-CREATE POLICY "Users update own profile" ON profiles FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users update own profile" ON profiles FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id AND role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid()));
 
 -- emergency_contacts: operator CRUD
-CREATE POLICY "Operator read contacts"   ON emergency_contacts FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY "Operator insert contacts" ON emergency_contacts FOR INSERT TO authenticated WITH CHECK (TRUE);
-CREATE POLICY "Operator update contacts" ON emergency_contacts FOR UPDATE TO authenticated USING (TRUE) WITH CHECK (TRUE);
-CREATE POLICY "Operator delete contacts" ON emergency_contacts FOR DELETE TO authenticated USING (TRUE);
+CREATE POLICY "Operator read contacts"   ON emergency_contacts FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY "Operator insert contacts" ON emergency_contacts FOR INSERT TO authenticated WITH CHECK (public.is_operator_or_admin());
+CREATE POLICY "Operator update contacts" ON emergency_contacts FOR UPDATE TO authenticated USING (public.is_operator_or_admin()) WITH CHECK (public.is_operator_or_admin());
+CREATE POLICY "Operator delete contacts" ON emergency_contacts FOR DELETE TO authenticated USING (public.is_operator_or_admin());
 
 -- ─── TRIGGER: auto-create profile on signup ──────────────────
 CREATE OR REPLACE FUNCTION handle_new_user()
@@ -121,7 +134,7 @@ BEGIN
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'name', NEW.email),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'OPERATOR')
+    'PUBLIC'
   );
   RETURN NEW;
 END;
@@ -144,18 +157,18 @@ BEGIN
   SELECT alert_type INTO v_last_type
   FROM alerts ORDER BY created_at DESC LIMIT 1;
 
-  IF NEW.water_level >= 85 THEN
+  IF NEW.water_level > 85.0 THEN
     v_alert_type := 'DANGER';
     v_severity   := 'EMERGENCY';
-    v_message    := format('DANGER: Water level at %.1f%%. Gate fully open. Evacuate immediately.', NEW.water_level);
-  ELSIF NEW.water_level >= 70 THEN
+    v_message    := format('DANGER: Water level at %.1f%% (>85.0%% critical). Sluice gate actuated to 50%% (90° Emergency Spillway). Immediate evacuation.', NEW.water_level);
+  ELSIF NEW.water_level >= 70.0 THEN
     v_alert_type := 'PRE_WARNING';
     v_severity   := 'WARNING';
-    v_message    := format('PRE-WARNING: Water level at %.1f%%. Gate opening 30%%.', NEW.water_level);
+    v_message    := format('PRE-WARNING: Water level at %.1f%% (70.0-85.0%%). Sluice gate held CLOSED at 0° (Water Conservation).', NEW.water_level);
   ELSE
     v_alert_type := 'NORMAL';
     v_severity   := 'INFO';
-    v_message    := format('NORMAL: Water level at %.1f%%.', NEW.water_level);
+    v_message    := format('NORMAL: Water level at %.1f%% (<70.0%% normal hold). Sluice gate closed (0° Water Conservation).', NEW.water_level);
   END IF;
 
   IF v_alert_type IS DISTINCT FROM v_last_type THEN
@@ -178,7 +191,3 @@ INSERT INTO emergency_contacts (name, phone, role) VALUES
   ('Dam Operator 2',        '+94XXXXXXXXX', 'OPERATOR'),
   ('District Disaster DMC', '+94XXXXXXXXX', 'ADMIN')
 ON CONFLICT (phone) DO NOTHING;
-
--- ─── REALTIME (enable in Supabase dashboard) ─────────────────
--- Dashboard → Database → Replication → supabase_realtime:
--- Add tables: sensor_readings, alerts, gate_control
