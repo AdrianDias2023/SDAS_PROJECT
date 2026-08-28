@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { fetchLatestReading } from '../../services/alerts';
 import { subscribeSensorReadings } from '../../services/realtime';
+import { resolveReading } from '../../services/demoData';
+import DemoModeBanner from '../../components/DemoModeBanner';
 import Svg, { Path } from 'react-native-svg';
 
 function CyanSparkline() {
@@ -39,15 +41,15 @@ function CyanSparkline() {
 }
 
 export default function OperatorDashboard({ navigation, isDemoSession, onLogout }) {
-  const [reading, setReading]               = useState(null);
+  const [rawReading, setRawReading]         = useState(null);  // raw from Supabase
   const [refreshing, setRefreshing]         = useState(false);
-  const [isAutoMode, setIsAutoMode]         = useState(true); // true = AUTO AI, false = MANUAL OVERRIDE
+  const [isAutoMode, setIsAutoMode]         = useState(true);
   const [gatePercentage, setGatePercentage] = useState(0);
 
   const loadData = useCallback(async () => {
     try {
       const r = await fetchLatestReading('ESP32_PUTTALAM_01');
-      setReading(r);
+      setRawReading(r);
     } catch (e) {
       console.error(e);
     } finally {
@@ -58,17 +60,19 @@ export default function OperatorDashboard({ navigation, isDemoSession, onLogout 
   useEffect(() => {
     loadData();
     const sc = subscribeSensorReadings((newReading) => {
-      setReading(newReading);
+      setRawReading(newReading);
     });
     return () => sc.unsubscribe();
   }, [loadData]);
 
-  // Determine if physical hardware is truly connected and transmitting
-  const lastUpdated = reading?.created_at ? new Date(reading.created_at).getTime() : 0;
-  const isHardwareOnline = (Date.now() - lastUpdated) < 120000; // Received packet within 2 minutes
+  // ── Resolve data source ────────────────────────────────────────────────────
+  const { data: reading, isDemo } = resolveReading(rawReading);
+
+  // isHardwareOnline is now derived from resolveReading result
+  const isHardwareOnline = !isDemo;
 
   const rawLevel = reading?.water_level;
-  const pct = (typeof rawLevel === 'number' && !isNaN(rawLevel)) ? rawLevel : (parseFloat(rawLevel) || 72.5);
+  const pct = (typeof rawLevel === 'number' && !isNaN(rawLevel)) ? rawLevel : parseFloat(rawLevel) || 0;
 
   const handleToggleSystemMode = () => {
     if (isAutoMode) {
@@ -144,16 +148,25 @@ export default function OperatorDashboard({ navigation, isDemoSession, onLogout 
         }
         showsVerticalScrollIndicator={false}
       >
+        {/* Demo / Live Mode Banner */}
+        <DemoModeBanner
+          isDemo={isDemo}
+          lastSeen={rawReading?.created_at}
+          dark={true}
+        />
+
         {/* Hardware Connectivity Status Pill */}
         <View style={[styles.hwStatusBar, isHardwareOnline ? styles.hwOnlineBg : styles.hwOfflineBg]}>
           <View style={styles.hwStatusLeft}>
             <View style={[styles.hwDot, isHardwareOnline ? styles.hwDotGreen : styles.hwDotAmber]} />
             <Text style={styles.hwStatusText}>
-              {isHardwareOnline ? '📡 ESP32 HARDWARE ONLINE (Live Telemetry)' : '⚠️ HARDWARE DISCONNECTED (Standby / Simulation)'}
+              {isHardwareOnline
+                ? `📡 LIVE — Last: ${reading?.created_at ? new Date(reading.created_at).toLocaleTimeString() : '—'}`
+                : `⚠️ DEMO MODE — ${isDemo ? 'Simulation Values' : 'Standby'}`}
             </Text>
           </View>
           <Text style={styles.hwLastSeen}>
-            {isHardwareOnline ? 'Sync < 2s' : 'Unplugged'}
+            {isHardwareOnline ? 'Sync < 2s' : 'No HW'}
           </Text>
         </View>
 

@@ -16,6 +16,8 @@ import { useNavigation } from '@react-navigation/native';
 import { fetchLatestReading } from '../../services/alerts';
 import { subscribeSensorReadings } from '../../services/realtime';
 import { fetchLivePuttalamWeather } from '../../services/weather';
+import { resolveReading } from '../../services/demoData';
+import DemoModeBanner from '../../components/DemoModeBanner';
 import Svg, { Path } from 'react-native-svg';
 
 function Sparkline() {
@@ -41,7 +43,7 @@ function Sparkline() {
 
 export default function HomeScreen() {
   const navigation = useNavigation();
-  const [reading, setReading]       = useState(null);
+  const [rawReading, setRawReading] = useState(null);  // directly from Supabase
   const [weather, setWeather]       = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -51,7 +53,7 @@ export default function HomeScreen() {
         fetchLatestReading('ESP32_PUTTALAM_01').catch(() => null),
         fetchLivePuttalamWeather('ESP32_PUTTALAM_01').catch(() => null),
       ]);
-      setReading(r);
+      setRawReading(r);
       setWeather(w);
     } catch (e) {
       console.error('HomeScreen fetch error:', e);
@@ -63,14 +65,17 @@ export default function HomeScreen() {
   useEffect(() => {
     loadData();
     const channel = subscribeSensorReadings((newReading) => {
-      setReading(newReading);
+      setRawReading(newReading);
     });
     return () => channel.unsubscribe();
   }, []);
 
+  // ── Resolve data source: real hardware OR demo fallback ────────────────────
+  const { data: reading, isDemo } = resolveReading(rawReading);
+
   const rawLevel = reading?.water_level;
-  const pct = (typeof rawLevel === 'number' && !isNaN(rawLevel)) ? rawLevel : (parseFloat(rawLevel) || 72.5);
-  
+  const pct = (typeof rawLevel === 'number' && !isNaN(rawLevel)) ? rawLevel : parseFloat(rawLevel) || 0;
+
   const isDanger = pct >= 85;
   const isWarning = pct >= 70 && pct < 85;
   const isNormal = pct < 70;
@@ -110,6 +115,13 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Demo / Live Status Banner */}
+      <DemoModeBanner
+        isDemo={isDemo}
+        lastSeen={rawReading?.created_at}
+        dark={false}
+      />
+
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={
@@ -120,7 +132,11 @@ export default function HomeScreen() {
         {/* Dam Subtitle & Telemetry Time */}
         <View style={styles.locationHeader}>
           <Text style={styles.damTitle}>Tabbowa Prototype Dam</Text>
-          <Text style={styles.updateTimeText}>Last Updated: 10 sec ago</Text>
+          <Text style={styles.updateTimeText}>
+            {isDemo
+              ? '⚠️ DEMO DATA'
+              : `Live: ${reading?.created_at ? new Date(reading.created_at).toLocaleTimeString() : '—'}`}
+          </Text>
         </View>
 
         {/* Big Hero Card: CURRENT STATUS */}
