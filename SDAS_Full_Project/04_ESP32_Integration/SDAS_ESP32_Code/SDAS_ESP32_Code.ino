@@ -72,8 +72,7 @@ const char* SMS_CONTACTS[] = {
 };
 const int SMS_CONTACT_COUNT = 3;
 
-// Rate-of-rise threshold to trigger WARNING / CONTROLLED RELEASE (% per 2-second reading)
-// 0.30% per 2 seconds = 9.00%/min (mathematically identical to Supabase cloud evaluate_water_level trigger)
+// Threshold equivalent to 0.30% per 2-second edge sampling, normalized to 9.00% per minute for timestamp-based cloud evaluation.
 #define RISE_RATE_THRESHOLD  0.30f   // 0.30% per 2 seconds = 9.00%/min
 
 // ════════════════════════════════════════════════════════════════════════════════

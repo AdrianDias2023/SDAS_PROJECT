@@ -59,8 +59,7 @@ BEGIN
     v_message    := format('DANGER: Water level at %.1f%% (>85.0%% critical). Sluice gate actuated to 50%% (90° Emergency Spillway). Immediate evacuation.', NEW.water_level);
 
   ELSIF NEW.water_level >= 70.0 THEN
-    -- Rate of rise normalized to %/minute across timestamped telemetry intervals,
-    -- evaluated against calibrated surge threshold of 9.00%/min (mathematically equivalent to 0.30% per 2-second sampling interval on physical edge node)
+    -- Threshold equivalent to 0.30% per 2-second edge sampling, normalized to 9.00% per minute for timestamp-based cloud evaluation.
     IF v_rate_of_rise > 9.00 THEN
       v_alert_type := 'WARNING';
       v_severity   := 'HIGH';
