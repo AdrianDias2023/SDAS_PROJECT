@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS emergency_contacts (
 );
 
 -- ─── PUBLIC ALERT SUBSCRIBERS (Citizen Registration) ──────────
--- Note: Zones are distance-based prototype notification zones, not hydraulic flood inundation models.
+-- Note: Zones are distance-based prototype notification sectors, not hydraulic flood inundation models.
 CREATE TABLE IF NOT EXISTS public_alert_subscribers (
   id                   BIGSERIAL PRIMARY KEY,
   full_name            TEXT NOT NULL,
@@ -105,6 +105,8 @@ CREATE TABLE IF NOT EXISTS public_alert_subscribers (
   status               TEXT NOT NULL DEFAULT 'PENDING_VERIFICATION' CHECK (status IN ('PENDING_VERIFICATION', 'VERIFIED', 'BLOCKED')),
   verification_status  TEXT NOT NULL DEFAULT 'PENDING' CHECK (verification_status IN ('PENDING', 'VERIFIED', 'BLOCKED')),
   active               BOOLEAN NOT NULL DEFAULT FALSE,
+  verified_at          TIMESTAMPTZ,
+  verified_by          UUID REFERENCES profiles(id),
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -124,13 +126,14 @@ CREATE TABLE IF NOT EXISTS alert_zones (
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ─── SMS DISPATCH & AUDIT LOGS ────────────────────────────────
+-- ─── SMS DISPATCH & AUDIT LOGS (with Cooldown Storm Protection) ──
 CREATE TABLE IF NOT EXISTS sms_dispatch_logs (
   id              BIGSERIAL PRIMARY KEY,
   action          TEXT NOT NULL,
   alert_type      TEXT NOT NULL CHECK (alert_type IN ('TEST', 'PRE_WARNING', 'WARNING', 'DANGER')),
   priority        TEXT NOT NULL DEFAULT 'INFO' CHECK (priority IN ('INFO', 'HIGH', 'CRITICAL')),
   target_zone     TEXT,
+  cooldown_key    TEXT,
   recipient_count INT NOT NULL DEFAULT 0,
   performed_by    TEXT NOT NULL DEFAULT 'SYSTEM',
   message_body    TEXT NOT NULL,
@@ -140,6 +143,7 @@ CREATE TABLE IF NOT EXISTS sms_dispatch_logs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sms_logs_created ON sms_dispatch_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sms_logs_cooldown ON sms_dispatch_logs (cooldown_key, created_at DESC);
 
 -- ─── TRIGGER: Auto-create profile on user signup ─────────────
 -- Defaults all signups to 'PUBLIC' to prevent unauthorized role escalation.

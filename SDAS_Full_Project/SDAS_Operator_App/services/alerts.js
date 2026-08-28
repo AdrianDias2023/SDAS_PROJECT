@@ -139,9 +139,15 @@ export async function fetchPublicSubscribers() {
 }
 
 export async function updateSubscriberStatus(id, status, active) {
+  const updates = {
+    status,
+    active,
+    verification_status: status,
+    verified_at: status === 'VERIFIED' ? new Date().toISOString() : null,
+  };
   const { data, error } = await supabase
     .from('public_alert_subscribers')
-    .update({ status, active, verification_status: status })
+    .update(updates)
     .eq('id', id)
     .select()
     .single();
@@ -162,7 +168,7 @@ export async function fetchAlertZones() {
   const { data, error } = await supabase
     .from('alert_zones')
     .select('*')
-    .order('radius_km', { ascending: true });
+    .order('zone_priority', { ascending: true });
   if (error) throw error;
   return data || [];
 }
@@ -178,9 +184,11 @@ export async function toggleAlertZone(id, active) {
   return data;
 }
 
-// ─── SMS DISPATCH & SIMULATION LOGS ──────────────────────────
+// ─── SMS DISPATCH & SIMULATION LOGS (with Cooldown Storm Protection) ──
 export async function dispatchSimulatedTestSMS(targetZone = 'ALL_ZONES', recipientCount = 5, message = '') {
   const msgBody = message || `[SDAS SIMULATION TEST] Routine flood warning broadcast verification for ${targetZone}. No evacuation required.`;
+  const cooldownKey = `TEST_${targetZone}_${new Date().toISOString().slice(0, 13)}`;
+
   const { data, error } = await supabase
     .from('sms_dispatch_logs')
     .insert([{
@@ -188,6 +196,7 @@ export async function dispatchSimulatedTestSMS(targetZone = 'ALL_ZONES', recipie
       alert_type: 'TEST',
       priority: 'INFO',
       target_zone: targetZone,
+      cooldown_key: cooldownKey,
       recipient_count: recipientCount,
       performed_by: 'OPERATOR_CONSOLE',
       message_body: msgBody,

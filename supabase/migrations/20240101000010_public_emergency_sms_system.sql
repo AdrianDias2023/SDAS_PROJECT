@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS public.emergency_contacts (
 );
 
 -- 2. Public Alert Subscribers (Voluntary Citizen Registration)
--- Note: Zones are distance-based prototype notification zones, not hydraulic flood inundation models.
+-- Note: Zones are distance-based prototype notification sectors, not hydraulic flood inundation models.
 CREATE TABLE IF NOT EXISTS public.public_alert_subscribers (
     id BIGSERIAL PRIMARY KEY,
     full_name TEXT NOT NULL,
@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS public.public_alert_subscribers (
     status TEXT NOT NULL DEFAULT 'PENDING_VERIFICATION' CHECK (status IN ('PENDING_VERIFICATION', 'VERIFIED', 'BLOCKED')),
     verification_status TEXT NOT NULL DEFAULT 'PENDING' CHECK (verification_status IN ('PENDING', 'VERIFIED', 'BLOCKED')),
     active BOOLEAN NOT NULL DEFAULT FALSE,
+    verified_at TIMESTAMPTZ,
+    verified_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -49,13 +51,14 @@ CREATE TABLE IF NOT EXISTS public.alert_zones (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 4. SMS Dispatch & Audit Logs
+-- 4. SMS Dispatch & Audit Logs (with Cooldown Storm Protection)
 CREATE TABLE IF NOT EXISTS public.sms_dispatch_logs (
     id BIGSERIAL PRIMARY KEY,
     action TEXT NOT NULL,
     alert_type TEXT NOT NULL CHECK (alert_type IN ('TEST', 'PRE_WARNING', 'WARNING', 'DANGER')),
     priority TEXT NOT NULL DEFAULT 'INFO' CHECK (priority IN ('INFO', 'HIGH', 'CRITICAL')),
     target_zone TEXT,
+    cooldown_key TEXT,
     recipient_count INT NOT NULL DEFAULT 0,
     performed_by TEXT NOT NULL DEFAULT 'SYSTEM',
     message_body TEXT NOT NULL,
@@ -65,6 +68,7 @@ CREATE TABLE IF NOT EXISTS public.sms_dispatch_logs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sms_logs_created ON public.sms_dispatch_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sms_logs_cooldown ON public.sms_dispatch_logs (cooldown_key, created_at DESC);
 
 -- ─── SEED OFFICIAL CONTACTS & ZONES ──────────────────────────
 INSERT INTO public.emergency_contacts (name, phone_number, role, warning_enabled, danger_enabled, active) VALUES
@@ -82,12 +86,12 @@ INSERT INTO public.alert_zones (zone_name, zone_priority, center_latitude, cente
 ON CONFLICT (zone_name) DO NOTHING;
 
 -- Seed Sample Subscribers for Demonstration
-INSERT INTO public.public_alert_subscribers (full_name, phone_number, latitude, longitude, area_name, risk_zone, distance_from_dam_km, receive_sms, status, verification_status, active) VALUES
-  ('Sunil Perera',      '+94772221111', 8.0410, 79.8820, 'Tabbowa Colony #1', 'ZONE_1_NEAR_DAM', 0.6, true, 'VERIFIED', 'VERIFIED', true),
-  ('Kamal Fernando',    '+94773332222', 8.0320, 79.8750, 'Karambawewa Village', 'ZONE_1_NEAR_DAM', 1.8, true, 'VERIFIED', 'VERIFIED', true),
-  ('Anura Jayasinghe',  '+94774443333', 8.0680, 79.8610, 'Wanathawilluwa Road', 'ZONE_2_INTERMEDIATE', 3.6, true, 'VERIFIED', 'VERIFIED', true),
-  ('Nimal Bandara',     '+94775554444', 8.0850, 79.8450, 'Puttalam Town North', 'ZONE_2_INTERMEDIATE', 6.2, true, 'VERIFIED', 'VERIFIED', true),
-  ('Ranjith Wickrema',  '+94776665555', 8.1200, 79.8300, 'Palaviya Junction', 'ZONE_3_EXTENDED', 10.4, true, 'PENDING_VERIFICATION', 'PENDING', false)
+INSERT INTO public.public_alert_subscribers (full_name, phone_number, latitude, longitude, area_name, risk_zone, distance_from_dam_km, receive_sms, status, verification_status, active, verified_at) VALUES
+  ('Sunil Perera',      '+94772221111', 8.0410, 79.8820, 'Tabbowa Colony #1', 'ZONE_1_NEAR_DAM', 0.6, true, 'VERIFIED', 'VERIFIED', true, NOW()),
+  ('Kamal Fernando',    '+94773332222', 8.0320, 79.8750, 'Karambawewa Village', 'ZONE_1_NEAR_DAM', 1.8, true, 'VERIFIED', 'VERIFIED', true, NOW()),
+  ('Anura Jayasinghe',  '+94774443333', 8.0680, 79.8610, 'Wanathawilluwa Road', 'ZONE_2_INTERMEDIATE', 3.6, true, 'VERIFIED', 'VERIFIED', true, NOW()),
+  ('Nimal Bandara',     '+94775554444', 8.0850, 79.8450, 'Puttalam Town North', 'ZONE_2_INTERMEDIATE', 6.2, true, 'VERIFIED', 'VERIFIED', true, NOW()),
+  ('Ranjith Wickrema',  '+94776665555', 8.1200, 79.8300, 'Palaviya Junction', 'ZONE_3_EXTENDED', 10.4, true, 'PENDING_VERIFICATION', 'PENDING', false, NULL)
 ON CONFLICT (phone_number) DO NOTHING;
 
 -- ─── HAVERSINE DISTANCE & REGISTRATION RPC ──────────────────

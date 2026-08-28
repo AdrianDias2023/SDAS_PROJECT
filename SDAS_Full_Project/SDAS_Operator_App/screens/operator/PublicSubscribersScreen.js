@@ -173,6 +173,11 @@ export default function PublicSubscribersScreen({ navigation }) {
         <Text style={styles.name}>{item.full_name}</Text>
         <Text style={styles.phone}>📱 {item.phone_number}</Text>
         <Text style={styles.area}>📍 {item.area_name || 'Tabbowa Sector'} ({item.distance_from_dam_km} km from dam)</Text>
+        {isVerified && item.verified_at && (
+          <Text style={styles.verifiedDate}>
+            ✓ Approved by Operator: {new Date(item.verified_at).toLocaleDateString()} {new Date(item.verified_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+        )}
 
         <View style={styles.actionsRow}>
           {isPending && (
@@ -394,7 +399,8 @@ const styles = StyleSheet.create({
   statusPillText: { fontSize: 9, fontWeight: '800', color: '#F8FAFC' },
   name: { fontSize: 16, fontWeight: '800', color: '#F8FAFC', marginBottom: 4 },
   phone: { fontSize: 13, color: '#38BDF8', marginBottom: 2 },
-  area: { fontSize: 12, color: '#94A3B8', marginBottom: 12 },
+  area: { fontSize: 12, color: '#94A3B8', marginBottom: 4 },
+  verifiedDate: { fontSize: 10, color: '#34D399', fontWeight: '700', marginBottom: 8 },
   actionsRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
