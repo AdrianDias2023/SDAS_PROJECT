@@ -22,7 +22,9 @@
       "package": "com.adrian2002.sdas.operator"
     },
     "extra": {
-      "eas": { "projectId": "a1c9f4ed-373b-45e9-bd96-cdfc7b6ba1c5" }
+      "eas": {
+        "projectId": "a1c9f4ed-373b-45e9-bd96-cdfc7b6ba1c5"
+      }
     },
     "owner": "adrian_2002"
   }

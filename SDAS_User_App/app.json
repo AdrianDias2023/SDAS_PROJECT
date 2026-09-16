@@ -5,15 +5,35 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "splash": { "image": "./assets/splash.png", "resizeMode": "contain", "backgroundColor": "#0B2545" },
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.adrian2002.sdas" },
-    "android": {
-      "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#0B2545" },
-      "package": "com.adrian2002.sdas"
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B2545"
     },
-    "plugins": ["expo-location", "expo-image-picker"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.adrian2002.sdas"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B2545"
+      },
+      "package": "com.adrian2002.sdas",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-location",
+      "expo-image-picker"
+    ],
     "extra": {
-      "eas": { "projectId": "a1c9f4ed-373b-45e9-bd96-cdfc7b6ba1c5" }
+      "eas": {
+        "projectId": "a1c9f4ed-373b-45e9-bd96-cdfc7b6ba1c5"
+      }
     },
     "owner": "adrian_2002"
   }
