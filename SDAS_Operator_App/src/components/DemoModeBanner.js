@@ -1,34 +1,83 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function DemoModeBanner({ isDemo }) {
-  if (isDemo) {
+  const { isDark, colors } = useTheme();
+  const { t } = useLanguage();
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1.0, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [pulse]);
+
+  if (!isDemo) {
     return (
-      <View style={styles.demoBanner}>
-        <Text style={styles.demoText}>DEMO MODE - NOT CONNECTED TO HARDWARE</Text>
+      <View style={[styles.container, { backgroundColor: isDark ? '#064E3B' : '#ECFDF5', borderColor: '#10B981' }]}>
+        <Animated.View style={[styles.dot, { backgroundColor: '#10B981', opacity: pulse }]} />
+        <Text style={[styles.liveText, { color: isDark ? '#6EE7B7' : '#047857' }]}>
+          {t('liveBadge')}
+        </Text>
       </View>
     );
   }
+
   return (
-    <View style={styles.liveBanner}>
-      <Text style={styles.liveText}>SYSTEM LIVE</Text>
+    <View style={[styles.container, { backgroundColor: isDark ? '#451A03' : '#FEF3C7', borderColor: '#F59E0B' }]}>
+      <Animated.Text style={[styles.icon, { opacity: pulse }]}>⚠️</Animated.Text>
+      <View style={styles.textCol}>
+        <Text style={[styles.demoTitle, { color: isDark ? '#FCD34D' : '#92400E' }]}>
+          {t('demoBannerTitle')}
+        </Text>
+        <Text style={[styles.demoSub, { color: isDark ? '#FDE68A' : '#B45309' }]}>
+          {t('demoBannerSub')}
+        </Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  demoBanner: {
-    backgroundColor: '#F97316',
-    padding: 10,
+  container: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
   },
-  demoText: { color: '#FFF', fontWeight: 'bold' },
-  liveBanner: {
-    backgroundColor: '#10B981',
-    padding: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
   },
-  liveText: { color: '#FFF', fontWeight: 'bold' },
+  icon: {
+    fontSize: 14,
+    marginRight: 8,
+  },
+  textCol: {
+    flex: 1,
+  },
+  liveText: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  demoTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  demoSub: {
+    fontSize: 10,
+    marginTop: 1,
+    lineHeight: 13,
+  },
 });
