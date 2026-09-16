@@ -32,13 +32,21 @@ function DashboardTab() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>
       <Stack.Screen name="DashboardHome" component={DashboardScreen} />
-      <Stack.Screen name="AIPrediction" component={AIPredictionScreen} />
       <Stack.Screen name="EmergencyControl" component={EmergencyControlScreen} />
     </Stack.Navigator>
   );
 }
 
-function ControlsTab() {
+function AITab() {
+  const { colors } = useTheme();
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>
+      <Stack.Screen name="AIPrediction" component={AIPredictionScreen} />
+    </Stack.Navigator>
+  );
+}
+
+function GateTab() {
   const { colors } = useTheme();
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>
@@ -52,18 +60,8 @@ function AlertsTab() {
   const { colors } = useTheme();
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>
-      <Stack.Screen name="AlertZones" component={AlertZonesScreen} />
       <Stack.Screen name="EmergencyControl" component={EmergencyControlScreen} />
-    </Stack.Navigator>
-  );
-}
-
-function ManageTab() {
-  const { colors } = useTheme();
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>
-      <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
-      <Stack.Screen name="PublicSubscribers" component={PublicSubscribersScreen} />
+      <Stack.Screen name="AlertZones" component={AlertZonesScreen} />
     </Stack.Navigator>
   );
 }
@@ -74,6 +72,8 @@ function SystemTab() {
     <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>
       <Stack.Screen name="SystemHealth" component={SystemHealthScreen} />
       <Stack.Screen name="AuditLogs" component={AuditLogsScreen} />
+      <Stack.Screen name="EmergencyContacts" component={EmergencyContactsScreen} />
+      <Stack.Screen name="PublicSubscribers" component={PublicSubscribersScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
     </Stack.Navigator>
   );
@@ -141,19 +141,19 @@ function AppContent() {
               tabBarIcon: ({ focused }) => {
                 let icon = '📊';
                 if (route.name === 'Dashboard') icon = '📊';
-                else if (route.name === 'Controls') icon = '⚙️';
-                else if (route.name === 'Alerts') icon = '🗺️';
-                else if (route.name === 'Manage') icon = '👥';
-                else if (route.name === 'System') icon = '🩺';
+                else if (route.name === 'AI') icon = '🤖';
+                else if (route.name === 'Gate') icon = '🚪';
+                else if (route.name === 'Alerts') icon = '🚨';
+                else if (route.name === 'System') icon = '⚙️';
                 return <Text style={{ fontSize: focused ? 20 : 18 }}>{icon}</Text>;
               },
             })}
           >
-            <Tab.Screen name="Dashboard" component={DashboardTab} options={{ tabBarLabel: t('tabDashboard') }} />
-            <Tab.Screen name="Controls" component={ControlsTab} options={{ tabBarLabel: t('tabControls') }} />
-            <Tab.Screen name="Alerts" component={AlertsTab} options={{ tabBarLabel: t('tabAlerts') }} />
-            <Tab.Screen name="Manage" component={ManageTab} options={{ tabBarLabel: t('tabManage') }} />
-            <Tab.Screen name="System" component={SystemTab} options={{ tabBarLabel: t('tabSystem') }} />
+            <Tab.Screen name="Dashboard" component={DashboardTab} options={{ tabBarLabel: t('tabDashboard', 'Dashboard') }} />
+            <Tab.Screen name="AI" component={AITab} options={{ tabBarLabel: 'AI' }} />
+            <Tab.Screen name="Gate" component={GateTab} options={{ tabBarLabel: t('tabControls', 'Gate') }} />
+            <Tab.Screen name="Alerts" component={AlertsTab} options={{ tabBarLabel: t('tabAlerts', 'Alerts') }} />
+            <Tab.Screen name="System" component={SystemTab} options={{ tabBarLabel: t('tabSystem', 'System') }} />
           </Tab.Navigator>
         ) : (
           <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>

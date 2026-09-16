@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../components/AppHeader';
 import DemoModeBanner from '../components/DemoModeBanner';
@@ -263,6 +263,7 @@ export default function DashboardScreen({ navigation }) {
                 unit="%"
                 color={levelColor}
                 icon="🌊"
+                trend="↑"
               />
               <TelemetryCard
                 title={t('gatePositionCard')}
@@ -324,6 +325,45 @@ export default function DashboardScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* AI Forecast Snapshot Card */}
+        <TouchableOpacity
+          style={[styles.aiSnapshotCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}
+          onPress={() => navigation.navigate('AI')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.aiSnapshotHeader}>
+            <View style={styles.aiSnapshotLeft}>
+              <Text style={styles.aiSnapshotIcon}>🧠</Text>
+              <View>
+                <Text style={[styles.aiSnapshotTitle, { color: colors.textPrimary }]}>AI Water Forecast Snapshot</Text>
+                <Text style={[styles.aiSnapshotSub, { color: colors.textSecondary }]}>Bi-LSTM Neural Inference (60-Min Horizon)</Text>
+              </View>
+            </View>
+            <View style={[styles.aiRiskBadge, { backgroundColor: '#10B98120', borderColor: '#10B981' }]}>
+              <Text style={[styles.aiRiskBadgeText, { color: '#10B981' }]}>LOW RISK</Text>
+            </View>
+          </View>
+
+          <View style={[styles.aiMetricsRow, { backgroundColor: colors.bgSurface }]}>
+            <View style={styles.aiMetricItem}>
+              <Text style={[styles.aiMetricLabel, { color: colors.textMuted }]}>CURRENT</Text>
+              <Text style={[styles.aiMetricVal, { color: colors.textPrimary }]}>
+                {typeof waterLevel === 'number' ? waterLevel.toFixed(1) : waterLevel}%
+              </Text>
+            </View>
+            <Text style={[styles.aiMetricArrow, { color: colors.accentCyan }]}>➔</Text>
+            <View style={styles.aiMetricItem}>
+              <Text style={[styles.aiMetricLabel, { color: colors.textMuted }]}>NEXT 1 HOUR</Text>
+              <Text style={[styles.aiMetricVal, { color: colors.accentCyan }]}>74.2%</Text>
+            </View>
+            <View style={[styles.aiMetricDivider, { backgroundColor: colors.borderColor }]} />
+            <View style={styles.aiMetricItem}>
+              <Text style={[styles.aiMetricLabel, { color: colors.textMuted }]}>CONFIDENCE</Text>
+              <Text style={[styles.aiMetricVal, { color: colors.safeGreen }]}>91.3%</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
 
         {/* End-to-End Data Pipeline Monitoring Card */}
         <View style={[styles.pipelineCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
@@ -421,7 +461,7 @@ export default function DashboardScreen({ navigation }) {
         <View style={styles.actionsRow}>
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}
-            onPress={() => navigation.navigate('Controls', { screen: 'GateControl' })}
+            onPress={() => navigation.navigate('Gate')}
             activeOpacity={0.8}
           >
             <Text style={styles.actionBtnIcon}>⚙️</Text>
@@ -430,7 +470,7 @@ export default function DashboardScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}
-            onPress={() => navigation.navigate('DashboardHome', { screen: 'AIPrediction' })}
+            onPress={() => navigation.navigate('AI')}
             activeOpacity={0.8}
           >
             <Text style={styles.actionBtnIcon}>🧠</Text>
@@ -448,7 +488,7 @@ export default function DashboardScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}
-            onPress={() => navigation.navigate('Manage', { screen: 'EmergencyContacts' })}
+            onPress={() => navigation.navigate('System', { screen: 'EmergencyContacts' })}
             activeOpacity={0.8}
           >
             <Text style={styles.actionBtnIcon}>📞</Text>
@@ -670,6 +710,76 @@ const styles = StyleSheet.create({
   emergencyHeroSub: {
     fontSize: 11,
     lineHeight: 15,
+  },
+  aiSnapshotCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  aiSnapshotHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  aiSnapshotLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  aiSnapshotIcon: {
+    fontSize: 22,
+  },
+  aiSnapshotTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  aiSnapshotSub: {
+    fontSize: 10,
+    marginTop: 1,
+  },
+  aiRiskBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  aiRiskBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  aiMetricsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+  },
+  aiMetricItem: {
+    alignItems: 'center',
+  },
+  aiMetricLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginBottom: 3,
+  },
+  aiMetricVal: {
+    fontSize: 15,
+    fontWeight: '900',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  aiMetricArrow: {
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  aiMetricDivider: {
+    width: 1,
+    height: 26,
   },
   pipelineCard: {
     borderRadius: 14,

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path, Line, Circle, Rect, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import AppHeader from '../components/AppHeader';
 import { DEMO_AI } from '../services/demoData';
 import { supabase } from '../services/supabase';
@@ -125,6 +126,97 @@ export default function AIPredictionScreen() {
                 {DEMO_AI.confidence}%
               </Text>
             </View>
+          </View>
+        </View>
+
+        {/* AI Water Trend Graph Card */}
+        <View style={[styles.chartCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+          <View style={styles.chartHeader}>
+            <View>
+              <Text style={[styles.chartTitle, { color: colors.textPrimary }]}>
+                📈 60-Minute Forward Water Trend Graph
+              </Text>
+              <Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>
+                Historical Sensor Readings vs. LSTM Prediction with 90% CI
+              </Text>
+            </View>
+            <View style={[styles.liveModelBadge, { backgroundColor: '#10B98120', borderColor: '#10B981' }]}>
+              <Text style={[styles.liveModelBadgeText, { color: '#10B981' }]}>MODEL ACTIVE</Text>
+            </View>
+          </View>
+
+          <View style={styles.svgChartWrapper}>
+            <Svg width="100%" height={160} viewBox="0 0 330 160">
+              <Defs>
+                <LinearGradient id="chartAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor="#00C9E4" stopOpacity="0.4" />
+                  <Stop offset="100%" stopColor="#00C9E4" stopOpacity="0.02" />
+                </LinearGradient>
+                <LinearGradient id="ciGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor="#F59E0B" stopOpacity="0.25" />
+                  <Stop offset="100%" stopColor="#F59E0B" stopOpacity="0.05" />
+                </LinearGradient>
+              </Defs>
+
+              {/* 85% Critical Danger Threshold Line */}
+              <Line x1="30" y1="30" x2="315" y2="30" stroke="#EF4444" strokeWidth="1" strokeDasharray="4,4" />
+              <SvgText x="32" y="25" fill="#EF4444" fontSize="9" fontWeight="700">85% SPILL LIMIT</SvgText>
+
+              {/* 70% Pre-Warning Line */}
+              <Line x1="30" y1="75" x2="315" y2="75" stroke="#F59E0B" strokeWidth="1" strokeDasharray="4,4" />
+              <SvgText x="32" y="70" fill="#F59E0B" fontSize="9" fontWeight="700">70% WARNING LINE</SvgText>
+
+              {/* 60% Normal Base Line */}
+              <Line x1="30" y1="120" x2="315" y2="120" stroke="#10B981" strokeWidth="1" strokeDasharray="4,4" />
+              <SvgText x="32" y="115" fill="#10B981" fontSize="9" fontWeight="700">60% NORMAL BASE</SvgText>
+
+              {/* Shaded Area Under Historical Curve */}
+              <Path
+                d="M 30 110 Q 75 105, 120 95 T 210 68 L 210 145 L 30 145 Z"
+                fill="url(#chartAreaGrad)"
+              />
+
+              {/* Historical Observed Telemetry Line */}
+              <Path
+                d="M 30 110 Q 75 105, 120 95 T 210 68"
+                stroke="#00C9E4"
+                strokeWidth="2.5"
+                fill="none"
+              />
+
+              {/* Current Point Dot */}
+              <Circle cx="210" cy="68" r="4.5" fill="#00C9E4" stroke="#FFFFFF" strokeWidth="1.5" />
+              <SvgText x="195" y="60" fill="#00C9E4" fontSize="10" fontWeight="900">
+                {currentLevel.toFixed(1)}% (Now)
+              </SvgText>
+
+              {/* Confidence Envelope Shading */}
+              <Path
+                d="M 210 68 Q 250 56, 305 46 L 305 58 Q 250 64, 210 68 Z"
+                fill="url(#ciGrad)"
+              />
+
+              {/* Forward Forecast Curve (Dashed) */}
+              <Path
+                d="M 210 68 Q 250 60, 305 52"
+                stroke={riskBadgeColor}
+                strokeWidth="2.5"
+                strokeDasharray="5,3"
+                fill="none"
+              />
+
+              {/* Prediction Endpoint Dot */}
+              <Circle cx="305" cy="52" r="4.5" fill={riskBadgeColor} stroke="#FFFFFF" strokeWidth="1.5" />
+              <SvgText x="250" y="44" fill={riskBadgeColor} fontSize="10" fontWeight="900">
+                {predictedLevel.toFixed(1)}% (+1h)
+              </SvgText>
+
+              {/* X Axis Time Labels */}
+              <SvgText x="30" y="152" fill="#64748B" fontSize="9" fontWeight="600">-60m</SvgText>
+              <SvgText x="115" y="152" fill="#64748B" fontSize="9" fontWeight="600">-30m</SvgText>
+              <SvgText x="202" y="152" fill="#00C9E4" fontSize="9" fontWeight="800">NOW</SvgText>
+              <SvgText x="285" y="152" fill={riskBadgeColor} fontSize="9" fontWeight="800">+60m</SvgText>
+            </Svg>
           </View>
         </View>
 
@@ -313,5 +405,42 @@ const styles = StyleSheet.create({
     height: 1,
     width: '100%',
     opacity: 0.4,
+  },
+  chartCard: {
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  chartTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  chartSubtitle: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+  liveModelBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  liveModelBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  svgChartWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
   },
 });

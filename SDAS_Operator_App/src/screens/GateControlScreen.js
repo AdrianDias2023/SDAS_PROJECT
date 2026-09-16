@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Rect, Path, Line, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
 import AppHeader from '../components/AppHeader';
 import { supabase } from '../services/supabase';
 import { useTheme } from '../context/ThemeContext';
@@ -193,57 +194,142 @@ export default function GateControlScreen({ navigation }) {
           </View>
         )}
 
-        {/* Visual Gate Indicator Ring */}
+        {/* Industrial Dam Gate Cross-Section SVG Diagram */}
         <View style={[styles.visualCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
-          <View style={[styles.gateGraphicRing, { borderColor: selectedPos.color }]}>
-            <Text style={styles.gateGraphicEmoji}>🌊</Text>
-            <Text style={[styles.gateOpeningValue, { color: selectedPos.color }]}>
-              {selectedPos.percent}%
+          <Text style={[styles.diagramTitle, { color: colors.textSecondary }]}>
+            SPILLWAY SLUICE CROSS-SECTION
+          </Text>
+
+          <View style={styles.svgContainer}>
+            <Svg width="100%" height={145} viewBox="0 0 330 145">
+              <Defs>
+                <LinearGradient id="waterGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <Stop offset="0%" stopColor="#38BDF8" />
+                  <Stop offset="100%" stopColor="#0284C7" />
+                </LinearGradient>
+                <LinearGradient id="dischargeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <Stop offset="0%" stopColor="#00C9E4" />
+                  <Stop offset="100%" stopColor="#0284C7" />
+                </LinearGradient>
+              </Defs>
+
+              {/* Reservoir Water Body */}
+              <Path
+                d="M 15 35 Q 35 30, 60 35 T 110 35 L 110 135 L 15 135 Z"
+                fill="url(#waterGrad)"
+              />
+
+              {/* Concrete Dam Wall */}
+              <Path
+                d="M 110 15 L 140 15 L 140 135 L 110 135 Z"
+                fill="#334155"
+                stroke="#475569"
+                strokeWidth="1"
+              />
+
+              {/* Spillway Chute Foundation */}
+              <Path
+                d="M 140 130 L 220 130 L 315 140 L 315 145 L 140 145 Z"
+                fill="#1E293B"
+              />
+
+              {/* Water Discharge Stream if Gate is open */}
+              {selectedPos.percent > 0 && (
+                <Path
+                  d="M 140 128 Q 180 115, 230 126 T 315 136 L 315 142 L 140 142 Z"
+                  fill="url(#dischargeGrad)"
+                  opacity={selectedPos.percent >= 50 ? 0.9 : 0.7}
+                />
+              )}
+
+              {/* Vertical Sluice Gate Guide Rails */}
+              <Line x1="140" y1="10" x2="140" y2="135" stroke="#00C9E4" strokeWidth="2.5" />
+
+              {/* Lifting Sluice Gate Blade */}
+              <Rect
+                x="135"
+                y={selectedPos.percent === 0 ? 82 : selectedPos.percent === 20 ? 54 : 22}
+                width="12"
+                height="50"
+                rx="2"
+                fill={selectedPos.color}
+                stroke="#FFFFFF"
+                strokeWidth="1.2"
+              />
+
+              {/* Actuator Rod */}
+              <Line
+                x1="141"
+                y1="5"
+                x2="141"
+                y2={selectedPos.percent === 0 ? 82 : selectedPos.percent === 20 ? 54 : 22}
+                stroke="#94A3B8"
+                strokeWidth="2"
+              />
+
+              {/* Labels */}
+              <SvgText x="20" y="24" fill="#94A3B8" fontSize="10" fontWeight="700">
+                RESERVOIR WATER
+              </SvgText>
+              <SvgText x="148" y="20" fill={selectedPos.color} fontSize="11" fontWeight="800">
+                GATE {selectedPos.percent}%
+              </SvgText>
+              <SvgText x="235" y="118" fill="#94A3B8" fontSize="9" fontWeight="700">
+                SPILLWAY DISCHARGE
+              </SvgText>
+            </Svg>
+          </View>
+
+          {/* Digital Status Readout */}
+          <View style={[styles.digitalReadoutStrip, { backgroundColor: colors.bgSurface, borderColor: colors.borderColor }]}>
+            <Text style={[styles.digitalReadoutLabel, { color: colors.textSecondary }]}>
+              Current Position:
             </Text>
-            <Text style={[styles.servoAngleText, { color: colors.textSecondary }]}>
-              {selectedPos.angle}° SERVO
+            <Text style={[styles.digitalReadoutVal, { color: selectedPos.color }]}>
+              🚪 {selectedPos.percent}% {selectedPos.code} ({selectedPos.angle}° SERVO)
             </Text>
           </View>
         </View>
 
-        {/* 3 Positions Selector Cards */}
+        {/* Industrial Radio Selection Controls */}
         <Text style={[styles.sectionLabel, { color: colors.textPrimary }]}>
-          Select Gate Target Position
+          COMMAND ACTUATION SELECTION
         </Text>
 
-        <View style={styles.positionsRow}>
+        <View style={[styles.radioGroupCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
           {POSITIONS.map((pos) => {
             const isSelected = selectedPos.percent === pos.percent;
             return (
               <TouchableOpacity
                 key={pos.code}
                 style={[
-                  styles.posCard,
+                  styles.radioRow,
                   {
-                    backgroundColor: colors.bgCard,
+                    backgroundColor: isSelected ? `${pos.color}15` : 'transparent',
                     borderColor: isSelected ? pos.color : colors.borderColor,
-                    borderWidth: isSelected ? 2.5 : 1,
                   },
                 ]}
                 onPress={() => setSelectedPos(pos)}
                 disabled={autoMode}
                 activeOpacity={0.8}
               >
-                <View style={[styles.posIndicatorDot, { backgroundColor: pos.color }]} />
-                <Text style={[styles.posCardPercent, { color: pos.color }]}>{pos.percent}%</Text>
-                <Text
-                  style={[
-                    styles.posCardLabel,
-                    {
-                      color: isSelected ? pos.color : colors.textSecondary,
-                      fontWeight: isSelected ? '800' : '600',
-                    },
-                  ]}
-                  numberOfLines={2}
-                >
-                  {t(pos.labelKey)}
-                </Text>
-                <Text style={[styles.posCardAngle, { color: colors.textMuted }]}>{pos.angle}°</Text>
+                {/* Radio Circle */}
+                <View style={[styles.radioCircle, { borderColor: isSelected ? pos.color : colors.borderColor }]}>
+                  {isSelected && <View style={[styles.radioInnerCircle, { backgroundColor: pos.color }]} />}
+                </View>
+
+                <View style={styles.radioTextCol}>
+                  <Text style={[styles.radioLabel, { color: isSelected ? pos.color : colors.textPrimary, fontWeight: isSelected ? '800' : '600' }]}>
+                    {pos.percent}% {t(pos.labelKey)}
+                  </Text>
+                  <Text style={[styles.radioSub, { color: colors.textMuted }]}>
+                    Servo Actuator Angle: {pos.angle}° PWM
+                  </Text>
+                </View>
+
+                <View style={[styles.radioPercentBadge, { backgroundColor: `${pos.color}20` }]}>
+                  <Text style={[styles.radioPercentText, { color: pos.color }]}>{pos.percent}%</Text>
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -387,70 +473,88 @@ const styles = StyleSheet.create({
   },
   visualCard: {
     borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
+    padding: 16,
     borderWidth: 1,
-    marginBottom: 18,
-  },
-  gateGraphicRing: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gateGraphicEmoji: {
-    fontSize: 32,
-    marginBottom: 2,
-  },
-  gateOpeningValue: {
-    fontSize: 28,
-    fontWeight: '900',
-  },
-  servoAngleText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '800',
-    marginBottom: 10,
-  },
-  positionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: 16,
   },
-  posCard: {
-    width: '31.5%',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+  diagramTitle: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    textAlign: 'center',
   },
-  posIndicatorDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  svgContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+  },
+  digitalReadoutStrip: {
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 10,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  digitalReadoutLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  digitalReadoutVal: {
+    fontSize: 13,
+    fontWeight: '900',
+    fontFamily: 'monospace',
+    letterSpacing: 0.3,
+  },
+  radioGroupCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 6,
+    marginBottom: 16,
+  },
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
     marginBottom: 6,
   },
-  posCardPercent: {
-    fontSize: 18,
-    fontWeight: '900',
-    marginBottom: 4,
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  posCardLabel: {
-    fontSize: 10,
-    textAlign: 'center',
-    marginBottom: 4,
-    minHeight: 26,
+  radioInnerCircle: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  radioTextCol: {
+    flex: 1,
+  },
+  radioLabel: {
+    fontSize: 13,
+    letterSpacing: 0.2,
+    marginBottom: 2,
+  },
+  radioSub: {
+    fontSize: 11,
+  },
+  radioPercentBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  radioPercentText: {
+    fontSize: 12,
+    fontWeight: '900',
   },
   posCardAngle: {
     fontSize: 11,

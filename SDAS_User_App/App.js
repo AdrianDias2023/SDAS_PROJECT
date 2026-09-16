@@ -44,9 +44,9 @@ function MainTabs() {
         tabBarIcon: ({ focused }) => {
           let icon = '🏠';
           if (route.name === 'Home') icon = '🏠';
-          else if (route.name === 'Alerts') icon = '🚨';
+          else if (route.name === 'Alerts') icon = '🔔';
           else if (route.name === 'Weather') icon = '🌦️';
-          else if (route.name === 'Safety') icon = '🛡️';
+          else if (route.name === 'Community') icon = '📢';
           else if (route.name === 'MoreStack') icon = '⚙️';
           return <Text style={{ fontSize: focused ? 20 : 18 }}>{icon}</Text>;
         },
@@ -55,7 +55,7 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarLabel: t('tabHome') }} />
       <Tab.Screen name="Alerts" component={AlertsScreen} options={{ tabBarLabel: t('tabAlerts') }} />
       <Tab.Screen name="Weather" component={WeatherScreen} options={{ tabBarLabel: t('tabWeather') }} />
-      <Tab.Screen name="Safety" component={SafetyScreen} options={{ tabBarLabel: t('tabSafety') }} />
+      <Tab.Screen name="Community" component={CommunityScreen} options={{ tabBarLabel: t('tabCommunity', 'Community') }} />
       <Tab.Screen name="MoreStack" component={MoreStack} options={{ tabBarLabel: t('tabMore') }} />
     </Tab.Navigator>
   );
@@ -66,7 +66,7 @@ function MoreStack() {
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>
-      <Stack.Screen name="Community" component={CommunityScreen} />
+      <Stack.Screen name="Safety" component={SafetyScreen} />
       <Stack.Screen name="SMSRegister" component={SMSRegisterScreen} />
     </Stack.Navigator>
   );

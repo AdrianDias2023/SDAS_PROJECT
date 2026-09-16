@@ -382,7 +382,7 @@ export default function HomeScreen({ navigation }) {
 
             <TouchableOpacity
               style={[styles.emergencyBtnOutline, { borderColor: colors.dangerRed }]}
-              onPress={() => navigation.navigate('MoreStack', { screen: 'Community' })}
+              onPress={() => navigation.navigate('Community')}
               activeOpacity={0.85}
             >
               <Text style={[styles.emergencyBtnOutlineText, { color: colors.dangerRed }]}>🚨 Report Flood</Text>
@@ -471,7 +471,7 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}
-            onPress={() => navigation.navigate('Safety')}
+            onPress={() => navigation.navigate('MoreStack', { screen: 'Safety' })}
             activeOpacity={0.8}
           >
             <View style={[styles.actionIconBadge, { backgroundColor: '#10B98120' }]}>
@@ -482,7 +482,7 @@ export default function HomeScreen({ navigation }) {
 
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}
-            onPress={() => navigation.navigate('MoreStack', { screen: 'Community' })}
+            onPress={() => navigation.navigate('Community')}
             activeOpacity={0.8}
           >
             <View style={[styles.actionIconBadge, { backgroundColor: '#F59E0B20' }]}>

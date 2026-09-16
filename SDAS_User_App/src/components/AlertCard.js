@@ -15,18 +15,32 @@ export default function AlertCard({ title, description, color, icon = '🔔', is
           borderColor: isActive ? color : colors.borderColor,
           borderWidth: isActive ? 2 : 1,
           borderLeftWidth: 6,
+          shadowColor: isActive ? color : '#000',
+          shadowOpacity: isActive ? 0.25 : 0.06,
         },
       ]}
     >
       <View style={styles.headerRow}>
-        <Text style={styles.icon}>{icon}</Text>
-        <Text style={[styles.title, { color }]}>{title}</Text>
+        <View style={[styles.iconBox, { backgroundColor: `${color}20`, borderColor: `${color}60` }]}>
+          <Text style={styles.iconText}>{icon}</Text>
+        </View>
+
+        <View style={styles.titleCol}>
+          <Text style={[styles.title, { color }]}>{title}</Text>
+          {isActive && (
+            <Text style={[styles.currentActiveLabel, { color }]}>
+              ● CURRENT RESERVOIR STATE
+            </Text>
+          )}
+        </View>
+
         {isActive && (
-          <View style={[styles.activePill, { backgroundColor: color + '22', borderColor: color }]}>
-            <Text style={[styles.activeText, { color }]}>CURRENT</Text>
+          <View style={[styles.activePill, { backgroundColor: color, borderColor: color }]}>
+            <Text style={styles.activeText}>ACTIVE</Text>
           </View>
         )}
       </View>
+
       <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
     </View>
   );
@@ -35,40 +49,57 @@ export default function AlertCard({ title, description, color, icon = '🔔', is
 const styles = StyleSheet.create({
   card: {
     padding: 16,
-    borderRadius: 12,
-    marginVertical: 6,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
+    borderRadius: 14,
+    marginVertical: 7,
+    elevation: 3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 10,
   },
-  icon: {
-    fontSize: 18,
-    marginRight: 8,
+  iconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  iconText: {
+    fontSize: 22,
+  },
+  titleCol: {
+    flex: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
+  currentActiveLabel: {
+    fontSize: 10,
     fontWeight: '800',
-    flex: 1,
+    letterSpacing: 0.5,
+    marginTop: 2,
   },
   activePill: {
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
     borderWidth: 1,
   },
   activeText: {
+    color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '900',
+    letterSpacing: 0.4,
   },
   description: {
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 12,
+    lineHeight: 18,
   },
 });

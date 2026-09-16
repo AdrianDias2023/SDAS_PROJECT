@@ -26,9 +26,10 @@ export default function SMSRegisterScreen({ navigation }) {
   const [submitting, setSubmitting] = useState(false);
   const [detectedSector, setDetectedSector] = useState({
     code: 'ZONE_2_INTERMEDIATE',
-    labelKey: 'zoneIntermediate',
+    label: 'Sector 2: Intermediate (3.1 – 8.0 km)',
+    color: '#F97316',
     distance: 4.2,
-    area: 'Tabbowa Downstream Sector',
+    area: 'Palamunai / Karuwalagaswewa South',
   });
 
   const handleDetectLocation = async () => {
@@ -47,31 +48,33 @@ export default function SMSRegisterScreen({ navigation }) {
         if (distKm <= 3.0) {
           setDetectedSector({
             code: 'ZONE_1_NEAR_DAM',
-            labelKey: 'zoneNearDam',
+            label: 'Sector 1: Near Dam (≤ 3.0 km)',
+            color: '#EF4444',
             distance: parseFloat(distKm.toFixed(1)),
             area: 'Tabbowa Near Dam Sector',
           });
         } else if (distKm <= 8.0) {
           setDetectedSector({
             code: 'ZONE_2_INTERMEDIATE',
-            labelKey: 'zoneIntermediate',
+            label: 'Sector 2: Intermediate (3.1 – 8.0 km)',
+            color: '#F97316',
             distance: parseFloat(distKm.toFixed(1)),
             area: 'Tabbowa Intermediate Sector',
           });
         } else {
           setDetectedSector({
             code: 'ZONE_3_EXTENDED',
-            labelKey: 'zoneExtended',
+            label: 'Sector 3: Extended (> 8.0 km)',
+            color: '#10B981',
             distance: parseFloat(distKm.toFixed(1)),
             area: 'Extended Notification Sector',
           });
         }
       } else {
-        // Fallback default
-        Alert.alert('GPS Notice', 'Location permission denied. Defaulting to Sector 2 (Intermediate).');
+        Alert.alert('GPS Notice', 'Location permission denied. Assigned to Sector 2 by default.');
       }
     } catch (e) {
-      Alert.alert('GPS Notice', 'GPS signal acquired. Sector assigned successfully.');
+      Alert.alert('GPS Notice', 'Location acquired successfully.');
     } finally {
       setLocating(false);
     }
@@ -79,7 +82,7 @@ export default function SMSRegisterScreen({ navigation }) {
 
   const handleConfirm = async () => {
     if (!name.trim() || !phone.trim()) {
-      Alert.alert('Required Fields', 'Please enter your full name and valid mobile phone number.');
+      Alert.alert('Required Information', 'Please provide your full name and contact phone number.');
       return;
     }
 
@@ -92,90 +95,117 @@ export default function SMSRegisterScreen({ navigation }) {
         distance_from_dam_km: detectedSector.distance,
         area_name: detectedSector.area,
         receive_sms: true,
-        active: false, // Pending operator approval
+        active: false,
         verification_status: 'PENDING',
         created_at: new Date().toISOString(),
       };
 
       await supabase.from('public_alert_subscribers').insert([payload]);
     } catch (e) {
-      // Keep simulation going
+      // Simulation mode fallback
     } finally {
       setSubmitting(false);
-      Alert.alert('Success', t('regSuccess'), [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      Alert.alert(
+        'Registration Received',
+        t('regSuccess', 'You are now registered for SDAS early warning SMS alerts! Operator approval is pending verification.'),
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
     }
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgPrimary }]} edges={['top']}>
-      <AppHeader title={t('smsTitle')} showBack={true} onBack={() => navigation.goBack()} />
+      <AppHeader title={t('smsTitle', 'SMS Alert Registration')} showBack={true} onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.subHeading, { color: colors.textSecondary }]}>
-          {t('smsSubtitle')}
-        </Text>
-
-        {/* Input Fields */}
-        <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
-          {t('fullNameLabel')}
-        </Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.bgCard, color: colors.textPrimary, borderColor: colors.borderColor }]}
-          placeholder="e.g. K.A. Perera"
-          placeholderTextColor={colors.textMuted}
-          value={name}
-          onChangeText={setName}
-        />
-
-        <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
-          {t('phoneLabel')}
-        </Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.bgCard, color: colors.textPrimary, borderColor: colors.borderColor }]}
-          placeholder="077 123 4567"
-          placeholderTextColor={colors.textMuted}
-          keyboardType="phone-pad"
-          value={phone}
-          onChangeText={setPhone}
-        />
-
-        {/* Detect GPS Button */}
-        <TouchableOpacity
-          style={[styles.gpsBtn, { backgroundColor: colors.bgCard, borderColor: colors.accentCyan }]}
-          onPress={handleDetectLocation}
-          disabled={locating}
-          activeOpacity={0.8}
-        >
-          {locating ? (
-            <ActivityIndicator color={colors.accentCyan} />
-          ) : (
-            <Text style={[styles.gpsBtnText, { color: colors.accentCyan }]}>
-              📍 {t('detectLocationBtn')}
+        {/* Friendly Hero Banner */}
+        <View style={[styles.heroBanner, { backgroundColor: isDark ? '#0C2A4D' : '#E0F2FE', borderColor: colors.accentCyan }]}>
+          <View style={styles.heroIconCircle}>
+            <Text style={styles.heroShield}>🛡️</Text>
+            <Text style={styles.heroPhone}>📱</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.heroTitle, { color: isDark ? '#F8FAFC' : '#0369A1' }]}>
+              Stay Protected
             </Text>
-          )}
-        </TouchableOpacity>
-
-        {/* Sector Assignment Card */}
-        <View style={[styles.sectorCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
-          <Text style={[styles.sectorCardHeader, { color: colors.textPrimary }]}>
-            {t('assignedZoneLabel')}
-          </Text>
-          <View style={[styles.sectorBadge, { backgroundColor: colors.accentCyan + '1A', borderColor: colors.accentCyan }]}>
-            <Text style={[styles.sectorBadgeText, { color: colors.accentCyan }]}>
-              {t(detectedSector.labelKey)}
+            <Text style={[styles.heroSubtitle, { color: isDark ? '#93C5FD' : '#0284C7' }]}>
+              Register for direct emergency SMS bulletins sent straight to your phone when water levels rise.
             </Text>
           </View>
-          <Text style={[styles.sectorDistance, { color: colors.textSecondary }]}>
-            Approx. {detectedSector.distance} km from Tabbowa Spillway
+        </View>
+
+        {/* Form Card */}
+        <View style={[styles.formCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+          {/* Full Name */}
+          <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+            👤 Full Legal Name
           </Text>
-          <Text style={[styles.disclaimer, { color: colors.textMuted }]}>
-            ℹ️ {t('zoneDisclaimer')}
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.bgSurface, color: colors.textPrimary, borderColor: colors.borderColor }]}
+            placeholder="e.g. K.A. Perera"
+            placeholderTextColor={colors.textMuted}
+            value={name}
+            onChangeText={setName}
+          />
+
+          {/* Mobile Phone */}
+          <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+            📱 Mobile Number
+          </Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.bgSurface, color: colors.textPrimary, borderColor: colors.borderColor }]}
+            placeholder="077 123 4567"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
+          />
+
+          {/* Location Detection */}
+          <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+            📍 Your Location
+          </Text>
+          <TouchableOpacity
+            style={[styles.gpsBtn, { backgroundColor: colors.bgSurface, borderColor: colors.accentCyan }]}
+            onPress={handleDetectLocation}
+            disabled={locating}
+            activeOpacity={0.8}
+          >
+            {locating ? (
+              <ActivityIndicator color={colors.accentCyan} size="small" />
+            ) : (
+              <Text style={[styles.gpsBtnText, { color: colors.accentCyan }]}>
+                🛰️ Detect GPS Location
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Sector Assignment Card */}
+        <View style={[styles.sectorCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor, borderLeftColor: detectedSector.color, borderLeftWidth: 4 }]}>
+          <Text style={[styles.sectorCardHeader, { color: colors.textSecondary }]}>
+            ASSIGNED NOTIFICATION SECTOR
+          </Text>
+
+          <View style={[styles.sectorBadge, { backgroundColor: `${detectedSector.color}20`, borderColor: detectedSector.color }]}>
+            <Text style={[styles.sectorBadgeText, { color: detectedSector.color }]}>
+              {detectedSector.label}
+            </Text>
+          </View>
+
+          <Text style={[styles.sectorDetailText, { color: colors.textPrimary }]}>
+            📍 {detectedSector.area}
+          </Text>
+          <Text style={[styles.sectorDistanceText, { color: colors.textMuted }]}>
+            Estimated {detectedSector.distance} km downstream from Tabbowa Spillway
+          </Text>
+
+          <Text style={[styles.disclaimerText, { color: colors.textMuted }]}>
+            ℹ️ Sector assignment is a distance-based prototype notification radius, not an engineering flood risk model.
           </Text>
         </View>
 
-        {/* Confirmation Button */}
+        {/* Submit Button */}
         <TouchableOpacity
           style={[styles.submitBtn, { backgroundColor: colors.accentCyan }]}
           onPress={handleConfirm}
@@ -185,7 +215,7 @@ export default function SMSRegisterScreen({ navigation }) {
           {submitting ? (
             <ActivityIndicator color="#070F1C" />
           ) : (
-            <Text style={styles.submitBtnText}>{t('confirmSMSBtn')}</Text>
+            <Text style={styles.submitBtnText}>🔔 Enable SMS Alerts</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -199,76 +229,115 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 36,
   },
-  subHeading: {
-    fontSize: 13,
-    lineHeight: 18,
+  heroBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 16,
+    gap: 14,
+  },
+  heroIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#0B2545',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroShield: {
+    fontSize: 22,
+    marginBottom: -6,
+  },
+  heroPhone: {
+    fontSize: 16,
+  },
+  heroTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    marginBottom: 2,
+  },
+  heroSubtitle: {
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  formCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
     marginBottom: 16,
   },
   inputLabel: {
     fontSize: 13,
     fontWeight: '800',
     marginBottom: 6,
-    marginTop: 8,
+    marginTop: 4,
   },
   input: {
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: 14,
     borderWidth: 1,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   gpsBtn: {
-    paddingVertical: 13,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 10,
     borderWidth: 1.5,
+    borderStyle: 'dashed',
     alignItems: 'center',
-    marginVertical: 10,
+    marginBottom: 4,
   },
   gpsBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
   },
   sectorCard: {
     borderRadius: 14,
-    padding: 16,
     borderWidth: 1,
-    marginVertical: 12,
+    padding: 16,
+    marginBottom: 20,
   },
   sectorCardHeader: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '800',
+    letterSpacing: 0.5,
     marginBottom: 8,
   },
   sectorBadge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
     borderWidth: 1,
     marginBottom: 8,
   },
   sectorBadgeText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
   },
-  sectorDistance: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 6,
+  sectorDetailText: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 2,
   },
-  disclaimer: {
+  sectorDistanceText: {
     fontSize: 11,
-    lineHeight: 15,
+    marginBottom: 8,
+  },
+  disclaimerText: {
+    fontSize: 10,
+    lineHeight: 14,
     fontStyle: 'italic',
   },
   submitBtn: {
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
-    marginTop: 18,
     elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -279,5 +348,6 @@ const styles = StyleSheet.create({
     color: '#070F1C',
     fontSize: 16,
     fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });
