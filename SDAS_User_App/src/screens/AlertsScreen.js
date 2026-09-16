@@ -62,9 +62,95 @@ export default function AlertsScreen() {
     activeColor = colors.accentAmber;
   }
 
+  const [activeTab, setActiveTab] = useState('NOTIFICATIONS'); // Default to Notification Center as requested!
+
+  const notifications = [
+    {
+      id: 'notif-1',
+      tier: 'DANGER ALERT',
+      severity: 'danger',
+      icon: '🔴',
+      time: '10:45 AM',
+      relative: '25m ago',
+      title: 'Water Level Exceeded Critical Limit (>85%)',
+      message: 'Dam reservoir reached 86.4% critical retention capacity. Emergency spillway release initiated. Official Emergency SMS dispatched to all sectors.',
+      smsSent: true,
+      recipientCount: 245,
+    },
+    {
+      id: 'notif-2',
+      tier: 'WARNING',
+      severity: 'warning',
+      icon: '🟠',
+      time: '09:20 AM',
+      relative: '1h 50m ago',
+      title: 'Rapid Water Increase Detected',
+      message: 'Surge rate climbed to +0.34%/min during intense upstream monsoonal inflow. Precautionary SMS sent to Zone 1 & Zone 2.',
+      smsSent: true,
+      recipientCount: 168,
+    },
+    {
+      id: 'notif-3',
+      tier: 'PRE-WARNING',
+      severity: 'amber',
+      icon: '🟡',
+      time: '07:15 AM',
+      relative: '3h 55m ago',
+      title: 'Water Storage Reached 72% Capacity',
+      message: 'Tabbowa reservoir crossed threshold boundary. Sluice gate standing by at 0% closed position. Field monitoring active.',
+      smsSent: false,
+      recipientCount: 0,
+    },
+  ];
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgPrimary }]} edges={['top']}>
       <AppHeader title={t('tabAlerts')} />
+
+      {/* Segmented Tab Switcher */}
+      <View style={styles.segmentRow}>
+        <TouchableOpacity
+          style={[
+            styles.segmentBtn,
+            {
+              backgroundColor: activeTab === 'NOTIFICATIONS' ? colors.accentCyan : colors.bgCard,
+              borderColor: activeTab === 'NOTIFICATIONS' ? colors.accentCyan : colors.borderColor,
+            },
+          ]}
+          onPress={() => setActiveTab('NOTIFICATIONS')}
+          activeOpacity={0.8}
+        >
+          <Text
+            style={[
+              styles.segmentText,
+              { color: activeTab === 'NOTIFICATIONS' ? '#070F1C' : colors.textSecondary },
+            ]}
+          >
+            🔔 Notification Center ({notifications.length})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.segmentBtn,
+            {
+              backgroundColor: activeTab === 'TIERS' ? colors.accentCyan : colors.bgCard,
+              borderColor: activeTab === 'TIERS' ? colors.accentCyan : colors.borderColor,
+            },
+          ]}
+          onPress={() => setActiveTab('TIERS')}
+          activeOpacity={0.8}
+        >
+          <Text
+            style={[
+              styles.segmentText,
+              { color: activeTab === 'TIERS' ? '#070F1C' : colors.textSecondary },
+            ]}
+          >
+            🚨 4-Tier Guidelines
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -89,64 +175,127 @@ export default function AlertsScreen() {
           </View>
         )}
 
-        {/* Active Hero Status Card */}
-        {hasData ? (
-          <View style={[styles.heroCard, { backgroundColor: activeColor, borderColor: activeColor }]}>
-            <Text style={styles.heroPreTitle}>{t('currentStatus')}</Text>
-            <Text style={styles.heroStatus}>{t(activeTierKey)}</Text>
-            <View style={styles.heroLevelBadge}>
-              <Text style={styles.heroLevelText}>
-                {level.toFixed(1)}% {t('waterLevelTitle')} {isOffline ? '(CACHED)' : ''}
+        {activeTab === 'NOTIFICATIONS' ? (
+          <View>
+            <View style={styles.notifHeaderRow}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+                Real-Time Alert Notifications
+              </Text>
+              <Text style={[styles.notifCountBadge, { color: colors.accentCyan }]}>
+                Live Stream
               </Text>
             </View>
+
+            {notifications.map((n) => {
+              let badgeColor = colors.safeGreen;
+              if (n.severity === 'danger') badgeColor = colors.dangerRed;
+              else if (n.severity === 'warning') badgeColor = colors.warningOrange;
+              else if (n.severity === 'amber') badgeColor = colors.accentAmber;
+
+              return (
+                <View
+                  key={n.id}
+                  style={[
+                    styles.notifCard,
+                    {
+                      backgroundColor: colors.bgCard,
+                      borderColor: colors.borderColor,
+                      borderLeftColor: badgeColor,
+                    },
+                  ]}
+                >
+                  <View style={styles.notifTopRow}>
+                    <View style={styles.notifTitleRow}>
+                      <Text style={styles.notifIcon}>{n.icon}</Text>
+                      <Text style={[styles.notifTier, { color: badgeColor }]}>{n.tier}</Text>
+                    </View>
+                    <View style={[styles.notifTimeBadge, { backgroundColor: colors.bgSurface }]}>
+                      <Text style={[styles.notifTimeText, { color: colors.textSecondary }]}>
+                        {n.time} ({n.relative})
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={[styles.notifSubject, { color: colors.textPrimary }]}>
+                    {n.title}
+                  </Text>
+                  <Text style={[styles.notifBody, { color: colors.textSecondary }]}>
+                    {n.message}
+                  </Text>
+
+                  {n.smsSent && (
+                    <View style={[styles.smsSentPill, { backgroundColor: colors.safeGreen + '1A', borderColor: colors.safeGreen }]}>
+                      <Text style={[styles.smsSentText, { color: colors.safeGreen }]}>
+                        📲 Emergency SMS Broadcast Sent ({n.recipientCount} citizens)
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </View>
         ) : (
-          <View style={[styles.noDataCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
-            <Text style={styles.noDataIcon}>📡</Text>
-            <Text style={[styles.noDataTitle, { color: colors.textPrimary }]}>
-              No Live Alerts Recorded
+          <View>
+            {/* Active Hero Status Card */}
+            {hasData ? (
+              <View style={[styles.heroCard, { backgroundColor: activeColor, borderColor: activeColor }]}>
+                <Text style={styles.heroPreTitle}>{t('currentStatus')}</Text>
+                <Text style={styles.heroStatus}>{t(activeTierKey)}</Text>
+                <View style={styles.heroLevelBadge}>
+                  <Text style={styles.heroLevelText}>
+                    {level.toFixed(1)}% {t('waterLevelTitle')} {isOffline ? '(CACHED)' : ''}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View style={[styles.noDataCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+                <Text style={styles.noDataIcon}>📡</Text>
+                <Text style={[styles.noDataTitle, { color: colors.textPrimary }]}>
+                  No Live Alerts Recorded
+                </Text>
+                <Text style={[styles.noDataSub, { color: colors.textSecondary }]}>
+                  Hardware telemetry is required to determine active flood advisory levels.
+                </Text>
+              </View>
+            )}
+
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              {t('tabAlerts')} & Guidelines
             </Text>
-            <Text style={[styles.noDataSub, { color: colors.textSecondary }]}>
-              Hardware telemetry is required to determine active flood advisory levels.
-            </Text>
+
+            <AlertCard
+              color={colors.safeGreen}
+              icon="🟢"
+              title={`${t('statusNormal')} (< 70%)`}
+              description={t('descNormal')}
+              isActive={isNormalActive}
+            />
+
+            <AlertCard
+              color={colors.accentAmber}
+              icon="🟡"
+              title={`${t('statusPreWarning')} (70%–85%)`}
+              description={t('descPreWarning')}
+              isActive={isPreWarningActive}
+            />
+
+            <AlertCard
+              color={colors.warningOrange}
+              icon="🟠"
+              title={`${t('statusWarning')} (70%–85% ⚡)`}
+              description={t('descWarning')}
+              isActive={isWarningActive}
+            />
+
+            <AlertCard
+              color={colors.dangerRed}
+              icon="🔴"
+              title={`${t('statusDanger')} (> 85%)`}
+              description={t('descDanger')}
+              isActive={isDangerActive}
+            />
           </View>
         )}
-
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-          {t('tabAlerts')} & Guidelines
-        </Text>
-
-        <AlertCard
-          color={colors.safeGreen}
-          icon="🟢"
-          title={`${t('statusNormal')} (< 70%)`}
-          description={t('descNormal')}
-          isActive={isNormalActive}
-        />
-
-        <AlertCard
-          color={colors.accentAmber}
-          icon="🟡"
-          title={`${t('statusPreWarning')} (70%–85%)`}
-          description={t('descPreWarning')}
-          isActive={isPreWarningActive}
-        />
-
-        <AlertCard
-          color={colors.warningOrange}
-          icon="🟠"
-          title={`${t('statusWarning')} (70%–85% ⚡)`}
-          description={t('descWarning')}
-          isActive={isWarningActive}
-        />
-
-        <AlertCard
-          color={colors.dangerRed}
-          icon="🔴"
-          title={`${t('statusDanger')} (> 85%)`}
-          description={t('descDanger')}
-          isActive={isDangerActive}
-        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -156,9 +305,94 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  segmentRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 4,
+    gap: 8,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  segmentText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
   content: {
     padding: 16,
     paddingBottom: 24,
+  },
+  notifHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  notifCountBadge: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  notifCard: {
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderLeftWidth: 4,
+    marginBottom: 12,
+  },
+  notifTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  notifTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  notifIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  notifTier: {
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 0.4,
+  },
+  notifTimeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  notifTimeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  notifSubject: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 4,
+    lineHeight: 18,
+  },
+  notifBody: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginBottom: 10,
+  },
+  smsSentPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  smsSentText: {
+    fontSize: 11,
+    fontWeight: '800',
   },
   offlineBanner: {
     padding: 12,

@@ -21,9 +21,10 @@ const DEFAULT_AUDIT_LOGS = [
     category: 'SMS',
     action: 'DANGER ALERT SMS BROADCAST',
     details: 'Spill release triggered >85% threshold. Evacuation SMS dispatched via SIM800L GSM to all sectors.',
+    operator_activity_line: '10:45 AM | Operator A | Dispatched emergency SMS: Danger Alert | Reason: Water level >85% critical limit',
     target_sector: 'ALL SECTORS',
     recipients_count: 245,
-    user: 'Operator (Tabbowa)',
+    user: 'Operator A',
     status: 'SUCCESS',
     severity: 'danger',
     timestamp: new Date(Date.now() - 1000 * 60 * 22).toISOString(),
@@ -33,9 +34,10 @@ const DEFAULT_AUDIT_LOGS = [
     category: 'GATE',
     action: 'GATE ACTUATION COMMAND (20%)',
     details: 'Sluice gate target set to 20% opening (Servo angle: 36°). Controlled flood discharge initiated.',
+    operator_activity_line: '10:30 AM | Operator A | Changed gate: 0% → 20% | Reason: Warning condition',
     target_sector: 'SPILLWAY 01',
     recipients_count: null,
-    user: 'lead_engineer@sdas.gov.lk',
+    user: 'Operator A',
     status: 'EXECUTED',
     severity: 'warning',
     timestamp: new Date(Date.now() - 1000 * 60 * 95).toISOString(),
@@ -45,9 +47,10 @@ const DEFAULT_AUDIT_LOGS = [
     category: 'SMS',
     action: 'PRE-WARNING SMS BULLETIN',
     details: 'Water storage reached 72.5% capacity. Precautionary SMS bulletin sent to Sector 1 & Sector 2 residents.',
+    operator_activity_line: '09:20 AM | Operator B | Dispatched advisory SMS: Pre-Warning | Reason: Rapid water increase detected',
     target_sector: 'ZONE 1 & 2',
     recipients_count: 168,
-    user: 'AI Auto Supervisor',
+    user: 'Operator B',
     status: 'SUCCESS',
     severity: 'amber',
     timestamp: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
@@ -57,9 +60,10 @@ const DEFAULT_AUDIT_LOGS = [
     category: 'GATE',
     action: 'GATE CLOSE LOCKOUT ENGAGED',
     details: 'Operator close command rejected by hydraulic safety interlock. Water level exceeded 85% safety boundary.',
+    operator_activity_line: '08:45 AM | Safety Interlock | Rejected gate close: 20% → 0% | Reason: Water level above safety boundary',
     target_sector: 'SAFETY INTERLOCK',
     recipients_count: null,
-    user: 'Safety Interlock Controller',
+    user: 'Safety Interlock',
     status: 'BLOCKED',
     severity: 'danger',
     timestamp: new Date(Date.now() - 1000 * 60 * 480).toISOString(),
@@ -69,6 +73,7 @@ const DEFAULT_AUDIT_LOGS = [
     category: 'AUTH',
     action: 'CONSOLE SECURE ACCESS',
     details: 'Operator authenticated successfully via Supabase cryptographic session token.',
+    operator_activity_line: '08:00 AM | adrian_2002 | Console authenticated | Reason: Shift handover verification',
     target_sector: 'CONTROL ROOM',
     recipients_count: null,
     user: 'adrian_2002',
@@ -106,11 +111,13 @@ export default function AuditLogsScreen() {
 
       if (smsLogs && smsLogs.length > 0) {
         smsLogs.forEach((s) => {
+          const timeStr = new Date(s.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           combined.push({
             id: `sms-${s.id}`,
             category: 'SMS',
             action: s.alert_tier || 'SMS BROADCAST',
             details: s.message_preview || `Dispatched to sector: ${s.target_sector || 'All'}`,
+            operator_activity_line: `${timeStr} | ${s.dispatched_by || 'Operator A'} | Dispatched SMS: ${s.alert_tier || 'Alert'} | Reason: Automated threshold alert`,
             target_sector: s.target_sector || 'ZONE 1',
             recipients_count: s.recipient_count || 1,
             user: s.dispatched_by || 'Operator',
@@ -123,11 +130,13 @@ export default function AuditLogsScreen() {
 
       if (gateLogs && gateLogs.length > 0) {
         gateLogs.forEach((g) => {
+          const timeStr = new Date(g.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           combined.push({
             id: `gate-${g.id}`,
             category: 'GATE',
             action: `GATE ACTUATION (${g.gate_percentage}%)`,
             details: `Servo angle set to ${g.servo_angle}°. Actuation status: ${g.status}`,
+            operator_activity_line: `${timeStr} | ${g.commanded_by || 'Operator A'} | Changed gate: 0% → ${g.gate_percentage}% | Reason: ${g.reason || 'Warning condition'}`,
             target_sector: 'SLUICE SPILLWAY',
             recipients_count: null,
             user: g.commanded_by || 'Operator',
@@ -290,6 +299,16 @@ export default function AuditLogsScreen() {
               <Text style={[styles.detailsText, { color: colors.textSecondary }]}>
                 {item.details}
               </Text>
+
+              {/* Structured Operator Activity Line */}
+              {item.operator_activity_line ? (
+                <View style={[styles.activityLineBox, { backgroundColor: colors.bgSurface, borderColor: accentColor }]}>
+                  <Text style={[styles.activityLinePrefix, { color: accentColor }]}>ACTIVITY LOG:</Text>
+                  <Text style={[styles.activityLineText, { color: colors.textPrimary }]}>
+                    {item.operator_activity_line}
+                  </Text>
+                </View>
+              ) : null}
 
               {/* Metrics / Metadata Row */}
               <View style={[styles.logMetaStrip, { backgroundColor: colors.bgSurface }]}>
@@ -474,5 +493,23 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 13,
+  },
+  activityLineBox: {
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 8,
+    marginBottom: 8,
+  },
+  activityLinePrefix: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  activityLineText: {
+    fontSize: 11,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+    lineHeight: 16,
   },
 });

@@ -144,6 +144,34 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </TouchableOpacity>
 
+          {/* Emergency Event Hero Card */}
+          <TouchableOpacity
+            style={[
+              styles.emergencyHeroCard,
+              {
+                backgroundColor: waterLevel >= 85 ? '#7F1D1D' : waterLevel >= 70 ? (isDark ? '#431407' : '#FFEDD5') : (isDark ? '#0F2644' : '#E0F2FE'),
+                borderColor: waterLevel >= 85 ? colors.dangerRed : waterLevel >= 70 ? colors.warningOrange : colors.accentCyan,
+              },
+            ]}
+            onPress={() => navigation.navigate('EmergencyControl')}
+            activeOpacity={0.85}
+          >
+            <View style={styles.emergencyHeroHeader}>
+              <View style={[styles.emergencyBadge, { backgroundColor: waterLevel >= 85 ? '#EF4444' : waterLevel >= 70 ? '#F97316' : '#0284C7' }]}>
+                <Text style={styles.emergencyBadgeText}>
+                  {waterLevel >= 85 ? '🔴 CRITICAL SPILL PROTOCOL' : waterLevel >= 70 ? '🟠 ACTIVE WARNING STATUS' : '🛡️ EMERGENCY DISPATCH CONSOLE'}
+                </Text>
+              </View>
+              <Text style={[styles.emergencyLinkText, { color: colors.accentCyan }]}>OPEN PANEL ›</Text>
+            </View>
+            <Text style={[styles.emergencyHeroTitle, { color: colors.textPrimary }]}>
+              Emergency Event & Evacuation Control
+            </Text>
+            <Text style={[styles.emergencyHeroSub, { color: colors.textSecondary }]}>
+              Active incident monitoring • 245 SMS sent • Sectors 1 & 2 armed • Sluice interlock active
+            </Text>
+          </TouchableOpacity>
+
         {/* Data Mode Indicator Badge */}
         <View style={styles.dataModeRow}>
           <Text style={[styles.dataModeLabel, { color: colors.textSecondary }]}>
@@ -297,6 +325,98 @@ export default function DashboardScreen({ navigation }) {
           </View>
         )}
 
+        {/* End-to-End Data Pipeline Monitoring Card */}
+        <View style={[styles.pipelineCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+          <View style={styles.pipelineHeader}>
+            <Text style={[styles.pipelineTitle, { color: colors.textPrimary }]}>
+              🔄 Data Flow Pipeline Monitoring
+            </Text>
+            <View style={[styles.liveStreamBadge, { backgroundColor: '#10B98120', borderColor: '#10B981' }]}>
+              <Text style={[styles.liveStreamBadgeText, { color: '#10B981' }]}>⚡ 120ms Realtime</Text>
+            </View>
+          </View>
+
+          {/* Flow Diagram */}
+          <View style={styles.pipelineFlowRow}>
+            <View style={styles.pipelineNode}>
+              <View style={[styles.pipelineCircle, { backgroundColor: '#10B981' }]}>
+                <Text style={styles.pipelineNodeIcon}>📡</Text>
+              </View>
+              <Text style={[styles.pipelineNodeText, { color: colors.textPrimary }]}>Sensors</Text>
+              <Text style={[styles.pipelineNodeSub, { color: colors.textMuted }]}>JSN-SR04T</Text>
+            </View>
+
+            <Text style={[styles.pipelineArrow, { color: colors.accentCyan }]}>➔</Text>
+
+            <View style={styles.pipelineNode}>
+              <View style={[styles.pipelineCircle, { backgroundColor: isLive ? '#10B981' : isSimulation ? '#F59E0B' : '#EF4444' }]}>
+                <Text style={styles.pipelineNodeIcon}>📟</Text>
+              </View>
+              <Text style={[styles.pipelineNodeText, { color: colors.textPrimary }]}>ESP32</Text>
+              <Text style={[styles.pipelineNodeSub, { color: colors.textMuted }]}>Node 01</Text>
+            </View>
+
+            <Text style={[styles.pipelineArrow, { color: colors.accentCyan }]}>➔</Text>
+
+            <View style={styles.pipelineNode}>
+              <View style={[styles.pipelineCircle, { backgroundColor: '#10B981' }]}>
+                <Text style={styles.pipelineNodeIcon}>☁️</Text>
+              </View>
+              <Text style={[styles.pipelineNodeText, { color: colors.textPrimary }]}>Cloud</Text>
+              <Text style={[styles.pipelineNodeSub, { color: colors.textMuted }]}>Supabase</Text>
+            </View>
+
+            <Text style={[styles.pipelineArrow, { color: colors.accentCyan }]}>➔</Text>
+
+            <View style={styles.pipelineNode}>
+              <View style={[styles.pipelineCircle, { backgroundColor: '#10B981' }]}>
+                <Text style={styles.pipelineNodeIcon}>📱</Text>
+              </View>
+              <Text style={[styles.pipelineNodeText, { color: colors.textPrimary }]}>Mobile</Text>
+              <Text style={[styles.pipelineNodeSub, { color: colors.textMuted }]}>Citizen/Op</Text>
+            </View>
+
+            <Text style={[styles.pipelineArrow, { color: colors.accentCyan }]}>➔</Text>
+
+            <View style={styles.pipelineNode}>
+              <View style={[styles.pipelineCircle, { backgroundColor: '#10B981' }]}>
+                <Text style={styles.pipelineNodeIcon}>📶</Text>
+              </View>
+              <Text style={[styles.pipelineNodeText, { color: colors.textPrimary }]}>SMS</Text>
+              <Text style={[styles.pipelineNodeSub, { color: colors.textMuted }]}>SIM800L</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Power & Battery Monitoring Card */}
+        <View style={[styles.powerCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+          <View style={styles.powerHeaderRow}>
+            <Text style={[styles.powerTitle, { color: colors.textPrimary }]}>
+              ⚡ Power & Battery Subsystem
+            </Text>
+            <View style={[styles.powerPill, { backgroundColor: '#10B98120', borderColor: '#10B981' }]}>
+              <Text style={[styles.powerPillText, { color: '#10B981' }]}>GRID STABLE</Text>
+            </View>
+          </View>
+
+          <View style={styles.powerGrid}>
+            <View style={styles.powerItem}>
+              <Text style={[styles.powerLabel, { color: colors.textMuted }]}>MAIN GRID SUPPLY</Text>
+              <Text style={[styles.powerVal, { color: colors.safeGreen }]}>🟢 230V AC Connected</Text>
+            </View>
+            <View style={styles.powerItem}>
+              <Text style={[styles.powerLabel, { color: colors.textMuted }]}>BACKUP BATTERY</Text>
+              <Text style={[styles.powerVal, { color: colors.accentCyan }]}>87% (12.6V DC)</Text>
+            </View>
+          </View>
+
+          <View style={[styles.powerFooter, { backgroundColor: colors.bgSurface }]}>
+            <Text style={[styles.powerFooterText, { color: colors.textSecondary }]}>
+              ⏱️ Est. Runtime Autonomy: <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>4.8 Hours</Text> • Charge: Float (0.8A)
+            </Text>
+          </View>
+        </View>
+
         {/* Quick Actions */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
@@ -315,6 +435,15 @@ export default function DashboardScreen({ navigation }) {
           >
             <Text style={styles.actionBtnIcon}>🧠</Text>
             <Text style={[styles.btnText, { color: colors.accentCyan }]}>{t('quickAI')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: colors.bgCard, borderColor: colors.dangerRed }]}
+            onPress={() => navigation.navigate('EmergencyControl')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.actionBtnIcon}>🚨</Text>
+            <Text style={[styles.btnText, { color: colors.dangerRed }]}>Emergency</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -505,5 +634,153 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     textAlign: 'center',
+  },
+  emergencyHeroCard: {
+    borderRadius: 14,
+    borderWidth: 1.5,
+    padding: 14,
+    marginBottom: 10,
+  },
+  emergencyHeroHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  emergencyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  emergencyBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.4,
+  },
+  emergencyLinkText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  emergencyHeroTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+    marginBottom: 2,
+  },
+  emergencyHeroSub: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  pipelineCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  pipelineHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  pipelineTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  liveStreamBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  liveStreamBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  pipelineFlowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  pipelineNode: {
+    alignItems: 'center',
+  },
+  pipelineCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  pipelineNodeIcon: {
+    fontSize: 16,
+  },
+  pipelineNodeText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  pipelineNodeSub: {
+    fontSize: 9,
+    marginTop: 1,
+  },
+  pipelineArrow: {
+    fontSize: 14,
+    fontWeight: '900',
+    marginBottom: 14,
+  },
+  powerCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 10,
+  },
+  powerHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  powerTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  powerPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  powerPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  powerGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  powerItem: {
+    flex: 1,
+  },
+  powerLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    marginBottom: 3,
+  },
+  powerVal: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  powerFooter: {
+    borderRadius: 8,
+    padding: 8,
+    alignItems: 'center',
+  },
+  powerFooterText: {
+    fontSize: 11,
   },
 });

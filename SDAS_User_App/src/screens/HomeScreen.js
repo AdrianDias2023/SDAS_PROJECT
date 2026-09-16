@@ -7,6 +7,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   Dimensions,
+  Linking,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../components/AppHeader';
@@ -120,6 +122,22 @@ export default function HomeScreen({ navigation }) {
   }
 
   const capacityRemaining = hasData ? Math.max(0, 100 - waterLevel).toFixed(1) : '--';
+
+  const handleShareLocation = async () => {
+    try {
+      await Share.share({
+        message: `[SDAS CITIZEN GPS BROADCAST] Sector: ZONE 2 (Palamunai / Tabbowa Central, 5.4km from Dam). Current dam water level: ${waterLevel}%. Monitoring active.`,
+      });
+    } catch (e) {}
+  };
+
+  const handleShareAlert = async () => {
+    try {
+      await Share.share({
+        message: `[SDAS EARLY WARNING ALERT] Tabbowa Dam Status: ${t(tierKey)} (Water Level: ${waterLevel}%). Sluice status: ${gateStatus}. Disaster Management Centre: Dial 117.`,
+      });
+    } catch (e) {}
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgPrimary }]} edges={['top']}>
@@ -268,6 +286,110 @@ export default function HomeScreen({ navigation }) {
           </View>
         )}
 
+        {/* Live IoT Connection Status Card */}
+        <View style={[styles.connectionCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+          <View style={styles.connectionHeaderRow}>
+            <Text style={[styles.connectionTitle, { color: colors.textPrimary }]}>System Status</Text>
+            <View style={[styles.connectionBadge, { backgroundColor: isLive ? colors.safeGreen + '20' : colors.warningOrange + '20', borderColor: isLive ? colors.safeGreen : colors.warningOrange }]}>
+              <Text style={[styles.connectionBadgeText, { color: isLive ? colors.safeGreen : colors.warningOrange }]}>
+                {isLive ? '🟢 Live Connection' : '⚠ Stream Disconnected'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.connectionDetailRow}>
+            <Text style={[styles.connectionLabel, { color: colors.textSecondary }]}>Last Update:</Text>
+            <Text style={[styles.connectionValue, { color: isOffline ? colors.warningOrange : colors.textPrimary }]}>
+              {isLive ? formatRelativeTime(lastUpdated) : `⚠ Last update ${formatRelativeTime(lastUpdated)}`}
+            </Text>
+          </View>
+          <View style={styles.connectionDetailRow}>
+            <Text style={[styles.connectionLabel, { color: colors.textSecondary }]}>Data Source:</Text>
+            <Text style={[styles.connectionValue, { color: colors.accentCyan, fontWeight: '700' }]}>
+              ESP32 Sensor Network (Tabbowa Dam)
+            </Text>
+          </View>
+        </View>
+
+        {/* Simple Water Level History Trend */}
+        <View style={[styles.trendCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+          <View style={styles.trendHeaderRow}>
+            <Text style={[styles.trendTitle, { color: colors.textPrimary }]}>Water Level History</Text>
+            <Text style={[styles.trendSubtitle, { color: colors.textSecondary }]}>Today</Text>
+          </View>
+
+          <View style={[styles.trendChartBox, { backgroundColor: colors.bgSurface }]}>
+            <View style={styles.trendRow}>
+              <Text style={[styles.trendThresholdLabel, { color: colors.dangerRed }]}>80% Spill Limit</Text>
+              <View style={[styles.trendBarTrack, { backgroundColor: colors.borderColor }]}>
+                <View style={[styles.trendBarFill, { width: '80%', backgroundColor: colors.dangerRed + '40' }]} />
+                <View style={[styles.trendDot, { left: '80%', backgroundColor: colors.dangerRed }]} />
+              </View>
+            </View>
+
+            <View style={styles.trendRow}>
+              <Text style={[styles.trendThresholdLabel, { color: colors.warningOrange }]}>70% Warning Line</Text>
+              <View style={[styles.trendBarTrack, { backgroundColor: colors.borderColor }]}>
+                <View style={[styles.trendBarFill, { width: '70%', backgroundColor: colors.warningOrange + '40' }]} />
+                <View style={[styles.trendDot, { left: '70%', backgroundColor: colors.warningOrange }]} />
+              </View>
+            </View>
+
+            <View style={styles.trendRow}>
+              <Text style={[styles.trendThresholdLabel, { color: colors.safeGreen }]}>60% Normal Base</Text>
+              <View style={[styles.trendBarTrack, { backgroundColor: colors.borderColor }]}>
+                <View style={[styles.trendBarFill, { width: '60%', backgroundColor: colors.safeGreen + '40' }]} />
+                <View style={[styles.trendDot, { left: '60%', backgroundColor: colors.safeGreen }]} />
+              </View>
+            </View>
+
+            <View style={[styles.trendCurrentRow, { borderTopColor: colors.borderColor }]}>
+              <Text style={[styles.trendCurrentLabel, { color: colors.textSecondary }]}>Current Recorded Level:</Text>
+              <Text style={[styles.trendCurrentValue, { color: tierColor }]}>{waterLevel}%</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Dedicated Emergency Quick Actions Card */}
+        <View style={[styles.emergencyCard, { backgroundColor: colors.bgCard, borderColor: colors.dangerRed }]}>
+          <View style={styles.emergencyHeaderRow}>
+            <Text style={[styles.emergencyTitle, { color: colors.dangerRed }]}>🆘 Emergency Quick Actions</Text>
+          </View>
+
+          <View style={styles.emergencyGrid}>
+            <TouchableOpacity
+              style={[styles.emergencyBtn, { backgroundColor: colors.dangerRed }]}
+              onPress={() => Linking.openURL('tel:117')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.emergencyBtnText}>📞 Call DMC 117</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.emergencyBtnOutline, { borderColor: colors.accentCyan }]}
+              onPress={handleShareLocation}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.emergencyBtnOutlineText, { color: colors.accentCyan }]}>📍 Share Location</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.emergencyBtnOutline, { borderColor: colors.warningOrange }]}
+              onPress={handleShareAlert}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.emergencyBtnOutlineText, { color: colors.warningOrange }]}>📲 Share Alert</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.emergencyBtnOutline, { borderColor: colors.dangerRed }]}
+              onPress={() => navigation.navigate('MoreStack', { screen: 'Community' })}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.emergencyBtnOutlineText, { color: colors.dangerRed }]}>🚨 Report Flood</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Metrics Grid Row */}
         <View style={styles.metricsRow}>
           <View style={[styles.metricTile, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
@@ -292,6 +414,30 @@ export default function HomeScreen({ navigation }) {
               {typeof rainfall === 'number' ? `${rainfall}mm` : rainfall}
             </Text>
             <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{t('metricRain')}</Text>
+          </View>
+        </View>
+
+        {/* Location Awareness Card */}
+        <View style={[styles.locationAwarenessCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+          <View style={styles.locationHeaderRow}>
+            <Text style={[styles.locationCardTitle, { color: colors.textPrimary }]}>📍 Your Location Awareness</Text>
+            <View style={[styles.sectorPill, { backgroundColor: colors.warningOrange + '22', borderColor: colors.warningOrange }]}>
+              <Text style={[styles.sectorPillText, { color: colors.warningOrange }]}>ZONE 2 (3–8 km)</Text>
+            </View>
+          </View>
+          <View style={[styles.locationDetailBox, { backgroundColor: colors.bgSurface }]}>
+            <View style={styles.locationInfoRow}>
+              <Text style={[styles.locationLabel, { color: colors.textSecondary }]}>Area:</Text>
+              <Text style={[styles.locationVal, { color: colors.textPrimary }]}>Palamunai / Tabbowa Central</Text>
+            </View>
+            <View style={styles.locationInfoRow}>
+              <Text style={[styles.locationLabel, { color: colors.textSecondary }]}>Distance to Dam:</Text>
+              <Text style={[styles.locationVal, { color: colors.accentCyan }]}>5.4 km downstream</Text>
+            </View>
+            <View style={styles.locationInfoRow}>
+              <Text style={[styles.locationLabel, { color: colors.textSecondary }]}>SMS Alert Status:</Text>
+              <Text style={[styles.locationVal, { color: colors.safeGreen }]}>🟢 Active & Monitored</Text>
+            </View>
           </View>
         </View>
 
@@ -500,7 +646,204 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
     borderWidth: 1.5,
-    marginBottom: 16,
+    marginBottom: 12,
+  },
+  connectionCard: {
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  connectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  connectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  connectionBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  connectionBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  connectionDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 3,
+  },
+  connectionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  connectionValue: {
+    fontSize: 12,
+  },
+  trendCard: {
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  trendHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  trendTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  trendSubtitle: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  trendChartBox: {
+    borderRadius: 10,
+    padding: 12,
+  },
+  trendRow: {
+    marginBottom: 8,
+  },
+  trendThresholdLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  trendBarTrack: {
+    height: 8,
+    borderRadius: 4,
+    width: '100%',
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  trendBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  trendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    position: 'absolute',
+    top: -2,
+    marginLeft: -6,
+  },
+  trendCurrentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 8,
+    marginTop: 4,
+    borderTopWidth: 1,
+  },
+  trendCurrentLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  trendCurrentValue: {
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  emergencyCard: {
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1.5,
+    marginBottom: 14,
+  },
+  emergencyHeaderRow: {
+    marginBottom: 10,
+  },
+  emergencyTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
+  emergencyGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  emergencyBtn: {
+    width: '48.5%',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emergencyBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  emergencyBtnOutline: {
+    width: '48.5%',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emergencyBtnOutlineText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  locationAwarenessCard: {
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  locationHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  locationCardTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  sectorPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  sectorPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  locationDetailBox: {
+    borderRadius: 10,
+    padding: 10,
+  },
+  locationInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 3,
+  },
+  locationLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  locationVal: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   statusHeaderRow: {
     flexDirection: 'row',

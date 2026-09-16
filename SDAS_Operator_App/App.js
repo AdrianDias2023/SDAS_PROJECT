@@ -19,6 +19,7 @@ import GateControlScreen from './src/screens/GateControlScreen';
 import EmergencyContactsScreen from './src/screens/EmergencyContactsScreen';
 import PublicSubscribersScreen from './src/screens/PublicSubscribersScreen';
 import AlertZonesScreen from './src/screens/AlertZonesScreen';
+import EmergencyControlScreen from './src/screens/EmergencyControlScreen';
 import SystemHealthScreen from './src/screens/SystemHealthScreen';
 import AuditLogsScreen from './src/screens/AuditLogsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
@@ -32,6 +33,7 @@ function DashboardTab() {
     <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>
       <Stack.Screen name="DashboardHome" component={DashboardScreen} />
       <Stack.Screen name="AIPrediction" component={AIPredictionScreen} />
+      <Stack.Screen name="EmergencyControl" component={EmergencyControlScreen} />
     </Stack.Navigator>
   );
 }
@@ -41,6 +43,7 @@ function ControlsTab() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>
       <Stack.Screen name="GateControl" component={GateControlScreen} />
+      <Stack.Screen name="EmergencyControl" component={EmergencyControlScreen} />
     </Stack.Navigator>
   );
 }
@@ -50,6 +53,7 @@ function AlertsTab() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: colors.bgPrimary } }}>
       <Stack.Screen name="AlertZones" component={AlertZonesScreen} />
+      <Stack.Screen name="EmergencyControl" component={EmergencyControlScreen} />
     </Stack.Navigator>
   );
 }
