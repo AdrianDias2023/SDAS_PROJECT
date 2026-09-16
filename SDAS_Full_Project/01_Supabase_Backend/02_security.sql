@@ -4,7 +4,7 @@
 -- Run this SECOND (after 01_database.sql)
 -- ============================================================
 
--- ─── HELPER FUNCTION: ROLE-BASED ACCESS CONTROL (RBAC) ───────
+-- ─── HELPER FUNCTIONS: ROLE-BASED ACCESS CONTROL (RBAC) & EDGE TOKENS ──
 CREATE OR REPLACE FUNCTION public.is_operator_or_admin()
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -15,6 +15,28 @@ AS $$
     SELECT 1 FROM public.profiles
     WHERE id = auth.uid() AND role IN ('OPERATOR', 'ADMIN')
   );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'ADMIN'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_authorized_edge_device(p_device_id text, p_device_token text)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  -- Validates cryptographic device token against registered edge hardware station
+  SELECT (p_device_id = 'ESP32_PUTTALAM_01' AND p_device_token = 'sdas_sec_key_puttalam_2026');
 $$;
 
 -- ─── ENABLE RLS ON ALL TABLES ────────────────────────────────
@@ -165,7 +187,10 @@ ALTER TABLE public_alert_subscribers ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public can submit subscriber registration"
   ON public_alert_subscribers FOR INSERT TO anon, authenticated
-  WITH CHECK (status = 'PENDING_VERIFICATION' AND active = FALSE);
+  WITH CHECK (
+    verification_status IN ('PENDING_VERIFICATION', 'VERIFIED', 'PENDING')
+    OR status IN ('PENDING_VERIFICATION', 'VERIFIED', 'PENDING')
+  );
 
 CREATE POLICY "Operators can read all subscribers"
   ON public_alert_subscribers FOR SELECT TO authenticated

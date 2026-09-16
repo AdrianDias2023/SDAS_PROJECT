@@ -13,12 +13,14 @@ import AppHeader from '../components/AppHeader';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDataMode } from '../context/DataModeContext';
+import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
 
 export default function EmergencyControlScreen({ navigation }) {
   const { isDark, colors } = useTheme();
   const { t } = useLanguage();
   const { isSimulationMode } = useDataMode();
+  const { role } = useAuth();
 
   const [broadcasting, setBroadcasting] = useState(false);
   const [lastBroadcastTime, setLastBroadcastTime] = useState('12m ago');
@@ -26,9 +28,17 @@ export default function EmergencyControlScreen({ navigation }) {
   const [emergencyLevel, setEmergencyLevel] = useState('WARNING'); // 'PRE-WARNING' | 'WARNING' | 'DANGER'
 
   const handleBroadcastEmergency = () => {
+    if (role === 'VIEWER') {
+      Alert.alert(
+        '⛔ RBAC ACCESS DENIED: READ-ONLY AUDIT ROLE',
+        'Your active session has VIEWER privileges.\n\nEmergency Evacuation Broadcast commands trigger real-time mass GSM SMS alerts across cellular infrastructure and are restricted strictly to OPERATOR or ADMIN roles.\n\nTip: To test broadcasts during your viva, switch your role to OPERATOR in the Settings tab.'
+      );
+      return;
+    }
+
     Alert.alert(
       '🚨 CONFIRM EMERGENCY BROADCAST',
-      `You are about to dispatch an official ${emergencyLevel} alert via SIM800L GSM to all registered citizens and emergency personnel in Tabbowa downstream sectors.\n\nEstimated recipients: ${smsSentCount + 35} subscribers.\n\nDo you authorize this broadcast?`,
+      `You are about to dispatch an official ${emergencyLevel} alert via SIM800L GSM.\n\n🔒 TRUSTED RECIPIENT SECURITY:\nDispatches strictly to verified registry numbers (${smsSentCount + 35} verified contacts & citizen subscribers). Arbitrary unverified numbers are blocked.\n\nDo you authorize this broadcast?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -69,6 +79,14 @@ export default function EmergencyControlScreen({ navigation }) {
   };
 
   const handleSendPrewarning = () => {
+    if (role === 'VIEWER') {
+      Alert.alert(
+        '⛔ RBAC ACCESS DENIED: READ-ONLY AUDIT ROLE',
+        'Pre-warning advisory SMS broadcast requires OPERATOR or ADMIN privileges.'
+      );
+      return;
+    }
+
     Alert.alert(
       '📢 Send Pre-Warning Advisory',
       'Dispatch precautionary advisory SMS to Sectors 1 and 2 (Near Dam & Intermediate)?',
@@ -94,6 +112,16 @@ export default function EmergencyControlScreen({ navigation }) {
       <AppHeader title="Emergency Event Control" showBack={true} onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Viewer Read-Only Notice */}
+        {role === 'VIEWER' && (
+          <View style={[styles.viewerBanner, { backgroundColor: colors.accentAmber + '20', borderColor: colors.accentAmber }]}>
+            <Text style={styles.viewerBannerIcon}>👁️</Text>
+            <Text style={[styles.viewerBannerText, { color: colors.accentAmber }]}>
+              READ-ONLY AUDIT MODE: Broadcast dispatch buttons are locked for VIEWER role. Switch to OPERATOR in Settings to test dispatch.
+            </Text>
+          </View>
+        )}
+
         {/* Incident Status Banner */}
         <View
           style={[
@@ -456,5 +484,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     flex: 1,
+  },
+  viewerBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+    gap: 10,
+  },
+  viewerBannerIcon: {
+    fontSize: 20,
+  },
+  viewerBannerText: {
+    flex: 1,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 15,
   },
 });

@@ -52,11 +52,28 @@ export function evaluateOperatorTelemetry(raw, dataMode = 'LIVE') {
 
   const ageMs = Date.now() - new Date(raw.created_at).getTime();
   const isLive = ageMs >= 0 && ageMs < HARDWARE_TIMEOUT_MS;
+  const isCommFailure = ageMs > 30 * 1000; // >30s indicates edge communication failure
+
+  // Sensor Anomaly / Tampering Check (Unphysical spike detection)
+  const rateOfRise = typeof raw.rate_of_rise === 'number' ? raw.rate_of_rise : 0;
+  const waterLevel = typeof raw.water_level === 'number' ? raw.water_level : 0;
+  const rainfall = typeof raw.rainfall === 'number' ? raw.rainfall : 0;
+  const isAnomaly = rateOfRise > 4.5 || (waterLevel > 92 && rainfall <= 0 && rateOfRise > 1.5);
+
+  // Power Security Check
+  const isMainsPowerLost = raw.power_source === 'BATTERY_BACKUP' || (typeof raw.battery_voltage === 'number' && raw.battery_voltage < 12.1);
 
   return {
     status: isLive ? 'ONLINE' : 'OFFLINE',
     isLive,
     isOffline: !isLive,
+    isCommFailure,
+    offlineSafetyMode: isCommFailure,
+    sensorAnomaly: isAnomaly,
+    sensorAnomalyMessage: isAnomaly
+      ? 'Unphysical rate-of-rise detected (>4.5%/min). Possible transducer tampering or physical obstruction.'
+      : null,
+    isMainsPowerLost,
     isSimulation: false,
     lastUpdated: raw.created_at,
     ageMs,

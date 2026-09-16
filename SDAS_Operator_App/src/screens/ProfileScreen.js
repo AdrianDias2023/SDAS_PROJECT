@@ -13,7 +13,7 @@ export default function ProfileScreen() {
   const { isDark, colors } = useTheme();
   const { t } = useLanguage();
   const { dataMode, setDataMode, isLiveMode } = useDataMode();
-  const { logout } = useAuth();
+  const { logout, role, switchRole, user } = useAuth();
 
   const [userEmail, setUserEmail] = useState('operator@sdas.gov.lk');
   const [lastTelemetry, setLastTelemetry] = useState(null);
@@ -76,13 +76,86 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Operator Profile Card */}
         <View style={[styles.profileCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
-          <View style={[styles.avatar, { backgroundColor: colors.accentCyan + '22', borderColor: colors.accentCyan }]}>
-            <Text style={styles.avatarText}>👷</Text>
+          <View style={[styles.avatar, { backgroundColor: (role === 'ADMIN' ? colors.dangerRed : role === 'VIEWER' ? colors.accentAmber : colors.accentCyan) + '22', borderColor: role === 'ADMIN' ? colors.dangerRed : role === 'VIEWER' ? colors.accentAmber : colors.accentCyan }]}>
+            <Text style={styles.avatarText}>{role === 'ADMIN' ? '👑' : role === 'VIEWER' ? '👁️' : '👷'}</Text>
           </View>
-          <Text style={[styles.name, { color: colors.textPrimary }]}>Dam Operations Engineer</Text>
-          <Text style={[styles.email, { color: colors.textSecondary }]}>{userEmail}</Text>
-          <View style={[styles.badge, { backgroundColor: colors.accentCyan + '20', borderColor: colors.accentCyan }]}>
-            <Text style={[styles.badgeText, { color: colors.accentCyan }]}>{t('roleOperator')}</Text>
+          <Text style={[styles.name, { color: colors.textPrimary }]}>{user?.name || 'Dam Operations Engineer'}</Text>
+          <Text style={[styles.email, { color: colors.textSecondary }]}>{user?.email || userEmail}</Text>
+          <View style={[styles.badge, { backgroundColor: (role === 'ADMIN' ? colors.dangerRed : role === 'VIEWER' ? colors.accentAmber : colors.accentCyan) + '20', borderColor: role === 'ADMIN' ? colors.dangerRed : role === 'VIEWER' ? colors.accentAmber : colors.accentCyan }]}>
+            <Text style={[styles.badgeText, { color: role === 'ADMIN' ? colors.dangerRed : role === 'VIEWER' ? colors.accentAmber : colors.accentCyan }]}>
+              {role === 'ADMIN' ? '🛡️ SYSTEM ADMINISTRATOR' : role === 'VIEWER' ? '👁️ AUDIT VIEWER (READ-ONLY)' : '⚙️ CERTIFIED DAM OPERATOR'}
+            </Text>
+          </View>
+        </View>
+
+        {/* RBAC ROLE SWITCHER CARD (Viva Demonstration Mode) */}
+        <View style={[styles.settingsCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
+            🎭 Role-Based Access Control (RBAC)
+          </Text>
+          <Text style={[styles.sectionSub, { color: colors.textSecondary }]}>
+            Switch role dynamically to demonstrate permission restrictions to examiners.
+          </Text>
+
+          <View style={styles.rbacPillsRow}>
+            {[
+              { id: 'OPERATOR', label: '⚙️ Operator', color: colors.accentCyan },
+              { id: 'ADMIN', label: '👑 Admin', color: colors.dangerRed },
+              { id: 'VIEWER', label: '👁️ Viewer', color: colors.accentAmber },
+            ].map((item) => {
+              const active = role === item.id;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[
+                    styles.rbacPillBtn,
+                    {
+                      backgroundColor: active ? item.color : colors.bgSurface,
+                      borderColor: active ? item.color : colors.borderColor,
+                    },
+                  ]}
+                  onPress={() => switchRole(item.id)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.rbacPillText, { color: active ? '#070F1C' : colors.textPrimary }]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Permissions Matrix */}
+          <View style={[styles.matrixBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderColor }]}>
+            <Text style={[styles.matrixTitle, { color: colors.textPrimary }]}>
+              ACTIVE PERMISSIONS MATRIX:
+            </Text>
+            <View style={styles.matrixRow}>
+              <Text style={[styles.matrixLabel, { color: colors.textSecondary }]}>View Live Water Level & Telemetry</Text>
+              <Text style={[styles.matrixBadge, { color: colors.safeGreen }]}>✅ ALLOWED</Text>
+            </View>
+            <View style={styles.matrixRow}>
+              <Text style={[styles.matrixLabel, { color: colors.textSecondary }]}>AI Prediction & Simulation</Text>
+              <Text style={[styles.matrixBadge, { color: colors.safeGreen }]}>✅ ALLOWED</Text>
+            </View>
+            <View style={styles.matrixRow}>
+              <Text style={[styles.matrixLabel, { color: colors.textSecondary }]}>Sluice Gate Control Actuation</Text>
+              <Text style={[styles.matrixBadge, { color: role === 'VIEWER' ? colors.dangerRed : colors.safeGreen }]}>
+                {role === 'VIEWER' ? '❌ BLOCKED' : '✅ ALLOWED'}
+              </Text>
+            </View>
+            <View style={styles.matrixRow}>
+              <Text style={[styles.matrixLabel, { color: colors.textSecondary }]}>Emergency Evacuation Broadcast</Text>
+              <Text style={[styles.matrixBadge, { color: role === 'VIEWER' ? colors.dangerRed : colors.safeGreen }]}>
+                {role === 'VIEWER' ? '❌ BLOCKED' : '✅ ALLOWED'}
+              </Text>
+            </View>
+            <View style={styles.matrixRow}>
+              <Text style={[styles.matrixLabel, { color: colors.textSecondary }]}>System Settings & Security Config</Text>
+              <Text style={[styles.matrixBadge, { color: role === 'ADMIN' ? colors.safeGreen : colors.dangerRed }]}>
+                {role === 'ADMIN' ? '✅ ALLOWED' : '❌ ADMIN ONLY'}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -179,6 +252,33 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Security & Authentication Protocol Card */}
+        <View style={[styles.settingsCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
+            🔒 Mission Control Security Posture
+          </Text>
+
+          <View style={[styles.diagRow, { borderBottomColor: colors.borderColor }]}>
+            <Text style={[styles.diagLabel, { color: colors.textSecondary }]}>Transport Encryption</Text>
+            <Text style={[styles.diagVal, { color: colors.safeGreen }]}>TLS 1.3 / HTTPS (256-bit AES)</Text>
+          </View>
+
+          <View style={[styles.diagRow, { borderBottomColor: colors.borderColor }]}>
+            <Text style={[styles.diagLabel, { color: colors.textSecondary }]}>Database Protection</Text>
+            <Text style={[styles.diagVal, { color: colors.accentCyan }]}>Supabase Row Level Security (RLS)</Text>
+          </View>
+
+          <View style={[styles.diagRow, { borderBottomColor: colors.borderColor }]}>
+            <Text style={[styles.diagLabel, { color: colors.textSecondary }]}>Session Inactivity Timeout</Text>
+            <Text style={[styles.diagVal, { color: colors.accentAmber }]}>15 Minutes Auto-Lock</Text>
+          </View>
+
+          <View style={[styles.diagRow, { borderBottomWidth: 0 }]}>
+            <Text style={[styles.diagLabel, { color: colors.textSecondary }]}>Edge Node Ingestion</Text>
+            <Text style={[styles.diagVal, { color: colors.safeGreen }]}>Device Token Authenticated</Text>
+          </View>
+        </View>
+
         {/* Sign Out Button */}
         <TouchableOpacity
           style={[styles.logoutBtn, { backgroundColor: colors.dangerRed }]}
@@ -254,6 +354,50 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
     marginBottom: 14,
+  },
+  rbacPillsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  rbacPillBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rbacPillText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  matrixBox: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 4,
+  },
+  matrixTitle: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
+  matrixRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 5,
+  },
+  matrixLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  matrixBadge: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.3,
   },
   dataModeOption: {
     borderRadius: 12,

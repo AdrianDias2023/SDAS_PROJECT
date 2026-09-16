@@ -117,6 +117,40 @@ export default function DashboardScreen({ navigation }) {
         }
         showsVerticalScrollIndicator={false}
       >
+        {/* Sensor Attack / Anomaly Security Alert */}
+        {telemetry?.sensorAnomaly && (
+          <View style={[styles.securityAlertCard, { backgroundColor: '#7F1D1D', borderColor: colors.dangerRed }]}>
+            <View style={styles.securityAlertHeader}>
+              <Text style={styles.securityAlertIcon}>🚨</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.securityAlertTitle}>
+                  SENSOR ATTACK / ANOMALY DETECTED
+                </Text>
+                <Text style={styles.securityAlertSub}>
+                  {telemetry.sensorAnomalyMessage || 'Unphysical transducer variance detected. AI validation flags potential tampering or obstruction.'}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Communication Failure / Offline Safety Mode */}
+        {telemetry?.offlineSafetyMode && !isSimulation && (
+          <View style={[styles.offlineSafetyCard, { backgroundColor: '#431407', borderColor: colors.warningOrange }]}>
+            <View style={styles.securityAlertHeader}>
+              <Text style={styles.securityAlertIcon}>⚠️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.securityAlertTitle, { color: colors.warningOrange }]}>
+                  COMMUNICATION FAILURE: OFFLINE SAFETY MODE
+                </Text>
+                <Text style={[styles.securityAlertSub, { color: '#FED7AA' }]}>
+                  Telemetry sync >30s delayed. Edge station operating under autonomous local hydraulic safety rules.
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Mode Switcher Card */}
         <TouchableOpacity
           style={[
@@ -434,25 +468,42 @@ export default function DashboardScreen({ navigation }) {
             <Text style={[styles.powerTitle, { color: colors.textPrimary }]}>
               ⚡ Power & Battery Subsystem
             </Text>
-            <View style={[styles.powerPill, { backgroundColor: '#10B98120', borderColor: '#10B981' }]}>
-              <Text style={[styles.powerPillText, { color: '#10B981' }]}>GRID STABLE</Text>
+            <View style={[styles.powerPill, {
+              backgroundColor: telemetry?.isMainsPowerLost ? '#F59E0B20' : '#10B98120',
+              borderColor: telemetry?.isMainsPowerLost ? colors.accentAmber : '#10B981',
+            }]}>
+              <Text style={[styles.powerPillText, { color: telemetry?.isMainsPowerLost ? colors.accentAmber : '#10B981' }]}>
+                {telemetry?.isMainsPowerLost ? '⚡ RUNNING ON BATTERY' : 'GRID STABLE'}
+              </Text>
             </View>
           </View>
+
+          {telemetry?.isMainsPowerLost && (
+            <View style={styles.powerFailureWarning}>
+              <Text style={styles.powerFailureText}>
+                ⚠️ 230V AC Mains power interrupted. System has failed over seamlessly to 12.6V AGM backup battery.
+              </Text>
+            </View>
+          )}
 
           <View style={styles.powerGrid}>
             <View style={styles.powerItem}>
               <Text style={[styles.powerLabel, { color: colors.textMuted }]}>MAIN GRID SUPPLY</Text>
-              <Text style={[styles.powerVal, { color: colors.safeGreen }]}>🟢 230V AC Connected</Text>
+              <Text style={[styles.powerVal, { color: telemetry?.isMainsPowerLost ? colors.dangerRed : colors.safeGreen }]}>
+                {telemetry?.isMainsPowerLost ? '🔴 230V AC Interrupted' : '🟢 230V AC Connected'}
+              </Text>
             </View>
             <View style={styles.powerItem}>
               <Text style={[styles.powerLabel, { color: colors.textMuted }]}>BACKUP BATTERY</Text>
-              <Text style={[styles.powerVal, { color: colors.accentCyan }]}>87% (12.6V DC)</Text>
+              <Text style={[styles.powerVal, { color: colors.accentCyan }]}>
+                {telemetry?.isMainsPowerLost ? '🟡 87% Discharging' : '87% (12.6V DC)'}
+              </Text>
             </View>
           </View>
 
           <View style={[styles.powerFooter, { backgroundColor: colors.bgSurface }]}>
             <Text style={[styles.powerFooterText, { color: colors.textSecondary }]}>
-              ⏱️ Est. Runtime Autonomy: <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>4.8 Hours</Text> • Charge: Float (0.8A)
+              ⏱️ Est. Runtime Autonomy: <Text style={{ color: colors.textPrimary, fontWeight: '800' }}>4.8 Hours</Text> • State: {telemetry?.isMainsPowerLost ? 'Active Discharge' : 'Float (0.8A)'}
             </Text>
           </View>
         </View>
@@ -892,5 +943,48 @@ const styles = StyleSheet.create({
   },
   powerFooterText: {
     fontSize: 11,
+  },
+  securityAlertCard: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    padding: 12,
+    marginBottom: 10,
+  },
+  offlineSafetyCard: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    padding: 12,
+    marginBottom: 10,
+  },
+  securityAlertHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  securityAlertIcon: {
+    fontSize: 24,
+  },
+  securityAlertTitle: {
+    color: '#F87171',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  securityAlertSub: {
+    color: '#FCA5A5',
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  powerFailureWarning: {
+    backgroundColor: '#78350F40',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 10,
+  },
+  powerFailureText: {
+    color: '#FCD34D',
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

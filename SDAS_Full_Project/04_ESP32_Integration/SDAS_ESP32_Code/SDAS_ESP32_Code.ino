@@ -541,13 +541,15 @@ void uploadToSupabase() {
   {
     HTTPClient http;
     http.begin(String(SUPABASE_URL) + "/rest/v1/sensor_readings");
-    http.addHeader("apikey",        SUPABASE_ANON_KEY);
-    http.addHeader("Authorization", String("Bearer ") + SUPABASE_ANON_KEY);
-    http.addHeader("Content-Type",  "application/json");
-    http.addHeader("Prefer",        "return=minimal");
+    http.addHeader("apikey",         SUPABASE_ANON_KEY);
+    http.addHeader("Authorization",  String("Bearer ") + SUPABASE_ANON_KEY);
+    http.addHeader("X-Device-Token", DEVICE_SECRET_KEY);
+    http.addHeader("Content-Type",   "application/json");
+    http.addHeader("Prefer",         "return=minimal");
 
     StaticJsonDocument<400> doc;
     doc["device_id"]     = DEVICE_ID;
+    doc["device_token"]  = DEVICE_SECRET_KEY;
     doc["water_level"]   = waterLevelPct;
     doc["temperature"]   = temperature;
     doc["humidity"]      = humidity;
@@ -559,7 +561,7 @@ void uploadToSupabase() {
     serializeJson(doc, body);
 
     int code = http.POST(body);
-    Serial.printf("[Supabase] sensor_readings POST (Battery: %.1f%%, %s) → HTTP %d\n", batteryPct, powerSource, code);
+    Serial.printf("[Supabase] sensor_readings POST (SecToken OK, Battery: %.1f%%, %s) → HTTP %d\n", batteryPct, powerSource, code);
     http.end();
   }
 

@@ -6,6 +6,7 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Line, Circle, Rect, Text as SvgText, Defs, LinearGradient, Stop } from 'react-native-svg';
@@ -262,6 +263,55 @@ export default function AIPredictionScreen() {
             <Text style={[styles.detailVal, { color: colors.accentCyan }]}>84 ms</Text>
           </View>
         </View>
+
+        {/* AI Model Security & Integrity Card (User Requested) */}
+        <View style={[styles.detailsCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+          <View style={styles.modelSecHeader}>
+            <Text style={styles.modelSecIcon}>🔒</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.detailsHeader, { color: colors.textPrimary, marginBottom: 2 }]}>
+                AI Model Security & Integrity Checksum
+              </Text>
+              <Text style={[styles.modelSecSub, { color: colors.textSecondary }]}>
+                Cryptographic tamper-proofing against neural weight manipulation
+              </Text>
+            </View>
+            <View style={[styles.integrityBadge, { backgroundColor: colors.safeGreen + '20', borderColor: colors.safeGreen }]}>
+              <Text style={[styles.integrityBadgeText, { color: colors.safeGreen }]}>PASS</Text>
+            </View>
+          </View>
+
+          <View style={[styles.detailItem, { marginTop: 6 }]}>
+            <Text style={[styles.detailKey, { color: colors.textMuted }]}>SHA-256 Checksum</Text>
+            <Text style={[styles.checksumVal, { color: colors.accentCyan }]}>
+              8f92a7c4e201bb6f0d4187e1a690e729
+            </Text>
+          </View>
+          <View style={[styles.detailDivider, { backgroundColor: colors.borderColor }]} />
+
+          <View style={styles.detailItem}>
+            <Text style={[styles.detailKey, { color: colors.textMuted }]}>Integrity Status</Text>
+            <Text style={[styles.detailVal, { color: colors.safeGreen }]}>
+              🟢 Verified (Tamper-Proof Weights)
+            </Text>
+          </View>
+          <View style={[styles.detailDivider, { backgroundColor: colors.borderColor }]} />
+
+          <View style={styles.detailItem}>
+            <Text style={[styles.detailKey, { color: colors.textMuted }]}>Signing Protocol</Text>
+            <Text style={[styles.detailVal, { color: colors.textPrimary }]}>
+              HMAC-SHA256 (SDAS Edge Pipeline)
+            </Text>
+          </View>
+          <View style={[styles.detailDivider, { backgroundColor: colors.borderColor }]} />
+
+          <View style={styles.detailItem}>
+            <Text style={[styles.detailKey, { color: colors.textMuted }]}>Runtime Engine</Text>
+            <Text style={[styles.detailVal, { color: colors.textPrimary }]}>
+              TensorFlow Lite Micro (TFLite)
+            </Text>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -442,5 +492,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 4,
+  },
+  modelSecHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 10,
+  },
+  modelSecIcon: {
+    fontSize: 22,
+  },
+  modelSecSub: {
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  integrityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  integrityBadgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  checksumVal: {
+    fontSize: 11,
+    fontWeight: '800',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
 });

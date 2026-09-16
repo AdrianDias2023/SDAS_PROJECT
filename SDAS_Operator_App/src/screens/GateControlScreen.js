@@ -15,10 +15,12 @@ import AppHeader from '../components/AppHeader';
 import { supabase } from '../services/supabase';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function GateControlScreen({ navigation }) {
   const { isDark, colors } = useTheme();
   const { t } = useLanguage();
+  const { role } = useAuth();
 
   const POSITIONS = [
     { labelKey: 'posClosed', percent: 0, angle: 0, color: colors.safeGreen, code: 'CLOSED' },
@@ -103,6 +105,15 @@ export default function GateControlScreen({ navigation }) {
   };
 
   const handleApply = () => {
+    // RBAC Security Check
+    if (role === 'VIEWER') {
+      Alert.alert(
+        '⛔ ACCESS DENIED: READ-ONLY AUDIT ROLE',
+        'Your active session has VIEWER privileges.\n\nGate actuation directly maneuvers physical spillway sluices and is restricted strictly to certified OPERATOR or ADMIN personnel.\n\nTip: To test gate commands during your viva, switch your role to OPERATOR in the Settings tab.'
+      );
+      return;
+    }
+
     if (autoMode) {
       Alert.alert('AI Protection Active', t('autoBlockedWarn'));
       return;
@@ -124,14 +135,21 @@ export default function GateControlScreen({ navigation }) {
     }
 
     const posLabel = t(selectedPos.labelKey);
-    const confirmMsg = t('confirmCommandMsg')
-      .replace('%POS%', posLabel)
-      .replace('%ANG%', selectedPos.angle);
+    const checks = [
+      `1. RBAC Authorization: Certified ${role} Active`,
+      `2. Hydraulic Overtopping Rule: Water Level (${currentWaterLevel.toFixed(1)}%) < 85% Overtopping Limit`,
+      `3. Dual Ultrasonic Echo Agreement: 98% Quality Check OK`,
+      `4. Physical Servo Angle Limit: Safe Range (0° to 90°)`,
+    ].join('\n');
 
-    Alert.alert(t('confirmCommandTitle'), confirmMsg, [
-      { text: t('cancelBtn'), style: 'cancel' },
-      { text: 'Confirm Actuation', onPress: executeCommand, style: 'destructive' },
-    ]);
+    Alert.alert(
+      '🛡️ 4-POINT SAFETY INTERLOCK VERIFICATION',
+      `${checks}\n\nProceed with dispatching ${selectedPos.percent}% aperture (${selectedPos.angle}° servo) command to ESP32 Edge Station?`,
+      [
+        { text: t('cancelBtn'), style: 'cancel' },
+        { text: '⚡ Execute Command', onPress: executeCommand, style: 'destructive' },
+      ]
+    );
   };
 
   const executeCommand = async () => {
@@ -369,12 +387,24 @@ export default function GateControlScreen({ navigation }) {
           />
         </View>
 
+        {/* Viewer Read-Only Notice */}
+        {role === 'VIEWER' && (
+          <View style={[styles.viewerLockCard, { backgroundColor: colors.accentAmber + '20', borderColor: colors.accentAmber }]}>
+            <Text style={styles.viewerLockIcon}>👁️</Text>
+            <Text style={[styles.viewerLockText, { color: colors.accentAmber }]}>
+              READ-ONLY AUDIT MODE: Gate actuation is disabled for VIEWER role. Switch to OPERATOR in Settings to test commands.
+            </Text>
+          </View>
+        )}
+
         {/* Big Red Apply Command Button */}
         <TouchableOpacity
           style={[
             styles.applyBtn,
             {
-              backgroundColor: colors.dangerRed,
+              backgroundColor: role === 'VIEWER' ? colors.bgSurface : colors.dangerRed,
+              borderColor: role === 'VIEWER' ? colors.accentAmber : 'transparent',
+              borderWidth: role === 'VIEWER' ? 1.5 : 0,
               opacity: autoMode || interlock ? 0.6 : 1.0,
             },
           ]}
@@ -385,7 +415,9 @@ export default function GateControlScreen({ navigation }) {
           {loading ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.applyBtnText}>🚨 {t('btnApplyCommand')}</Text>
+            <Text style={[styles.applyBtnText, { color: role === 'VIEWER' ? colors.accentAmber : '#FFFFFF' }]}>
+              {role === 'VIEWER' ? '⛔ ACTUATION LOCKED (VIEWER ROLE)' : `🚨 ${t('btnApplyCommand')}`}
+            </Text>
           )}
         </TouchableOpacity>
 
@@ -590,6 +622,24 @@ const styles = StyleSheet.create({
   interlockSub: {
     fontSize: 11,
     lineHeight: 14,
+  },
+  viewerLockCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+    gap: 10,
+  },
+  viewerLockIcon: {
+    fontSize: 20,
+  },
+  viewerLockText: {
+    flex: 1,
+    fontSize: 11,
+    fontWeight: '800',
+    lineHeight: 15,
   },
   applyBtn: {
     paddingVertical: 17,

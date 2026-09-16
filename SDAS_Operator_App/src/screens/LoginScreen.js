@@ -113,17 +113,36 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Quick Demo Pre-fill & Demo Bypass */}
+            {/* Quick Demo Pre-fill & Role Evaluation Bypass */}
             <View style={[styles.demoSection, { borderTopColor: colors.borderColor }]}>
-              <TouchableOpacity
-                style={[styles.demoBypassBtn, { backgroundColor: colors.safeGreen }]}
-                onPress={loginWithDemo}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.demoBypassBtnText}>
-                  ⚡ Instant Demo Evaluation Access
-                </Text>
-              </TouchableOpacity>
+              <Text style={[styles.demoSectionLabel, { color: colors.textSecondary }]}>
+                QUICK VIVA EVALUATION ACCESS:
+              </Text>
+              <View style={styles.roleDemoRow}>
+                <TouchableOpacity
+                  style={[styles.roleDemoBtn, { backgroundColor: colors.safeGreen }]}
+                  onPress={() => loginWithDemo('OPERATOR')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.roleDemoBtnText}>⚙️ Operator</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.roleDemoBtn, { backgroundColor: colors.accentCyan }]}
+                  onPress={() => loginWithDemo('ADMIN')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.roleDemoBtnText, { color: '#070F1C' }]}>👑 Admin</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.roleDemoBtn, { backgroundColor: colors.accentAmber }]}
+                  onPress={() => loginWithDemo('VIEWER')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.roleDemoBtnText, { color: '#070F1C' }]}>👁️ Viewer</Text>
+                </TouchableOpacity>
+              </View>
 
               <TouchableOpacity onPress={handleFillDemo} style={styles.prefillLink}>
                 <Text style={[styles.prefillLinkText, { color: colors.accentCyan }]}>
@@ -231,16 +250,28 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     alignItems: 'center',
   },
-  demoBypassBtn: {
-    width: '100%',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 10,
+  demoSectionLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
-  demoBypassBtnText: {
+  roleDemoRow: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+    marginBottom: 12,
+  },
+  roleDemoBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roleDemoBtnText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '800',
   },
   prefillLink: {
