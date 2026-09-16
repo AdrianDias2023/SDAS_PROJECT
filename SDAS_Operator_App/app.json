@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SDAS Operator",
-    "slug": "sdas-operator-app",
+    "slug": "sdasproject-zr6vv0llrfqn9kmlbt",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,13 +11,19 @@
       "backgroundColor": "#070F1C"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.adrian2002.sdas.operator"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#070F1C"
-      }
-    }
+      },
+      "package": "com.adrian2002.sdas.operator"
+    },
+    "extra": {
+      "eas": { "projectId": "a1c9f4ed-373b-45e9-bd96-cdfc7b6ba1c5" }
+    },
+    "owner": "adrian_2002"
   }
 }
