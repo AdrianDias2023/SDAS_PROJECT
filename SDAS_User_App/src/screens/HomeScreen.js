@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../components/AppHeader';
 import DemoModeBanner from '../components/DemoModeBanner';
 import StatusGauge from '../components/StatusGauge';
-import { resolveReading, DEMO_READING } from '../services/demoData';
+import { evaluateHardwareStatus, formatRelativeTime, formatTimestamp } from '../services/demoData';
 import { supabase } from '../services/supabase';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -23,7 +23,7 @@ export default function HomeScreen({ navigation }) {
   const { isDark, colors } = useTheme();
   const { t } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
-  const [readingState, setReadingState] = useState(resolveReading(null));
+  const [hwStatus, setHwStatus] = useState(evaluateHardwareStatus(null));
 
   const fetchReading = useCallback(async () => {
     try {
@@ -35,12 +35,12 @@ export default function HomeScreen({ navigation }) {
         .maybeSingle();
 
       if (!error && data) {
-        setReadingState(resolveReading(data));
+        setHwStatus(evaluateHardwareStatus(data));
       } else {
-        setReadingState(resolveReading(null));
+        setHwStatus(evaluateHardwareStatus(null));
       }
     } catch (e) {
-      setReadingState(resolveReading(null));
+      setHwStatus(evaluateHardwareStatus(null));
     } finally {
       setRefreshing(false);
     }
@@ -57,7 +57,7 @@ export default function HomeScreen({ navigation }) {
         { event: 'INSERT', schema: 'public', table: 'sensor_readings' },
         (payload) => {
           if (payload.new) {
-            setReadingState(resolveReading(payload.new));
+            setHwStatus(evaluateHardwareStatus(payload.new));
           }
         }
       )
@@ -73,40 +73,45 @@ export default function HomeScreen({ navigation }) {
     fetchReading();
   };
 
-  const { data: reading, isDemo } = readingState;
-  const waterLevel = typeof reading.water_level === 'number' ? reading.water_level : 72.5;
-  const temp = reading.temperature || 31.4;
-  const humidity = reading.humidity || 78.2;
-  const rainfall = reading.rainfall || 12.6;
-  const isRapidSurge = reading.rate_of_rise && reading.rate_of_rise >= 0.30;
+  const { data: reading, isLive, isOffline, lastUpdated, status } = hwStatus;
 
-  // Determine current tier
+  // Real sensor readings — never fake values
+  const hasData = !!reading;
+  const waterLevel = hasData && typeof reading.water_level === 'number' ? reading.water_level : 0;
+  const temp = hasData && reading.temperature !== undefined ? reading.temperature : '--';
+  const humidity = hasData && reading.humidity !== undefined ? reading.humidity : '--';
+  const rainfall = hasData && reading.rainfall !== undefined ? reading.rainfall : '--';
+  const isRapidSurge = hasData && reading.rate_of_rise && reading.rate_of_rise >= 0.30;
+
+  // Determine alert tier
   let tierKey = 'statusNormal';
   let descKey = 'descNormal';
   let tierColor = colors.safeGreen;
 
-  if (waterLevel >= 85) {
-    tierKey = 'statusDanger';
-    descKey = 'descDanger';
-    tierColor = colors.dangerRed;
-  } else if (waterLevel >= 70) {
-    if (isRapidSurge) {
-      tierKey = 'statusWarning';
-      descKey = 'descWarning';
-      tierColor = colors.warningOrange;
-    } else {
-      tierKey = 'statusPreWarning';
-      descKey = 'descPreWarning';
-      tierColor = colors.accentAmber;
+  if (hasData) {
+    if (waterLevel >= 85) {
+      tierKey = 'statusDanger';
+      descKey = 'descDanger';
+      tierColor = colors.dangerRed;
+    } else if (waterLevel >= 70) {
+      if (isRapidSurge) {
+        tierKey = 'statusWarning';
+        descKey = 'descWarning';
+        tierColor = colors.warningOrange;
+      } else {
+        tierKey = 'statusPreWarning';
+        descKey = 'descPreWarning';
+        tierColor = colors.accentAmber;
+      }
     }
   }
 
-  const capacityRemaining = Math.max(0, 100 - waterLevel).toFixed(1);
+  const capacityRemaining = hasData ? Math.max(0, 100 - waterLevel).toFixed(1) : '--';
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgPrimary }]} edges={['top']}>
       <AppHeader />
-      <DemoModeBanner isDemo={isDemo} />
+      <DemoModeBanner hardwareStatus={hwStatus} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -131,60 +136,103 @@ export default function HomeScreen({ navigation }) {
             },
           ]}
         >
-          <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-            {t('waterLevelTitle')}
-          </Text>
-
-          <StatusGauge percentage={waterLevel} size={width > 380 ? 250 : 210} isRapidSurge={isRapidSurge} />
-
-          <View style={[styles.storageRow, { backgroundColor: colors.bgSurface }]}>
-            <Text style={[styles.storageLabel, { color: colors.textSecondary }]}>
-              {t('safeStorageAvail')}:
+          {/* Header Row inside Card */}
+          <View style={styles.gaugeHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+              {t('waterLevelTitle')}
             </Text>
-            <Text style={[styles.storageValue, { color: colors.accentCyan }]}>
-              {capacityRemaining}%
-            </Text>
+            {isOffline && hasData ? (
+              <View style={[styles.offlinePill, { backgroundColor: colors.warningOrange + '22', borderColor: colors.warningOrange }]}>
+                <Text style={[styles.offlinePillText, { color: colors.warningOrange }]}>CACHED</Text>
+              </View>
+            ) : isLive ? (
+              <View style={[styles.offlinePill, { backgroundColor: colors.safeGreen + '22', borderColor: colors.safeGreen }]}>
+                <Text style={[styles.offlinePillText, { color: colors.safeGreen }]}>LIVE</Text>
+              </View>
+            ) : null}
           </View>
+
+          {hasData ? (
+            <>
+              <StatusGauge percentage={waterLevel} size={width > 380 ? 250 : 210} isRapidSurge={isRapidSurge} />
+
+              <View style={[styles.storageRow, { backgroundColor: colors.bgSurface }]}>
+                <Text style={[styles.storageLabel, { color: colors.textSecondary }]}>
+                  {t('safeStorageAvail')}:
+                </Text>
+                <Text style={[styles.storageValue, { color: colors.accentCyan }]}>
+                  {capacityRemaining}%
+                </Text>
+              </View>
+
+              <Text style={[styles.lastSyncCaption, { color: colors.textMuted }]}>
+                Last sync: {formatTimestamp(lastUpdated)} ({formatRelativeTime(lastUpdated)})
+              </Text>
+            </>
+          ) : (
+            <View style={styles.noDataBox}>
+              <Text style={styles.noDataIcon}>📡</Text>
+              <Text style={[styles.noDataTitle, { color: colors.textPrimary }]}>
+                Awaiting Initial Telemetry
+              </Text>
+              <Text style={[styles.noDataSub, { color: colors.textSecondary }]}>
+                Power on the ESP32 edge station at Tabbowa Dam to begin streaming real-time sensor readings.
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Current Status Advisory Card */}
-        <View
-          style={[
-            styles.statusCard,
-            {
-              backgroundColor: tierColor + (isDark ? '1A' : '15'),
-              borderColor: tierColor,
-            },
-          ]}
-        >
-          <View style={styles.statusHeaderRow}>
-            <View style={[styles.statusIndicatorDot, { backgroundColor: tierColor }]} />
-            <Text style={[styles.statusTierLabel, { color: tierColor }]}>
-              {t(tierKey)}
+        {hasData && (
+          <View
+            style={[
+              styles.statusCard,
+              {
+                backgroundColor: tierColor + (isDark ? '1A' : '15'),
+                borderColor: tierColor,
+              },
+            ]}
+          >
+            <View style={styles.statusHeaderRow}>
+              <View style={[styles.statusIndicatorDot, { backgroundColor: tierColor }]} />
+              <Text style={[styles.statusTierLabel, { color: tierColor }]}>
+                {t(tierKey)}
+              </Text>
+              {isOffline && (
+                <Text style={[styles.statusOfflineNotice, { color: colors.textMuted }]}>
+                  (Based on last recorded reading)
+                </Text>
+              )}
+            </View>
+            <Text style={[styles.statusDescription, { color: colors.textPrimary }]}>
+              {t(descKey)}
             </Text>
           </View>
-          <Text style={[styles.statusDescription, { color: colors.textPrimary }]}>
-            {t(descKey)}
-          </Text>
-        </View>
+        )}
 
         {/* Metrics Grid Row */}
         <View style={styles.metricsRow}>
           <View style={[styles.metricTile, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
             <Text style={styles.metricIcon}>🌡️</Text>
-            <Text style={[styles.metricVal, { color: colors.textPrimary }]}>{temp}°C</Text>
+            <Text style={[styles.metricVal, { color: colors.textPrimary }]}>
+              {typeof temp === 'number' ? `${temp}°C` : temp}
+            </Text>
             <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{t('metricTemp')}</Text>
           </View>
 
           <View style={[styles.metricTile, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
             <Text style={styles.metricIcon}>💧</Text>
-            <Text style={[styles.metricVal, { color: colors.textPrimary }]}>{humidity}%</Text>
+            <Text style={[styles.metricVal, { color: colors.textPrimary }]}>
+              {typeof humidity === 'number' ? `${humidity}%` : humidity}
+            </Text>
             <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{t('metricHumidity')}</Text>
           </View>
 
           <View style={[styles.metricTile, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
             <Text style={styles.metricIcon}>🌧️</Text>
-            <Text style={[styles.metricVal, { color: colors.textPrimary }]}>{rainfall}mm</Text>
+            <Text style={[styles.metricVal, { color: colors.textPrimary }]}>
+              {typeof rainfall === 'number' ? `${rainfall}mm` : rainfall}
+            </Text>
             <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{t('metricRain')}</Text>
           </View>
         </View>
@@ -240,7 +288,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* SMS Registration Banner Promo */}
+        {/* SMS Registration Promo Card */}
         <TouchableOpacity
           style={[styles.smsPromoCard, { backgroundColor: isDark ? '#0C2A4D' : '#E0F2FE', borderColor: colors.accentCyan }]}
           onPress={() => navigation.navigate('MoreStack', { screen: 'SMSRegister' })}
@@ -283,12 +331,28 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
   },
+  gaugeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 8,
+  },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
-    marginBottom: 8,
+  },
+  offlinePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  offlinePillText: {
+    fontSize: 10,
+    fontWeight: '800',
   },
   storageRow: {
     flexDirection: 'row',
@@ -296,7 +360,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 12,
-    marginTop: 10,
+    marginTop: 8,
   },
   storageLabel: {
     fontSize: 12,
@@ -306,6 +370,30 @@ const styles = StyleSheet.create({
   storageValue: {
     fontSize: 14,
     fontWeight: '800',
+  },
+  lastSyncCaption: {
+    fontSize: 11,
+    marginTop: 8,
+    fontWeight: '500',
+  },
+  noDataBox: {
+    paddingVertical: 30,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  noDataIcon: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  noDataTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  noDataSub: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 17,
   },
   statusCard: {
     borderRadius: 14,
@@ -328,6 +416,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  statusOfflineNotice: {
+    fontSize: 10,
+    marginLeft: 8,
+    fontStyle: 'italic',
   },
   statusDescription: {
     fontSize: 13,

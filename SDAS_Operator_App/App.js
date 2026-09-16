@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { LanguageProvider, useLanguage } from './src/context/LanguageContext';
+import { DataModeProvider } from './src/context/DataModeContext';
 import { supabase } from './src/services/supabase';
 
 import LoginScreen from './src/screens/LoginScreen';
@@ -179,7 +180,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <AppContent />
+        <DataModeProvider>
+          <AppContent />
+        </DataModeProvider>
       </LanguageProvider>
     </ThemeProvider>
   );

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../components/AppHeader';
 import AlertCard from '../components/AlertCard';
 import { supabase } from '../services/supabase';
-import { resolveReading } from '../services/demoData';
+import { evaluateHardwareStatus, formatTimestamp, formatRelativeTime } from '../services/demoData';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -12,7 +12,7 @@ export default function AlertsScreen() {
   const { isDark, colors } = useTheme();
   const { t } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
-  const [reading, setReading] = useState(resolveReading(null).data);
+  const [hwStatus, setHwStatus] = useState(evaluateHardwareStatus(null));
 
   const fetchReading = useCallback(async () => {
     try {
@@ -24,10 +24,12 @@ export default function AlertsScreen() {
         .maybeSingle();
 
       if (data) {
-        setReading(resolveReading(data).data);
+        setHwStatus(evaluateHardwareStatus(data));
+      } else {
+        setHwStatus(evaluateHardwareStatus(null));
       }
     } catch (e) {
-      // keep fallback
+      setHwStatus(evaluateHardwareStatus(null));
     } finally {
       setRefreshing(false);
     }
@@ -37,13 +39,15 @@ export default function AlertsScreen() {
     fetchReading();
   }, [fetchReading]);
 
-  const level = reading.water_level || 72.5;
-  const isRapid = reading.rate_of_rise && reading.rate_of_rise >= 0.30;
+  const { data: reading, isLive, isOffline, lastUpdated } = hwStatus;
+  const hasData = !!reading;
+  const level = hasData && typeof reading.water_level === 'number' ? reading.water_level : 0;
+  const isRapid = hasData && reading.rate_of_rise && reading.rate_of_rise >= 0.30;
 
-  const isNormalActive = level < 70;
-  const isPreWarningActive = level >= 70 && level < 85 && !isRapid;
-  const isWarningActive = level >= 70 && level < 85 && isRapid;
-  const isDangerActive = level >= 85;
+  const isNormalActive = hasData && level < 70;
+  const isPreWarningActive = hasData && level >= 70 && level < 85 && !isRapid;
+  const isWarningActive = hasData && level >= 70 && level < 85 && isRapid;
+  const isDangerActive = hasData && level >= 85;
 
   let activeTierKey = 'statusNormal';
   let activeColor = colors.safeGreen;
@@ -76,14 +80,37 @@ export default function AlertsScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Active Hero Status Card */}
-        <View style={[styles.heroCard, { backgroundColor: activeColor, borderColor: activeColor }]}>
-          <Text style={styles.heroPreTitle}>{t('currentStatus')}</Text>
-          <Text style={styles.heroStatus}>{t(activeTierKey)}</Text>
-          <View style={styles.heroLevelBadge}>
-            <Text style={styles.heroLevelText}>{level.toFixed(1)}% {t('waterLevelTitle')}</Text>
+        {/* Offline Warning Notice if applicable */}
+        {isOffline && hasData && (
+          <View style={[styles.offlineBanner, { backgroundColor: colors.warningOrange + '1A', borderColor: colors.warningOrange }]}>
+            <Text style={[styles.offlineBannerText, { color: colors.warningOrange }]}>
+              ⚠️ Sensor stream offline. Alerts below reflect last recorded telemetry from {formatTimestamp(lastUpdated)} ({formatRelativeTime(lastUpdated)}).
+            </Text>
           </View>
-        </View>
+        )}
+
+        {/* Active Hero Status Card */}
+        {hasData ? (
+          <View style={[styles.heroCard, { backgroundColor: activeColor, borderColor: activeColor }]}>
+            <Text style={styles.heroPreTitle}>{t('currentStatus')}</Text>
+            <Text style={styles.heroStatus}>{t(activeTierKey)}</Text>
+            <View style={styles.heroLevelBadge}>
+              <Text style={styles.heroLevelText}>
+                {level.toFixed(1)}% {t('waterLevelTitle')} {isOffline ? '(CACHED)' : ''}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.noDataCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+            <Text style={styles.noDataIcon}>📡</Text>
+            <Text style={[styles.noDataTitle, { color: colors.textPrimary }]}>
+              No Live Alerts Recorded
+            </Text>
+            <Text style={[styles.noDataSub, { color: colors.textSecondary }]}>
+              Hardware telemetry is required to determine active flood advisory levels.
+            </Text>
+          </View>
+        )}
 
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
           {t('tabAlerts')} & Guidelines
@@ -133,6 +160,17 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 24,
   },
+  offlineBanner: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 14,
+  },
+  offlineBannerText: {
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
   heroCard: {
     borderRadius: 16,
     padding: 24,
@@ -167,6 +205,27 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
+  },
+  noDataCard: {
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  noDataIcon: {
+    fontSize: 36,
+    marginBottom: 8,
+  },
+  noDataTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  noDataSub: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 16,
   },
   sectionTitle: {
     fontSize: 17,

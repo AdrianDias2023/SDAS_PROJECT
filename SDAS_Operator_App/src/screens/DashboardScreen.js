@@ -5,52 +5,57 @@ import AppHeader from '../components/AppHeader';
 import DemoModeBanner from '../components/DemoModeBanner';
 import TelemetryCard from '../components/TelemetryCard';
 import { supabase } from '../services/supabase';
-import { resolveReading } from '../services/demoData';
+import { evaluateOperatorTelemetry, formatTimestamp, formatRelativeTime } from '../services/demoData';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useDataMode } from '../context/DataModeContext';
 
 export default function DashboardScreen({ navigation }) {
   const { isDark, colors } = useTheme();
   const { t } = useLanguage();
+  const { dataMode, isSimulationMode } = useDataMode();
 
-  const [data, setData] = useState(null);
-  const [isDemo, setIsDemo] = useState(true);
+  const [telemetry, setTelemetry] = useState(evaluateOperatorTelemetry(null, dataMode));
   const [refreshing, setRefreshing] = useState(false);
   const [isAutoMode, setIsAutoMode] = useState(true);
 
-  const fetchData = useCallback(async () => {
+  const fetchTelemetry = useCallback(async () => {
     try {
+      if (dataMode === 'SIMULATION') {
+        setTelemetry(evaluateOperatorTelemetry(null, 'SIMULATION'));
+        setRefreshing(false);
+        return;
+      }
+
+      // Strictly LIVE mode
       const { data: readings } = await supabase
         .from('sensor_readings')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(1)
+        .maybeSingle();
 
-      const resolved = resolveReading(readings?.[0]);
-      setData(resolved.data);
-      setIsDemo(resolved.isDemo);
+      setTelemetry(evaluateOperatorTelemetry(readings, 'LIVE'));
     } catch (e) {
-      const resolved = resolveReading(null);
-      setData(resolved.data);
-      setIsDemo(resolved.isDemo);
+      setTelemetry(evaluateOperatorTelemetry(null, dataMode));
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [dataMode]);
 
   useEffect(() => {
-    fetchData();
+    fetchTelemetry();
+
+    if (dataMode === 'SIMULATION') return;
 
     const channel = supabase
-      .channel('operator_dashboard_stream')
+      .channel('operator_live_telemetry_stream')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'sensor_readings' },
         (payload) => {
           if (payload.new) {
-            const resolved = resolveReading(payload.new);
-            setData(resolved.data);
-            setIsDemo(resolved.isDemo);
+            setTelemetry(evaluateOperatorTelemetry(payload.new, 'LIVE'));
           }
         }
       )
@@ -59,7 +64,7 @@ export default function DashboardScreen({ navigation }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchData]);
+  }, [fetchTelemetry, dataMode]);
 
   const handleToggleMode = () => {
     if (isAutoMode) {
@@ -81,19 +86,22 @@ export default function DashboardScreen({ navigation }) {
     }
   };
 
-  const waterLevel = data?.water_level || 72.5;
-  const gatePos = data?.gate_position !== undefined ? data.gate_position : 0;
-  const temp = data?.temperature || 31.4;
-  const humidity = data?.humidity || 78.2;
-  const rain = data?.rainfall || 12.6;
-  const battery = data?.battery_voltage || 12.6;
+  const { data, isLive, isOffline, isSimulation, lastUpdated } = telemetry;
+  const hasData = !!data;
+
+  const waterLevel = hasData && typeof data.water_level === 'number' ? data.water_level : 0;
+  const gatePos = hasData && data.gate_position !== undefined ? data.gate_position : 0;
+  const temp = hasData && data.temperature !== undefined ? data.temperature : '--';
+  const humidity = hasData && data.humidity !== undefined ? data.humidity : '--';
+  const rain = hasData && data.rainfall !== undefined ? data.rainfall : '--';
+  const battery = hasData && data.battery_voltage !== undefined ? data.battery_voltage : '--';
 
   const levelColor = waterLevel >= 85 ? colors.dangerRed : waterLevel >= 70 ? colors.accentAmber : colors.safeGreen;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bgPrimary }]} edges={['top']}>
       <AppHeader title={t('appConsoleTitle')} />
-      <DemoModeBanner isDemo={isDemo} />
+      <DemoModeBanner telemetryStatus={telemetry} isSimulationMode={isSimulationMode} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -102,14 +110,14 @@ export default function DashboardScreen({ navigation }) {
             refreshing={refreshing}
             onRefresh={() => {
               setRefreshing(true);
-              fetchData();
+              fetchTelemetry();
             }}
             tintColor={colors.accentCyan}
           />
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* System Mode Interactive Card */}
+        {/* Mode Switcher Card */}
         <TouchableOpacity
           style={[
             styles.modeCard,
@@ -136,61 +144,105 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </TouchableOpacity>
 
-        {/* Telemetry 2x3 Grid */}
-        <View style={styles.grid}>
-          <View style={styles.row}>
-            <TelemetryCard
-              title={t('waterLevelCard')}
-              value={waterLevel.toFixed(1)}
-              unit="%"
-              color={levelColor}
-              icon="🌊"
-            />
-            <TelemetryCard
-              title={t('gatePositionCard')}
-              value={`${gatePos}%`}
-              unit={gatePos === 0 ? 'CLOSED' : 'OPEN'}
-              color={gatePos === 0 ? colors.safeGreen : colors.warningOrange}
-              icon="🚪"
-            />
-          </View>
-
-          <View style={styles.row}>
-            <TelemetryCard
-              title={t('metricTemp')}
-              value={temp}
-              unit="°C"
-              color={colors.textPrimary}
-              icon="🌡️"
-            />
-            <TelemetryCard
-              title={t('metricHumidity')}
-              value={humidity}
-              unit="%"
-              color={colors.accentCyan}
-              icon="💧"
-            />
-          </View>
-
-          <View style={styles.row}>
-            <TelemetryCard
-              title={t('metricRain')}
-              value={rain}
-              unit="mm/h"
-              color={colors.accentCyan}
-              icon="🌧️"
-            />
-            <TelemetryCard
-              title={t('batteryCard')}
-              value={battery}
-              unit="V"
-              color={colors.safeGreen}
-              icon="🔋"
-            />
-          </View>
+        {/* Data Mode Indicator Badge */}
+        <View style={styles.dataModeRow}>
+          <Text style={[styles.dataModeLabel, { color: colors.textSecondary }]}>
+            Data Source:
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.dataModeBadge,
+              {
+                backgroundColor: isSimulation ? colors.accentAmber + '22' : isLive ? colors.safeGreen + '22' : colors.warningOrange + '22',
+                borderColor: isSimulation ? colors.accentAmber : isLive ? colors.safeGreen : colors.warningOrange,
+              },
+            ]}
+            onPress={() => navigation.navigate('System', { screen: 'Profile' })}
+          >
+            <Text
+              style={[
+                styles.dataModeBadgeText,
+                { color: isSimulation ? colors.accentAmber : isLive ? colors.safeGreen : colors.warningOrange },
+              ]}
+            >
+              {isSimulation ? '🧪 SIMULATION MODE' : isLive ? '🟢 LIVE ESP32' : '🔴 OFFLINE CACHED'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Cockpit Quick Actions */}
+        {/* Telemetry 2x3 Grid */}
+        {hasData ? (
+          <View style={styles.grid}>
+            <View style={styles.row}>
+              <TelemetryCard
+                title={t('waterLevelCard')}
+                value={typeof waterLevel === 'number' ? waterLevel.toFixed(1) : waterLevel}
+                unit="%"
+                color={levelColor}
+                icon="🌊"
+              />
+              <TelemetryCard
+                title={t('gatePositionCard')}
+                value={`${gatePos}%`}
+                unit={gatePos === 0 ? 'CLOSED' : 'OPEN'}
+                color={gatePos === 0 ? colors.safeGreen : colors.warningOrange}
+                icon="🚪"
+              />
+            </View>
+
+            <View style={styles.row}>
+              <TelemetryCard
+                title={t('metricTemp')}
+                value={temp}
+                unit="°C"
+                color={colors.textPrimary}
+                icon="🌡️"
+              />
+              <TelemetryCard
+                title={t('metricHumidity')}
+                value={humidity}
+                unit="%"
+                color={colors.accentCyan}
+                icon="💧"
+              />
+            </View>
+
+            <View style={styles.row}>
+              <TelemetryCard
+                title={t('metricRain')}
+                value={rain}
+                unit="mm/h"
+                color={colors.accentCyan}
+                icon="🌧️"
+              />
+              <TelemetryCard
+                title={t('batteryCard')}
+                value={battery}
+                unit="V"
+                color={colors.safeGreen}
+                icon="🔋"
+              />
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.noDataCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
+            <Text style={styles.noDataIcon}>📡</Text>
+            <Text style={[styles.noDataTitle, { color: colors.textPrimary }]}>
+              No ESP32 Telemetry Detected
+            </Text>
+            <Text style={[styles.noDataSub, { color: colors.textSecondary }]}>
+              The database does not contain sensor readings. Power on the edge station, or switch to Simulation in Settings to test without hardware.
+            </Text>
+            <TouchableOpacity
+              style={[styles.simBtn, { backgroundColor: colors.accentCyan }]}
+              onPress={() => navigation.navigate('System', { screen: 'Profile' })}
+            >
+              <Text style={styles.simBtnText}>Open Settings to Toggle Simulation</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Quick Actions */}
         <View style={styles.actionsRow}>
           <TouchableOpacity
             style={[styles.actionBtn, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}
@@ -264,12 +316,65 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
   },
+  dataModeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 6,
+    marginBottom: 8,
+  },
+  dataModeLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  dataModeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  dataModeBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
   grid: {
     marginVertical: 4,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  noDataCard: {
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    marginVertical: 12,
+  },
+  noDataIcon: {
+    fontSize: 36,
+    marginBottom: 8,
+  },
+  noDataTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  noDataSub: {
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 16,
+    marginBottom: 16,
+  },
+  simBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  simBtnText: {
+    color: '#070F1C',
+    fontSize: 12,
+    fontWeight: '800',
   },
   actionsRow: {
     flexDirection: 'row',
