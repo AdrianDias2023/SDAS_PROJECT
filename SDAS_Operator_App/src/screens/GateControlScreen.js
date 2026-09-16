@@ -31,6 +31,7 @@ export default function GateControlScreen({ navigation }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [userEmail, setUserEmail] = useState('operator@sdas.gov.lk');
+  const [currentWaterLevel, setCurrentWaterLevel] = useState(0);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -40,7 +41,43 @@ export default function GateControlScreen({ navigation }) {
     }).catch(() => {});
 
     fetchHistory();
+    fetchWaterLevel();
+
+    // Subscribe to live water level updates
+    const channel = supabase
+      .channel('gate_control_water_level')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'sensor_readings' },
+        (payload) => {
+          if (payload.new && typeof payload.new.water_level === 'number') {
+            setCurrentWaterLevel(payload.new.water_level);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
+
+  const fetchWaterLevel = async () => {
+    try {
+      const { data } = await supabase
+        .from('sensor_readings')
+        .select('water_level')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data && typeof data.water_level === 'number') {
+        setCurrentWaterLevel(data.water_level);
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
 
   const fetchHistory = async () => {
     try {
@@ -69,6 +106,17 @@ export default function GateControlScreen({ navigation }) {
       Alert.alert('AI Protection Active', t('autoBlockedWarn'));
       return;
     }
+
+    // Critical Hydraulic Interlock: If water level > 85%, CLOSE is strictly blocked to prevent dam overtopping
+    if (selectedPos.percent === 0 && currentWaterLevel > 85) {
+      Alert.alert(
+        '⛔ CRITICAL HYDRAULIC INTERLOCK: CLOSE BLOCKED',
+        `Dam water level is currently ${currentWaterLevel.toFixed(1)}% (exceeds 85% DANGER threshold).\n\nGate CLOSE (0%) is strictly BLOCKED by SDAS hydraulic safety rules to prevent dam overtopping! Open the gate to release excess volume.`,
+        [{ text: 'Acknowledge', style: 'default' }]
+      );
+      return;
+    }
+
     if (interlock) {
       Alert.alert(t('interlockLabel'), t('interlockEnabledWarn'));
       return;
@@ -129,6 +177,21 @@ export default function GateControlScreen({ navigation }) {
             thumbColor="#FFFFFF"
           />
         </View>
+
+        {/* Hydraulic Interlock Banner if waterLevel > 85% */}
+        {currentWaterLevel > 85 && (
+          <View style={[styles.hydraulicBanner, { backgroundColor: colors.dangerRed + '22', borderColor: colors.dangerRed }]}>
+            <Text style={styles.hydraulicBannerIcon}>⛔</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.hydraulicBannerTitle, { color: colors.dangerRed }]}>
+                HYDRAULIC INTERLOCK ACTIVE
+              </Text>
+              <Text style={[styles.hydraulicBannerSub, { color: colors.textPrimary }]}>
+                Water level is {currentWaterLevel.toFixed(1)}% (&gt;85%). Gate CLOSE (0%) is strictly locked out to prevent dam overtopping.
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Visual Gate Indicator Ring */}
         <View style={[styles.visualCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}>
@@ -284,6 +347,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderWidth: 1,
     marginBottom: 16,
+  },
+  hydraulicBanner: {
+    borderRadius: 14,
+    borderWidth: 1.5,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  hydraulicBannerIcon: {
+    fontSize: 26,
+    marginRight: 12,
+  },
+  hydraulicBannerTitle: {
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  hydraulicBannerSub: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
   },
   modeTextCol: {
     flex: 1,

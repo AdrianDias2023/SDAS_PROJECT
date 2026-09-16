@@ -29,7 +29,7 @@ export default function CommunityScreen({ navigation }) {
   const categories = [
     { key: 'hazardFlood', icon: '🌊' },
     { key: 'hazardRoad', icon: '🚧' },
-    { key: 'hazardTree', icon: '🌳' },
+    { key: 'hazardRain', icon: '🌧️' },
     { key: 'hazardOther', icon: '⚠️' },
   ];
 

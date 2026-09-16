@@ -170,7 +170,62 @@ export default function DashboardScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Telemetry 2x3 Grid */}
+        {/* Hardware Status Diagnostics Card */}
+        <TouchableOpacity
+          style={[styles.hwCard, { backgroundColor: colors.bgCard, borderColor: colors.borderColor }]}
+          onPress={() => navigation.navigate('System', { screen: 'SystemHealth' })}
+          activeOpacity={0.85}
+        >
+          <View style={styles.hwHeaderRow}>
+            <Text style={[styles.hwCardTitle, { color: colors.textPrimary }]}>
+              Hardware Status
+            </Text>
+            <Text style={[styles.hwDetailsLink, { color: colors.accentCyan }]}>
+              View Diagnostics ›
+            </Text>
+          </View>
+
+          <View style={[styles.hwBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderColor }]}>
+            <View style={styles.hwRow}>
+              <Text style={[styles.hwLabel, { color: colors.textSecondary }]}>ESP32:</Text>
+              <Text style={[styles.hwValue, { color: isLive ? colors.safeGreen : isSimulation ? colors.accentAmber : colors.dangerRed }]}>
+                {isLive ? '🟢 Connected' : isSimulation ? '🧪 Simulated' : '🔴 Disconnected'}
+              </Text>
+            </View>
+            <View style={[styles.hwDivider, { backgroundColor: colors.borderColor }]} />
+
+            <View style={styles.hwRow}>
+              <Text style={[styles.hwLabel, { color: colors.textSecondary }]}>Water Sensor 1:</Text>
+              <Text style={[styles.hwValue, { color: isLive || isSimulation ? colors.safeGreen : colors.dangerRed }]}>
+                {isLive || isSimulation ? '🟢 Healthy' : '🔴 Standby'}
+              </Text>
+            </View>
+            <View style={[styles.hwDivider, { backgroundColor: colors.borderColor }]} />
+
+            <View style={styles.hwRow}>
+              <Text style={[styles.hwLabel, { color: colors.textSecondary }]}>Water Sensor 2:</Text>
+              <Text style={[styles.hwValue, { color: isLive || isSimulation ? colors.safeGreen : colors.dangerRed }]}>
+                {isLive || isSimulation ? '🟢 Healthy' : '🔴 Standby'}
+              </Text>
+            </View>
+            <View style={[styles.hwDivider, { backgroundColor: colors.borderColor }]} />
+
+            <View style={styles.hwRow}>
+              <Text style={[styles.hwLabel, { color: colors.textSecondary }]}>GSM Module:</Text>
+              <Text style={[styles.hwValue, { color: isLive || isSimulation ? colors.safeGreen : colors.warningOrange }]}>
+                {isLive || isSimulation ? '🟢 Ready' : '🔴 Offline'}
+              </Text>
+            </View>
+            <View style={[styles.hwDivider, { backgroundColor: colors.borderColor }]} />
+
+            <View style={styles.hwRow}>
+              <Text style={[styles.hwLabel, { color: colors.textSecondary }]}>Internet:</Text>
+              <Text style={[styles.hwValue, { color: colors.safeGreen }]}>
+                🟢 Connected
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
         {hasData ? (
           <View style={styles.grid}>
             <View style={styles.row}>
@@ -336,6 +391,53 @@ const styles = StyleSheet.create({
   dataModeBadgeText: {
     fontSize: 11,
     fontWeight: '800',
+  },
+  hwCard: {
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  hwHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  hwCardTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  hwDetailsLink: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  hwBox: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  hwRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  hwLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  hwValue: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  hwDivider: {
+    height: 1,
+    width: '100%',
+    opacity: 0.4,
   },
   grid: {
     marginVertical: 4,

@@ -24,6 +24,7 @@ export default function HomeScreen({ navigation }) {
   const { t } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
   const [hwStatus, setHwStatus] = useState(evaluateHardwareStatus(null));
+  const [gateStatus, setGateStatus] = useState('0% CLOSED');
 
   const fetchReading = useCallback(async () => {
     try {
@@ -38,6 +39,18 @@ export default function HomeScreen({ navigation }) {
         setHwStatus(evaluateHardwareStatus(data));
       } else {
         setHwStatus(evaluateHardwareStatus(null));
+      }
+
+      // Fetch latest sluice gate actuation
+      const { data: gateData } = await supabase
+        .from('gate_control')
+        .select('gate_percentage, status')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (gateData) {
+        setGateStatus(`${gateData.gate_percentage}% ${gateData.status || (gateData.gate_percentage === 0 ? 'CLOSED' : 'OPEN')}`);
       }
     } catch (e) {
       setHwStatus(evaluateHardwareStatus(null));
@@ -138,9 +151,14 @@ export default function HomeScreen({ navigation }) {
         >
           {/* Header Row inside Card */}
           <View style={styles.gaugeHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-              {t('waterLevelTitle')}
-            </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.damTitleText, { color: colors.textPrimary }]}>
+                Tabbowa Prototype Dam
+              </Text>
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                {t('waterLevelTitle')}
+              </Text>
+            </View>
             {isOffline && hasData ? (
               <View style={[styles.offlinePill, { backgroundColor: colors.warningOrange + '22', borderColor: colors.warningOrange }]}>
                 <Text style={[styles.offlinePillText, { color: colors.warningOrange }]}>CACHED</Text>
@@ -156,6 +174,46 @@ export default function HomeScreen({ navigation }) {
             <>
               <StatusGauge percentage={waterLevel} size={width > 380 ? 250 : 210} isRapidSurge={isRapidSurge} />
 
+              {/* Live Dam Status Detailed Breakdown */}
+              <View style={[styles.damStatusDetailsCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderColor }]}>
+                <View style={styles.detailItemRow}>
+                  <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Water Level</Text>
+                  <Text style={[styles.detailItemValue, { color: tierColor, fontWeight: '800' }]}>
+                    {waterLevel}%
+                  </Text>
+                </View>
+
+                <View style={[styles.detailDivider, { backgroundColor: colors.borderColor }]} />
+
+                <View style={styles.detailItemRow}>
+                  <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Status</Text>
+                  <View style={[styles.tierBadgeInline, { backgroundColor: tierColor + '20', borderColor: tierColor }]}>
+                    <Text style={[styles.tierBadgeText, { color: tierColor }]}>
+                      {tierColor === colors.safeGreen ? '🟢 ' : tierColor === colors.accentAmber ? '🟡 ' : tierColor === colors.warningOrange ? '🟠 ' : '🔴 '}
+                      {t(tierKey)}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={[styles.detailDivider, { backgroundColor: colors.borderColor }]} />
+
+                <View style={styles.detailItemRow}>
+                  <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Gate</Text>
+                  <Text style={[styles.detailItemValue, { color: colors.textPrimary, fontWeight: '700' }]}>
+                    {gateStatus}
+                  </Text>
+                </View>
+
+                <View style={[styles.detailDivider, { backgroundColor: colors.borderColor }]} />
+
+                <View style={styles.detailItemRow}>
+                  <Text style={[styles.detailItemLabel, { color: colors.textSecondary }]}>Last Updated</Text>
+                  <Text style={[styles.detailItemValue, { color: colors.textSecondary, fontWeight: '600' }]}>
+                    {formatRelativeTime(lastUpdated)}
+                  </Text>
+                </View>
+              </View>
+
               <View style={[styles.storageRow, { backgroundColor: colors.bgSurface }]}>
                 <Text style={[styles.storageLabel, { color: colors.textSecondary }]}>
                   {t('safeStorageAvail')}:
@@ -166,7 +224,7 @@ export default function HomeScreen({ navigation }) {
               </View>
 
               <Text style={[styles.lastSyncCaption, { color: colors.textMuted }]}>
-                Last sync: {formatTimestamp(lastUpdated)} ({formatRelativeTime(lastUpdated)})
+                Sync time: {formatTimestamp(lastUpdated)}
               </Text>
             </>
           ) : (
@@ -338,11 +396,54 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 8,
   },
+  damTitleText: {
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+    marginBottom: 2,
+  },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
+  },
+  damStatusDetailsCard: {
+    width: '100%',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginTop: 14,
+    marginBottom: 6,
+  },
+  detailItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  detailItemLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  detailItemValue: {
+    fontSize: 13,
+  },
+  detailDivider: {
+    height: 1,
+    width: '100%',
+    opacity: 0.5,
+  },
+  tierBadgeInline: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  tierBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
   },
   offlinePill: {
     paddingHorizontal: 8,

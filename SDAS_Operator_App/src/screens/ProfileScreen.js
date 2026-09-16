@@ -6,12 +6,14 @@ import { supabase } from '../services/supabase';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useDataMode } from '../context/DataModeContext';
+import { useAuth } from '../context/AuthContext';
 import { evaluateOperatorTelemetry, formatTimestamp, formatRelativeTime } from '../services/demoData';
 
 export default function ProfileScreen() {
   const { isDark, colors } = useTheme();
   const { t } = useLanguage();
   const { dataMode, setDataMode, isLiveMode } = useDataMode();
+  const { logout } = useAuth();
 
   const [userEmail, setUserEmail] = useState('operator@sdas.gov.lk');
   const [lastTelemetry, setLastTelemetry] = useState(null);
@@ -43,7 +45,7 @@ export default function ProfileScreen() {
         text: 'Sign Out',
         style: 'destructive',
         onPress: async () => {
-          await supabase.auth.signOut();
+          await logout();
         },
       },
     ]);

@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { LanguageProvider, useLanguage } from './src/context/LanguageContext';
 import { DataModeProvider } from './src/context/DataModeContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { supabase } from './src/services/supabase';
 
 import LoginScreen from './src/screens/LoginScreen';
@@ -77,23 +78,7 @@ function SystemTab() {
 function AppContent() {
   const { isDark, colors } = useTheme();
   const { t } = useLanguage();
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    }).catch(() => {
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription?.unsubscribe();
-  }, []);
+  const { isAuthenticated, loading } = useAuth();
 
   const navigationTheme = isDark
     ? {
@@ -131,7 +116,7 @@ function AppContent() {
     <SafeAreaProvider>
       <NavigationContainer theme={navigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        {session && session.user ? (
+        {isAuthenticated ? (
           <Tab.Navigator
             screenOptions={({ route }) => ({
               headerShown: false,
@@ -181,7 +166,9 @@ export default function App() {
     <ThemeProvider>
       <LanguageProvider>
         <DataModeProvider>
-          <AppContent />
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
         </DataModeProvider>
       </LanguageProvider>
     </ThemeProvider>
